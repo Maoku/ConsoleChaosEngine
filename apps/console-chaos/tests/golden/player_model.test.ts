@@ -10,8 +10,9 @@
 import { describe, it, expect } from 'vitest';
 import { readFileSync, existsSync } from 'node:fs';
 import { join } from 'node:path';
-import { loadGltf, type GltfIO, type GltfModel } from '@/render/loader/gltf';
-import { GENERATION_IDS, PROFILES, type PlayerClip } from '@/generation/profiles';
+import { loadGltf, type GltfIO, type GltfModel } from '@console-chaos/engine';
+import { CONSOLE_CHAOS_GENERATION_THEMES, type PlayerClip } from '@/config/generation';
+import { GENERATION_IDS } from '../generations';
 
 const MODEL_DIR = 'public/assets/models';
 
@@ -31,10 +32,10 @@ const io: GltfIO = {
 };
 
 /** モデルで描く世代だけがここの対象。2D の 2 世代は絵で描く（T2-09 / T2-11。player_sprite.test.ts） */
-const MODEL_IDS = GENERATION_IDS.filter((id) => PROFILES[id].player.kind === 'model');
+const MODEL_IDS = GENERATION_IDS.filter((id) => CONSOLE_CHAOS_GENERATION_THEMES[id].player.kind === 'model');
 
 const models = new Map<string, GltfModel>();
-for (const file of new Set(MODEL_IDS.map((id) => PROFILES[id].player.file))) {
+for (const file of new Set(MODEL_IDS.map((id) => CONSOLE_CHAOS_GENERATION_THEMES[id].player.file))) {
   models.set(file, await loadGltf(join(MODEL_DIR, file), io));
 }
 
@@ -42,13 +43,13 @@ describe('プレイヤーモデル', () => {
   it('モデルで描く世代がモデルを指し、その実体がある', () => {
     expect(MODEL_IDS).toEqual(['PS1', 'PS2']);
     for (const id of MODEL_IDS) {
-      const file = PROFILES[id].player.file;
+      const file = CONSOLE_CHAOS_GENERATION_THEMES[id].player.file;
       expect(existsSync(join(MODEL_DIR, file)), `${id} の ${file} が無い`).toBe(true);
     }
   });
 
   for (const id of MODEL_IDS) {
-    const player = PROFILES[id].player;
+    const player = CONSOLE_CHAOS_GENERATION_THEMES[id].player;
     if (player.kind !== 'model') continue;
 
     it(`${id}: idle / walk / jump の 3 つがアセットの実在するアニメーションを指す`, () => {

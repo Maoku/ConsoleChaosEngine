@@ -7,9 +7,9 @@
  */
 import { describe, it, expect } from 'vitest';
 import { spriteCellCount, spriteCellOf, spriteUvRect } from '@/render/sprite_sheet';
-import { PROFILES, type PlayerSpriteProfile } from '@/generation/profiles';
+import { CONSOLE_CHAOS_GENERATION_THEMES, type PlayerSpriteProfile } from '@/config/generation';
 
-const sprite = PROFILES.FC.player as PlayerSpriteProfile;
+const sprite = CONSOLE_CHAOS_GENERATION_THEMES.FC.player as PlayerSpriteProfile;
 
 describe('スプライトのコマ送り', () => {
   it('先頭のコマは 0 秒から始まる', () => {

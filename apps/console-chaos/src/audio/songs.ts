@@ -11,7 +11,7 @@
  *（4 編曲の約束は曲を跨いで同じ）。
  */
 import { AREA1_SONG_CALM, AREA1_SONG_POP } from './music';
-import type { Score } from './score';
+import type { Score } from '@console-chaos/engine';
 
 export type SongId = 'pop' | 'calm';
 

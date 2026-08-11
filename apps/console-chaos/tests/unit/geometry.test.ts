@@ -7,7 +7,7 @@
  */
 import { describe, it, expect } from 'vitest';
 import { readFileSync } from 'node:fs';
-import { billboardMesh, boxMesh, segmentsFor, triangleCountOf, unitCube, DEFAULT_MAX_SEGMENTS } from '@/render/geometry';
+import { billboardMesh, boxMesh, segmentsFor, triangleCountOf, unitCube, DEFAULT_MAX_SEGMENTS } from '@console-chaos/engine';
 import { collidersOf, parseLevel } from '@/level/loader';
 import { materialFor } from '@/render/material';
 

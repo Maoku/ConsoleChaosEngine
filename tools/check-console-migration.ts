@@ -1,4 +1,4 @@
-import { readFileSync, readdirSync, statSync } from 'node:fs';
+import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs';
 import { dirname, extname, join, relative } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -12,14 +12,39 @@ const SOURCE = join(ROOT, 'apps/console-chaos/src');
 const FIXTURES = join(ROOT, 'tools/fixtures/console-migration');
 const SOURCE_EXTENSIONS = new Set(['.ts', '.tsx', '.js', '.mjs']);
 
-const RULES: ReadonlyArray<readonly [string, RegExp]> = [
-  ['legacy generation state machine', /generation\/(?:switcher|transition)/],
-  ['legacy raw input', /\b(?:RawInput|createMapper|applyConstraints|createKeyboardSource|createGamepadSource)\b/],
-  ['app-owned loop', /(?:@\/core\/loop|\bcreateLoop\s*\(|\bbrowserHost\s*\()/],
-  ['direct renderer asset load', /\b(?:new\s+Image|fetch|loadGltf)\s*\(/],
-  ['app-owned generation graphics', /render\/(?:pipeline|postfx|quantize)/],
-  ['legacy bootstrap', /import\s*\(\s*['"]\.\/main['"]\s*\)/],
+interface Rule {
+  name: string;
+  pattern: RegExp;
+  sourcePath?: RegExp;
+}
+
+const RULES: readonly Rule[] = [
+  { name: 'legacy generation state machine', pattern: /generation\/(?:switcher|transition)/ },
+  { name: 'legacy raw input', pattern: /\b(?:RawInput|createMapper|applyConstraints|createKeyboardSource|createGamepadSource)\b/ },
+  { name: 'app-owned loop', pattern: /(?:@\/core\/loop|\bcreateLoop\s*\(|\bbrowserHost\s*\()/ },
+  {
+    name: 'direct renderer asset load',
+    pattern: /\b(?:new\s+Image|fetch|loadGltf)\s*\(/,
+    sourcePath: /(?:^|\/)(?:render|presentation)\//,
+  },
+  { name: 'app-owned generation graphics', pattern: /render\/(?:pipeline|postfx|quantize)/ },
+  { name: 'legacy bootstrap', pattern: /import\s*\(\s*['"]\.\/main['"]\s*\)/ },
+  { name: 'engine deep import', pattern: /@console-chaos\/engine\// },
+  { name: 'app-owned hardware profile literal', pattern: /\bmaxSimultaneousColors\s*:/ },
 ];
+
+const FORBIDDEN_FILES = [
+  'main.ts',
+  'generation/profiles.ts',
+  'generation/switcher.ts',
+  'generation/transition.ts',
+  'render/frame.ts',
+  'render/pipeline.ts',
+  'render/renderer3d.ts',
+  'core/loop.ts',
+  'audio/director.ts',
+  'audio/engine.ts',
+] as const;
 
 function sourceFiles(directory: string): string[] {
   const files: string[] = [];
@@ -35,8 +60,18 @@ function scan(directory: string): Finding[] {
   const findings: Finding[] = [];
   for (const file of sourceFiles(directory)) {
     const source = readFileSync(file, 'utf8');
-    for (const [rule, pattern] of RULES) {
-      if (pattern.test(source)) findings.push({ file: relative(ROOT, file), rule });
+    const sourcePath = relative(directory, file);
+    for (const rule of RULES) {
+      const fixture = directory === FIXTURES;
+      if ((!rule.sourcePath || rule.sourcePath.test(sourcePath) || fixture) && rule.pattern.test(source)) {
+        findings.push({ file: relative(ROOT, file), rule: rule.name });
+      }
+    }
+  }
+  if (directory === SOURCE) {
+    for (const file of FORBIDDEN_FILES) {
+      const path = join(directory, file);
+      if (existsSync(path)) findings.push({ file: relative(ROOT, path), rule: 'forbidden legacy file' });
     }
   }
   return findings;
@@ -51,10 +86,9 @@ function selfTest(): void {
 
 selfTest();
 const findings = scan(SOURCE);
-const strict = process.argv.includes('--strict');
-if (strict && findings.length > 0) {
+if (findings.length > 0) {
   for (const finding of findings) console.error(`${finding.file}: ${finding.rule}`);
   process.exitCode = 1;
 } else {
-  console.log(`Console migration checker: ${findings.length} legacy finding(s), fixture detection passed${strict ? '' : ' (audit mode)'}.`);
+  console.log('Console migration checker: 0 legacy findings, fixture detection passed (strict mode).');
 }

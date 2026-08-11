@@ -27,8 +27,8 @@ import { P2_1_LANE_Z, P2_1_MARK, P2_1_SLAB_COUNT, P2_1_SLAB_IDS, causewayOf, p2T
 import type { PuzzleContext, PuzzleDefinition } from '@/gameplay/puzzles/types';
 import { StaticBody } from '@/gameplay/physics';
 import { PlayerBody, type PlayerBodyData } from '@/gameplay/player';
-import { createWorld, type Entity } from '@/core/ecs/world';
-import { GENERATION_IDS, PROFILES, type GenerationId } from '@/generation/profiles';
+import { createWorld, type Entity } from '@console-chaos/engine';
+import { GENERATION_IDS, GENERATION_VIEWS, type GenerationId } from '../generations';
 import type { Vec3 } from '@/gameplay/projection';
 
 /** パズル 1 件分の試験台。要素は id で置き、プレイヤーを好きな位置へ動かせる */
@@ -56,7 +56,7 @@ function lab(ids: readonly string[]) {
 
   const ctx: PuzzleContext = {
     world,
-    profile: PROFILES.FC,
+    profile: GENERATION_VIEWS.FC,
     entities,
     player,
     memory,
@@ -103,7 +103,7 @@ function lab(ids: readonly string[]) {
       return world.get(entities.get(id)!, StaticBody)!.solid;
     },
     run(generation: GenerationId, definition: PuzzleDefinition, ticks = 1): void {
-      ctx.profile = PROFILES[generation];
+      ctx.profile = GENERATION_VIEWS[generation];
       for (let i = 0; i < ticks; i++) {
         definition.update(ctx);
         tickIndex++;
@@ -114,7 +114,7 @@ function lab(ids: readonly string[]) {
 
 /** 4 世代それぞれで solvableIn を評価する */
 function solvableSet(definition: PuzzleDefinition): GenerationId[] {
-  return GENERATION_IDS.filter((id) => definition.solvableIn(PROFILES[id]));
+  return GENERATION_IDS.filter((id) => definition.solvableIn(GENERATION_VIEWS[id]));
 }
 
 describe('gameplay/puzzles の登録（§7.3）', () => {
@@ -220,8 +220,8 @@ describe('F-2 ちらつきが答えを覗かせる（第1世代）', () => {
 
   it('走査線の上限が群れの数より少ない世代でのみ解ける', () => {
     expect(solvableSet(f2FlickerGap)).toEqual(['FC']);
-    expect(PROFILES.FC.video.spritesPerScanline).toBeLessThan(F2_SWARM_COUNT);
-    expect(PROFILES.SFC.video.spritesPerScanline).toBeGreaterThan(F2_SWARM_COUNT);
+    expect(GENERATION_VIEWS.FC.hardware.video.spritesPerScanline).toBeLessThan(F2_SWARM_COUNT);
+    expect(GENERATION_VIEWS.SFC.hardware.video.spritesPerScanline).toBeGreaterThan(F2_SWARM_COUNT);
   });
 
   it('正解の道は必ず渡り切れる（行き止まりを作らない）', () => {
@@ -392,8 +392,8 @@ describe('P1-2 ソートの破れ（第3世代）', () => {
   it('奥行きがあり、かつ深度バッファを持たない世代でのみ解ける', () => {
     expect(solvableSet(p1SortBreak)).toEqual(['PS1']);
     // 2D の世代も深度バッファを持たないが、奥行きが無いので該当しない
-    expect(PROFILES.FC.video.depthBuffer).toBe(false);
-    expect(p1SortBreak.solvableIn(PROFILES.FC)).toBe(false);
+    expect(GENERATION_VIEWS.FC.hardware.video.depthBuffer).toBe(false);
+    expect(p1SortBreak.solvableIn(GENERATION_VIEWS.FC)).toBe(false);
   });
 
   it('破れている世代では継ぎ目だけが通れるようになる（殻の他の面は壁のまま）', () => {

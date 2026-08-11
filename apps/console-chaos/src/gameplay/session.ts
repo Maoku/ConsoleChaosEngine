@@ -16,17 +16,21 @@
  * **走査線制限は描画にだけ効く**（T2 の決定 2 で「消えたら当たり判定も消える」を廃止）。
  * `culled` を読むのは `gameplay/scene.ts` だけで、パズルには渡さない。
  */
-import { createSchedule, type SystemSchedule } from '@/core/ecs/system';
-import { createWorld, type Entity, type World } from '@/core/ecs/world';
-import { hash32 } from '@/core/rng';
-import { TICK_MS } from '@/core/time';
-import type { GenerationController } from '@console-chaos/engine';
+import {
+  TICK_MS,
+  createSchedule,
+  createWorld,
+  hash32,
+  type Entity,
+  type GenerationController,
+  type SystemSchedule,
+  type World,
+} from '@console-chaos/engine';
 import {
   createNeutralConsoleChaosActions,
   type ConsoleChaosActionSnapshot,
 } from '@/config/actions';
-import { composeLegacyGenerationProfile } from '@/config/generation';
-import type { GenerationProfile } from '@/generation/profiles';
+import { generationView, type ConsoleChaosGenerationView } from '@/config/generation';
 import type { LevelEntity, LevelFile } from '@/level/schema';
 import {
   advanceRespawn,
@@ -116,7 +120,7 @@ export interface Session {
   readonly activePuzzleId: string | null;
   /** プレイヤーがヒントを要求した。段階を 1 つ進めて返す */
   requestHint(): HintMessage | null;
-  readonly profile: GenerationProfile;
+  readonly profile: ConsoleChaosGenerationView;
   readonly tickIndex: number;
   /** §4.4 の段階 3〜8。GameHost が generation を進めた後の ActionMap snapshot を受け取る。 */
   tick(actions: ConsoleChaosActionSnapshot): void;
@@ -198,7 +202,7 @@ export function createSession(options: SessionOptions): Session {
   const slide: { z: ((progress: number) => number) | null; y: number | null } = { z: null, y: null };
   let frame = {
     snapshot: createNeutralConsoleChaosActions(),
-    profile: composeLegacyGenerationProfile(startGeneration),
+    profile: generationView(startGeneration),
   };
 
   const disconnectGeneration = generation.onBeforeSwitch((event) => {
@@ -233,7 +237,7 @@ export function createSession(options: SessionOptions): Session {
   schedule.add(
     'physics',
     'bodies',
-    physicsSystem(() => ({ mode: frame.profile.video.projection, projection }), () => [player]),
+    physicsSystem(() => ({ mode: frame.profile.hardware.video.projection, projection }), () => [player]),
   );
 
   const puzzles: PuzzleDefinition[] = allPuzzles();
@@ -261,7 +265,7 @@ export function createSession(options: SessionOptions): Session {
     memories.set(puzzle.id, memory);
     contexts.set(puzzle.id, {
       world,
-      profile: composeLegacyGenerationProfile(startGeneration),
+      profile: generationView(startGeneration),
       entities,
       player,
       memory,
@@ -298,9 +302,9 @@ export function createSession(options: SessionOptions): Session {
   }
 
   function tick(actions: ConsoleChaosActionSnapshot): void {
-    const profile = composeLegacyGenerationProfile(generation.generation);
+    const profile = generationView(generation.generation);
     const snapshot = isPlayable(checkpoints) ? actions : createNeutralConsoleChaosActions();
-    projection.mode = profile.video.projection;
+    projection.mode = profile.hardware.video.projection;
     frame = { snapshot, profile };
 
     // 段階 4・5：プレイヤーの意図 → 物理
@@ -369,7 +373,7 @@ export function createSession(options: SessionOptions): Session {
     },
     requestHint: () => requestHint(hints, activePuzzleId),
     get profile() {
-      return composeLegacyGenerationProfile(generation.generation);
+      return generationView(generation.generation);
     },
     get tickIndex() {
       return tickIndex;

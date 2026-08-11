@@ -3,7 +3,7 @@ import {
   createSortWorkspace,
   sortTrianglesByDepthNaive,
   sortTrianglesByDepthRadix,
-} from '@/render/sort';
+} from '@console-chaos/engine';
 
 /** 決定的な乱数（テストの再現性のため。core/rng.ts と同じ考え方） */
 function mulberry32(seed: number): () => number {

@@ -12,7 +12,7 @@
  * この 2 つを同時に満たすのは第3世代だけだが、条件はプロファイルの値で書いてあり、
  * 世代 ID には触れていない（不変条件 I2）。
  */
-import type { GenerationProfile } from '@/generation/profiles';
+import type { ConsoleChaosGenerationView } from '@/config/generation';
 import { playerTouches, setSolid, type PuzzleContext, type PuzzleDefinition } from './types';
 
 /** 殻（見た目）。**どの世代でも消えない**。T1-27 で当たり判定を板ごとに分けた */
@@ -29,8 +29,8 @@ export const P1_2_SEAM = 'p1_2_seam';
 /** 殻の内部の核 */
 export const P1_2_CORE = 'p1_2_core';
 
-function sortBreaks(profile: GenerationProfile): boolean {
-  return profile.video.projection === 'perspective3d' && !profile.video.depthBuffer;
+function sortBreaks(profile: ConsoleChaosGenerationView): boolean {
+  return profile.hardware.video.projection === 'perspective3d' && !profile.hardware.video.depthBuffer;
 }
 
 export const p1SortBreak: PuzzleDefinition = {

@@ -14,7 +14,7 @@ import {
   createSortWorkspace,
   sortTrianglesByDepthNaive,
   sortTrianglesByDepthRadix,
-} from '../src/render/sort';
+} from '@console-chaos/engine';
 
 /** §6.1 のフレーム予算配分より、PS1 のソートに割り当てられた時間 */
 const BUDGET_MS = 2.0;

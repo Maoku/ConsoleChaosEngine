@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { createEventBus } from '@/core/events';
+import { createEventBus } from '@console-chaos/engine';
 
 interface TestEvents {
   ping: { value: number };

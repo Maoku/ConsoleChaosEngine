@@ -24,8 +24,8 @@
  * 正解は**試行ごとに変わる**（決定 3）。落ちてやり直すたびに石の並びが変わるので、
  * 覚えても意味がなく、毎回ちらつきを読むことになる。
  */
-import { pick } from '@/core/rng';
-import type { GenerationProfile } from '@/generation/profiles';
+import { pick } from '@console-chaos/engine';
+import type { ConsoleChaosGenerationView } from '@/config/generation';
 import { bodyOf, boxOf, moveTo, playerTouches, setSolid, type PuzzleContext, type PuzzleDefinition } from './types';
 
 /** 幕を張る群れの数。走査線の上限（第1世代は 8）より多いことが成立条件 */
@@ -72,8 +72,8 @@ const TOUCH_MARGIN = 0.06;
 const ATTEMPT = 'attempt';
 
 /** 幕の一部があふれるか（＝ 走査線の上限が群れの数より少ないか） */
-function flickers(profile: GenerationProfile): boolean {
-  const limit = profile.video.spritesPerScanline;
+function flickers(profile: ConsoleChaosGenerationView): boolean {
+  const limit = profile.hardware.video.spritesPerScanline;
   // -1 は「制限なし」。0 以下はあふれない
   return limit > 0 && limit < F2_SWARM_COUNT;
 }

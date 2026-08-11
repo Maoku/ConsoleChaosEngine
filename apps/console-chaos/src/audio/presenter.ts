@@ -1,8 +1,7 @@
 import type { AudioService, HardwareGenerationProfile } from '@console-chaos/engine';
-import { composeLegacyGenerationProfile } from '@/config/generation';
 import { arrangeFor } from './music';
 import { sfxRequests, type SfxId, type SfxOptions } from './sfx';
-import type { Score } from './score';
+import type { Score } from '@console-chaos/engine';
 
 export interface ConsoleAudioPresenter {
   start(hardware: HardwareGenerationProfile, fromTick?: number): void;
@@ -17,7 +16,7 @@ export function createConsoleAudioPresenter(audio: AudioService, initialSong: Sc
   const arrangement = (hardware: HardwareGenerationProfile): Score => {
     let score = arrangements.get(hardware.id);
     if (!score) {
-      score = arrangeFor(composeLegacyGenerationProfile(hardware.id), song);
+      score = arrangeFor(hardware, song);
       arrangements.set(hardware.id, score);
     }
     return score;
@@ -32,7 +31,7 @@ export function createConsoleAudioPresenter(audio: AudioService, initialSong: Sc
       audio.useScore(arrangement(hardware));
     },
     playSfx(id, hardware, options): void {
-      for (const request of sfxRequests(id, composeLegacyGenerationProfile(hardware.id), audio.currentTime + 0.01, options)) {
+      for (const request of sfxRequests(id, hardware, audio.currentTime + 0.01, options)) {
         audio.playOneShot(request);
       }
     },

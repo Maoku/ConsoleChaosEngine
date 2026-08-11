@@ -22,7 +22,7 @@
  * その上に立っているものすべてだからで、これが無いと乗った瞬間に足元だけが逃げていく。
  * 運ばれることで「回る面に乗って向こう岸へ渡る」が成立する。
  */
-import type { GenerationProfile } from '@/generation/profiles';
+import type { ConsoleChaosGenerationView } from '@/config/generation';
 import { bodyOf, playerTouches, setSolid, type PuzzleContext, type PuzzleDefinition } from './types';
 
 /** 公転する島。台座を載せている */
@@ -47,13 +47,13 @@ const RADIUS = 'radius';
 const CARRY_MARGIN = 0.06;
 
 /** 面が回るか */
-function planeTurns(profile: GenerationProfile): boolean {
-  return profile.video.affinePlane;
+function planeTurns(profile: ConsoleChaosGenerationView): boolean {
+  return profile.hardware.video.affinePlane;
 }
 
 /** 踏み台が見えるか（＝実体を持つか） */
-function stepVisible(profile: GenerationProfile): boolean {
-  return profile.video.alphaBlend;
+function stepVisible(profile: ConsoleChaosGenerationView): boolean {
+  return profile.hardware.video.alphaBlend;
 }
 
 /**

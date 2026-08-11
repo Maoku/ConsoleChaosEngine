@@ -9,8 +9,8 @@
  * スプライトは**素材そのものが既にコマの列**なので、量子化する余地が無い。
  * 刻みは素材が持つ間隔（`PlayerSpriteClip.frameSeconds`）をそのまま使う。
  */
-import type { PlayerSpriteClip, PlayerSpriteProfile } from '@/generation/profiles';
-import type { UvRect } from './geometry';
+import type { PlayerSpriteClip, PlayerSpriteProfile } from '@/config/generation';
+import type { UvRect } from '@console-chaos/engine';
 
 /** アトラスに入るセルの総数 */
 export function spriteCellCount(sheet: PlayerSpriteProfile): number {

@@ -1,8 +1,15 @@
 import { describe, it, expect } from 'vitest';
-import { createWorld, NO_ENTITY } from '@/core/ecs/world';
-import { defineComponent } from '@/core/ecs/component';
-import { collect, query1, query2, query3 } from '@/core/ecs/query';
-import { STAGES, createSchedule } from '@/core/ecs/system';
+import {
+  NO_ENTITY,
+  STAGES,
+  collect,
+  createSchedule,
+  createWorld,
+  defineComponent,
+  query1,
+  query2,
+  query3,
+} from '@console-chaos/engine';
 
 interface Transform {
   position: [number, number, number];

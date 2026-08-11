@@ -14,15 +14,15 @@
  * 総当たりで解けてしまうなら、その宣言は嘘になる。したがって各パズルの
  * `update` は「解けた」を宣言する前に自分の成立条件を確認する。
  */
-import type { GenerationProfile } from '@/generation/profiles';
-import type { Entity, World } from '@/core/ecs/world';
+import type { ConsoleChaosGenerationView } from '@/config/generation';
+import type { Entity, World } from '@console-chaos/engine';
 import { StaticBody, type StaticBodyData } from '@/gameplay/physics';
 import { aabbFromCenter, overlaps, type AABB, type ProjectionMode, type Vec3 } from '@/gameplay/projection';
 import type { PlayerBodyData } from '@/gameplay/player';
 
 export interface PuzzleContext {
   world: World;
-  profile: GenerationProfile;
+  profile: ConsoleChaosGenerationView;
   /** レベルデータの id → 実体（レベルを読み込んだ側が作る） */
   entities: ReadonlyMap<string, Entity>;
   player: PlayerBodyData;
@@ -55,7 +55,7 @@ export interface PuzzleDefinition {
    * このプロファイルで原理的に解けるか。CI が 4 世代すべてで評価する。
    * 副作用を持たせないこと（評価順に依存すると検証の意味が無くなる）
    */
-  solvableIn(profile: GenerationProfile): boolean;
+  solvableIn(profile: ConsoleChaosGenerationView): boolean;
   update(ctx: PuzzleContext): void;
 }
 
@@ -79,7 +79,7 @@ export function boxOf(ctx: PuzzleContext, id: string): AABB | null {
 
 /** 現在の投影モード。2D では重なり判定が Z を見ない（§5.5） */
 export function projectionOf(ctx: PuzzleContext): ProjectionMode {
-  return ctx.profile.video.projection;
+  return ctx.profile.hardware.video.projection;
 }
 
 /**

@@ -12,7 +12,7 @@ import {
   sampleAnimation,
   type GltfIO,
   type GltfModel,
-} from '@/render/loader/gltf';
+} from '@console-chaos/engine';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '../..');
 const MODEL_PATH = join(ROOT, 'public/assets/models/test_skinned.gltf');

@@ -4,7 +4,7 @@
  * 実 GPU の描画結果は検証できない（それは Playwright の nightly の役割、§7.1）。
  * ここで検証するのは「ラッパーが正しい GL 呼び出し列を出すか」まで。
  */
-import type { GLContext } from '@/render/gl/index';
+import type { GLContext } from '@console-chaos/engine';
 
 export interface GLCall {
   fn: string;

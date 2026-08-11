@@ -8,7 +8,8 @@
  * ★ 垂直スライスの 6 件（T1-09〜14）をここで登録する。
  * パズルを足すときにこのファイルへ 1 行加えることが、CI に載せる唯一の手続きになる。
  */
-import { PROFILES, type GenerationId } from '@/generation/profiles';
+import type { GenerationId } from '@console-chaos/engine';
+import { generationView } from '@/config/generation';
 import type { PuzzleDefinition } from './types';
 import { f1ColorCrush } from './f1_color_crush';
 import { f2FlickerGap } from './f2_flicker_gap';
@@ -60,6 +61,6 @@ for (const definition of VERTICAL_SLICE_PUZZLES) registerPuzzle(definition);
 export function generationChecks(): Array<{ id: string; solvableIn(generation: GenerationId): boolean }> {
   return allPuzzles().map((definition) => ({
     id: definition.id,
-    solvableIn: (generation: GenerationId) => definition.solvableIn(PROFILES[generation]),
+    solvableIn: (generation: GenerationId) => definition.solvableIn(generationView(generation)),
   }));
 }

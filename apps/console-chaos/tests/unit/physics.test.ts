@@ -18,8 +18,7 @@ import {
   type Vec3,
 } from '@/gameplay/projection';
 import { PlayerBody, type PlayerBodyData } from '@/gameplay/player';
-import { createWorld } from '@/core/ecs/world';
-import { TICK_SECONDS } from '@/core/time';
+import { TICK_SECONDS, createWorld } from '@console-chaos/engine';
 
 function body(position: Vec3, velocity: Vec3 = [0, 0, 0], half: Vec3 = [0.35, 0.8, 0.35]): MovingBody {
   return { position: [...position], velocity: [...velocity], halfExtents: [...half], grounded: false, wallDirection: 0 };

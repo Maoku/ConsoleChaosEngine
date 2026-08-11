@@ -9,7 +9,8 @@
  * 表示するのは**チャンネル番号と世代名だけ**（実機名は出さない。GAME_PLAN §7.1.1）。
  * 切替中は「行き先」を併記し、連打しても今どこへ向かっているかが読めるようにする。
  */
-import { DISPLAY_NAMES, type GenerationId } from '@/generation/profiles';
+import type { GenerationId } from '@console-chaos/engine';
+import { DISPLAY_NAMES } from '@/config/generation';
 
 export interface ChannelView {
   generation: GenerationId;

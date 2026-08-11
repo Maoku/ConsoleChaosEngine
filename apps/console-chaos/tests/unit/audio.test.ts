@@ -1,14 +1,17 @@
 import { describe, it, expect } from 'vitest';
-import { createMusicClock, phasePreserved } from '@/audio/clock';
-import { createVoiceAllocator } from '@/audio/voicelimit';
 import {
+  createAudioEngine,
+  createMusicClock,
+  createVoiceAllocator,
+  phasePreserved,
   pitchToFrequency,
   scoreLengthTicks,
   secondsPerTick,
   trackOf,
+  type GenerationVoiceSource,
+  type PlayRequest,
   type Score,
-} from '@/audio/score';
-import { createAudioEngine, type GenerationVoiceSource, type PlayRequest } from '@/audio/engine';
+} from '@console-chaos/engine';
 
 /** 2 小節・120BPM のテスト曲。4 世代で共有される唯一の楽曲データ */
 const SCORE: Score = {

@@ -27,9 +27,9 @@ import {
   type TextureSet,
   type TextureSpec,
 } from './texture_spec';
-import { MASTER_PALETTE_RGB, nearestMasterIndex } from '../src/render/quantize/master_palette';
+import { GENERATION_IDS, MASTER_PALETTE_RGB, nearestMasterIndex } from '@console-chaos/engine';
 import { FC_PALETTE } from '../src/render/key_palette';
-import { GENERATION_IDS, PROFILES } from '../src/generation/profiles';
+import { CONSOLE_CHAOS_GENERATION_THEMES } from '../src/config/generation';
 import { MATERIALS } from '../src/render/material';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
@@ -363,7 +363,7 @@ if (existsSync(TEXTURE_DIR)) {
 // セットの名前が世代プロファイルの宣言と一致すること
 {
   const declared = TEXTURE_SETS.map((set) => set.dir).join(',');
-  const used = GENERATION_IDS.map((id) => PROFILES[id].art.textureSet).join(',');
+  const used = GENERATION_IDS.map((id) => CONSOLE_CHAOS_GENERATION_THEMES[id].art.textureSet).join(',');
   if (declared !== used) {
     errors.push(`セットの一覧が食い違う: texture_spec.ts=[${declared}] / profiles.ts=[${used}]`);
   }

@@ -10,7 +10,7 @@
  * このファイルは `level/` にあるため core/ と generation/ にしか依存できない（§4.2）。
  * パズルの世代検証（§7.3）は定義そのものを引数で受け取り、gameplay/ へは依存しない。
  */
-import { GENERATION_IDS, PROFILES, type GenerationId } from '@/generation/profiles';
+import { GENERATION_IDS, HARDWARE_GENERATION_PROFILES, type GenerationId } from '@console-chaos/engine';
 
 export const LEVEL_VERSION = 1;
 
@@ -24,7 +24,7 @@ export const LEVEL_VERSION = 1;
 export const PIXELS_PER_WORLD_UNIT = 32;
 
 /** 第1世代のタイル 1 枚のワールド単位（= 8px / 32）。レベル要素はこの倍数に揃える */
-export const FC_GRID_WORLD = PROFILES.FC.video.tileSnap / PIXELS_PER_WORLD_UNIT;
+export const FC_GRID_WORLD = HARDWARE_GENERATION_PROFILES.FC.video.tileSnap / PIXELS_PER_WORLD_UNIT;
 
 export type Vec3Tuple = [number, number, number];
 export type Vec4Tuple = [number, number, number, number];

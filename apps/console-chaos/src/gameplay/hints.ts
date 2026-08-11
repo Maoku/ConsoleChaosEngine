@@ -16,7 +16,8 @@
  * **レベルデータの `requiredGenerations` から組み立てる**。
  * 文面に世代を直書きすると、レベルを直したときに嘘になる。
  */
-import { DISPLAY_NAMES, type GenerationId } from '@/generation/profiles';
+import type { GenerationId } from '@console-chaos/engine';
+import { DISPLAY_NAMES } from '@/config/generation';
 
 /** 段階 0 → 1、1 → 2、2 → 3 の待ち時間（ミリ秒）。§13.1 の 3 分 / 2 分 / 2 分 */
 export const HINT_DELAYS_MS: readonly [number, number, number] = [180_000, 120_000, 120_000];

@@ -11,7 +11,10 @@
  * **シェーダにもプリセットにも分岐を足さない**（計画 §2 の決定 4）。
  * `crt.ts` は元から `override` を受け取れるようになっていたので、道を繋ぐだけで済む。
  */
-import type { CrtPreset } from '@/render/postfx/presets';
+export interface DisplayEffectOverrides {
+  mask: number;
+  curvature: number;
+}
 
 export interface DisplayOptions {
   /**
@@ -45,7 +48,7 @@ export interface DisplaySettings {
    * CRT プリセットへの部分上書き。**既定のままの項目は返さない**ので、
    * 何も変えていなければ空になり、プリセットがそのまま通る
    */
-  crtOverride(): Partial<CrtPreset>;
+  crtOverride(): Partial<DisplayEffectOverrides>;
 }
 
 /**
@@ -93,8 +96,8 @@ export function createDisplaySettings(storage: Storage | null = defaultStorage()
       save();
       return options[key];
     },
-    crtOverride(): Partial<CrtPreset> {
-      const override: Partial<CrtPreset> = {};
+    crtOverride(): Partial<DisplayEffectOverrides> {
+      const override: Partial<DisplayEffectOverrides> = {};
       if (!options.moire) override.mask = 0;
       if (options.flatten) override.curvature = 0;
       return override;

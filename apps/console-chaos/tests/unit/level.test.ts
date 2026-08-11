@@ -12,7 +12,8 @@ import {
 } from '@/level/schema';
 import { LevelValidationError, collidersOf, entityById, loadLevel, parseLevel } from '@/level/loader';
 import { entitiesInSectors, sectorAt, visibleEntities, visibleSectorIds } from '@/level/sector';
-import { PROFILES } from '@/generation/profiles';
+import { HARDWARE_GENERATION_PROFILES } from '@console-chaos/engine';
+import { CONSOLE_CHAOS_GENERATION_THEMES } from '@/config/generation';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '../..');
 const MINI_PATH = join(ROOT, 'public/assets/levels/mini.json');
@@ -45,9 +46,9 @@ function minimal(): Record<string, unknown> {
 describe('level/schema の座標系（T1-07 で定めた対応）', () => {
   it('第1世代の 8px タイルが 0.25 ワールド単位に対応する', () => {
     expect(PIXELS_PER_WORLD_UNIT).toBe(32);
-    expect(FC_GRID_WORLD).toBe(PROFILES.FC.video.tileSnap / PIXELS_PER_WORLD_UNIT);
+    expect(FC_GRID_WORLD).toBe(HARDWARE_GENERATION_PROFILES.FC.video.tileSnap / PIXELS_PER_WORLD_UNIT);
     // タイル 1 枚と第1世代の移動グリッドが一致する（1 タイルだけ動いて止まれる）
-    expect(FC_GRID_WORLD).toBe(PROFILES.FC.action.moveSnap);
+    expect(FC_GRID_WORLD).toBe(CONSOLE_CHAOS_GENERATION_THEMES.FC.action.moveSnap);
   });
 
   it('グリッド判定は浮動小数の誤差を許す', () => {

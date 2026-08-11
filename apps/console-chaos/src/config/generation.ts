@@ -281,28 +281,7 @@ export function generationView(id: GenerationId): ConsoleChaosGenerationView {
   };
 }
 
-/** M6 までだけ残す、旧 renderer/content 向けの比較 view。 */
-export function composeLegacyGenerationProfile(id: GenerationId): LegacyGenerationProfile {
-  const { hardware, theme } = generationView(id);
-  return {
-    id,
-    video: hardware.video,
-    audio: hardware.audio,
-    input: { ...hardware.input, buttons: theme.availableActions },
-    camera: theme.camera,
-    action: theme.action,
-    player: theme.player,
-    art: theme.art,
-  };
-}
-
-export interface LegacyGenerationProfile {
-  id: GenerationId;
-  video: HardwareGenerationProfile['video'];
-  audio: HardwareGenerationProfile['audio'];
-  input: HardwareGenerationProfile['input'] & { buttons: readonly ConsoleActionName[] };
-  camera: ConsoleCameraTheme;
-  action: ConsoleActionTheme;
-  player: PlayerVisual;
-  art: ConsoleArtTheme;
-}
+export const DISPLAY_NAMES: Readonly<Record<GenerationId, { channel: string; label: string }>> =
+  Object.fromEntries(
+    Object.entries(CONSOLE_CHAOS_GENERATION_THEMES).map(([id, theme]) => [id, theme.display]),
+  ) as Record<GenerationId, { channel: string; label: string }>;

@@ -10,7 +10,7 @@ import {
   updateCheckpoints,
   type CheckpointPoint,
 } from '@/gameplay/checkpoint';
-import { TICK_SECONDS } from '@/core/time';
+import { TICK_SECONDS } from '@console-chaos/engine';
 import type { Vec3 } from '@/gameplay/projection';
 
 const HALF: Vec3 = [0.35, 0.8, 0.35];

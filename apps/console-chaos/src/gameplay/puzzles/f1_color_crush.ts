@@ -21,7 +21,7 @@
  * **「解ける／解けない」だけでなく「どれだけ楽か」で世代差を出す**という方針の第 1 号
  *（`Docs/PHASE2_GIMMICK_PLAN.md` §6 の決定 1）。したがって `solvableIn` は 3 世代を返す。
  */
-import type { GenerationProfile } from '@/generation/profiles';
+import type { ConsoleChaosGenerationView } from '@/config/generation';
 import { bodyOf, boxOf, playerTouches, setSolid, type PuzzleContext, type PuzzleDefinition } from './types';
 
 /** 緑のツタ。体重を保つ */
@@ -55,13 +55,13 @@ const BROKEN = 'broken';
  * 固定パレット（`fixed54`）は色の選択肢そのものが少なく、
  * 近い色相の 2 色は同じ 1 色へ丸められる。RGB555 や truecolor では丸められない。
  */
-function vinesCollapse(profile: GenerationProfile): boolean {
-  return profile.video.paletteMode === 'fixed54';
+function vinesCollapse(profile: ConsoleChaosGenerationView): boolean {
+  return profile.hardware.video.paletteMode === 'fixed54';
 }
 
 /** どちらのツタに乗るかを選べるか（= 奥行きが潰れていないか） */
-function choosableDepth(profile: GenerationProfile): boolean {
-  return profile.video.projection === 'perspective3d';
+function choosableDepth(profile: ConsoleChaosGenerationView): boolean {
+  return profile.hardware.video.projection === 'perspective3d';
 }
 
 /** 揺れの位置。時刻ではなくティック番号から出すので、リプレイでも同じ揺れになる（I4） */

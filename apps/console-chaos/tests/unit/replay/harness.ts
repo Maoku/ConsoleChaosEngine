@@ -11,11 +11,11 @@
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
-import type { GenerationId } from '@/generation/profiles';
+import type { GenerationId } from '@console-chaos/engine';
 import type { Vec3 } from '@/gameplay/projection';
 import { parseLevel } from '@/level/loader';
 import { PIXELS_PER_WORLD_UNIT, type LevelFile } from '@/level/schema';
-import { applyScanlineLimit, type SpriteDrawItem } from '@/render/sprite_limit';
+import { applyScanlineLimit, type SpriteDrawItem } from '@console-chaos/engine';
 import { createTestSession, tickSession, type TestActionInput } from '../session-testkit';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '../../..');
@@ -120,11 +120,15 @@ export function runReplay(record: ReplayRecord): ReplayResult {
       const profile = session.profile;
       const sprites: SpriteDrawItem[] = session.sprites.map(({ entity, body }) => ({
         entity,
-        y: screenYOf(body.position[1] + body.halfExtents[1], session.player.position[1], profile.video.internalHeight),
+        y: screenYOf(body.position[1] + body.halfExtents[1], session.player.position[1], profile.hardware.video.internalHeight),
         height: body.halfExtents[1] * 2 * PIXELS_PER_WORLD_UNIT,
       }));
       session.commitCulled(
-        applyScanlineLimit(sprites, profile.video.spritesPerScanline, profile.video.internalHeight).culled,
+        applyScanlineLimit(
+          sprites,
+          profile.hardware.video.spritesPerScanline,
+          profile.hardware.video.internalHeight,
+        ).culled,
       );
     }
   }

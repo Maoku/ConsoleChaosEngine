@@ -14,11 +14,8 @@
  * - `grounded` / `wallDirection` は物理が毎ティック書き、ここは読むだけ
  * - 入力バッファとコヨーテタイムは `input/buffer.ts` の共通実装を使う（全世代同じ）
  */
-import { defineComponent } from '@/core/ecs/component';
-import { query1, query2 } from '@/core/ecs/query';
-import type { System } from '@/core/ecs/system';
-import type { Entity, World } from '@/core/ecs/world';
-import type { ForwardXZ, GenerationProfile } from '@/generation/profiles';
+import { defineComponent, query1, query2, type Entity, type System, type World } from '@console-chaos/engine';
+import type { ConsoleChaosGenerationView, ForwardXZ } from '@/config/generation';
 import {
   clearActionBuffer,
   consumeActionBuffer,
@@ -113,7 +110,7 @@ export const LockTarget = defineComponent<{ position: Vec3 }>('LockTarget');
 /** このティックの入力と世代。システムの外から与える（§4.4 の段階 3 の結果） */
 export interface PlayerFrame {
   snapshot: ConsoleChaosActionSnapshot;
-  profile: GenerationProfile;
+  profile: ConsoleChaosGenerationView;
 }
 
 /**
@@ -164,19 +161,19 @@ function updateAim(
   body: PlayerBodyData,
   state: PlayerStateData,
   moveXZ: AimXZ,
-  profile: GenerationProfile,
+  profile: ConsoleChaosGenerationView,
 ): void {
   const forward: AimXZ = [state.facing, 0];
 
   // 全方位を持たない世代は、常に正面（左右）しか狙えない
-  if (!profile.action.attack.startsWith('omni')) {
+  if (!profile.theme.action.attack.startsWith('omni')) {
     state.aim = forward;
     state.lockOn = null;
     return;
   }
 
   // ロックオンを持つ世代は、射程内の相手がいればそちらを向く
-  if (profile.action.attack === 'omni_lock') {
+  if (profile.theme.action.attack === 'omni_lock') {
     const target = nearestTarget(world, body.position);
     if (target) {
       state.lockOn = target.entity;
@@ -195,7 +192,7 @@ function updateAim(
   state.aim = normalizeXZ(moveXZ[0], moveXZ[1], forward);
 }
 
-function updateAttack(state: PlayerStateData, snapshot: ConsoleChaosActionSnapshot, profile: GenerationProfile): void {
+function updateAttack(state: PlayerStateData, snapshot: ConsoleChaosActionSnapshot, profile: ConsoleChaosGenerationView): void {
   if (state.attackCooldown > 0) state.attackCooldown--;
   if (state.attackTicks > 0) state.attackTicks--;
 
@@ -207,7 +204,7 @@ function updateAttack(state: PlayerStateData, snapshot: ConsoleChaosActionSnapsh
   };
 
   // 溜めを持つ世代：押している間ためて、離した瞬間に出る
-  if (profile.action.attack === 'forward_charge') {
+  if (profile.theme.action.attack === 'forward_charge') {
     if (snapshot.action.down) {
       state.chargeMs = Math.min(snapshot.action.heldMs, CHARGE_FULL_MS);
       return;
@@ -220,16 +217,16 @@ function updateAttack(state: PlayerStateData, snapshot: ConsoleChaosActionSnapsh
   state.chargeMs = 0;
   if (!snapshot.action.pressed || state.attackCooldown > 0) return;
   // 感圧を持つ世代は押し込み量が強さになる。持たない世代は常に基本の強さ
-  fire(profile.input.pressureSensitive ? snapshot.pressure.value : 0);
+  fire(profile.hardware.input.pressureSensitive ? snapshot.pressure.value : 0);
 }
 
-function updateJump(body: PlayerBodyData, state: PlayerStateData, snapshot: ConsoleChaosActionSnapshot, profile: GenerationProfile): void {
+function updateJump(body: PlayerBodyData, state: PlayerStateData, snapshot: ConsoleChaosActionSnapshot, profile: ConsoleChaosGenerationView): void {
   updateActionBuffer(state.jump, snapshot.jump.pressed, body.grounded);
 
   if (consumeActionBuffer(state.jump)) {
     body.velocity[1] = JUMP_SPEED;
   } else if (
-    profile.action.wallJump &&
+    profile.theme.action.wallJump &&
     !body.grounded &&
     body.wallDirection !== 0 &&
     isBuffered(state.jump)
@@ -243,7 +240,7 @@ function updateJump(body: PlayerBodyData, state: PlayerStateData, snapshot: Cons
   }
 
   // 高さ可変：上昇中に離したら切る。固定高さの世代は離しても伸び切る
-  if (profile.action.variableJump && snapshot.jump.released && body.velocity[1] > 0) {
+  if (profile.theme.action.variableJump && snapshot.jump.released && body.velocity[1] > 0) {
     body.velocity[1] *= VARIABLE_JUMP_CUT;
   }
 }
@@ -259,21 +256,21 @@ export function updatePlayer(
 
   // --- 移動。入力はカメラ相対に読み替える（T2-08）。
   //     アナログの世代では倒し込みがそのまま速度になる（微調整） ---
-  const moveInput: readonly [number, number] = snapshot.fine.down && profile.action.fineControl
+  const moveInput: readonly [number, number] = snapshot.fine.down && profile.theme.action.fineControl
     ? [snapshot.move[0] * FINE_MOVE_SCALE, snapshot.move[1] * FINE_MOVE_SCALE]
     : snapshot.move;
-  const move = moveToWorldXZ(moveInput, profile.camera.forward);
-  body.velocity[0] = move[0] * profile.action.moveSpeed;
-  body.velocity[2] = move[1] * profile.action.moveSpeed;
+  const move = moveToWorldXZ(moveInput, profile.theme.camera.forward);
+  body.velocity[0] = move[0] * profile.theme.action.moveSpeed;
+  body.velocity[2] = move[1] * profile.theme.action.moveSpeed;
   // 2D 投影の世代では Z 方向へ動けない（§5.5.1）。判定は投影ルールに委ねる
-  constrainVelocity(body.velocity, profile.video.projection);
+  constrainVelocity(body.velocity, profile.hardware.video.projection);
 
   // 向きは**進んだ向き**から決める。入力の左右ではないので、背後視点で
   // 真横へ流しているあいだは向きが変わらない（カメラも暴れない）
   if (move[0] !== 0) state.facing = move[0] > 0 ? 1 : -1;
 
   // --- グリッド吸着。手を離した瞬間に「ぴたりと止まれる」（GAME_PLAN §5.3 / §10.4） ---
-  const snap = profile.action.moveSnap;
+  const snap = profile.theme.action.moveSnap;
   if (snap > 0 && body.grounded) {
     if (move[0] === 0) body.position[0] = snapTo(body.position[0], snap);
     if (move[1] === 0) body.position[2] = snapTo(body.position[2], snap);

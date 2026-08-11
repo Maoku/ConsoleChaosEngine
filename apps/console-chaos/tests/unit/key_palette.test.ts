@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { FC_PALETTE, KEY_COLORS, fcColorOf, type KeyColorName } from '@/render/key_palette';
-import { MASTER_PALETTE_RGB, nearestMasterIndex } from '@/render/quantize/master_palette';
+import { MASTER_PALETTE_RGB, nearestMasterIndex } from '@console-chaos/engine';
 
 /** `tools/texture_spec.ts` の QUANTIZE_LEVELS と同じ。第1世代が実際に見る明るさ */
 const LEVELS = [1.0, 0.85, 0.7, 0.55, 0.45];

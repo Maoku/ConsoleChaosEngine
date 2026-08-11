@@ -16,9 +16,7 @@
  * | 余韻 | `reverb` | 残響のある世代は尾を伸ばす |
  * | 定位 | `positional` | 鳴った場所へ振る。持たない世代は中央 |
  */
-import type { GenerationProfile } from '@/generation/profiles';
-import type { PlayRequest } from './engine';
-import { pitchToFrequency } from './score';
+import { pitchToFrequency, type HardwareGenerationProfile, type PlayRequest } from '@console-chaos/engine';
 
 export type SfxId =
   | 'jump'
@@ -59,7 +57,7 @@ export const SFX: Record<SfxId, SfxDefinition> = {
 };
 
 /** 掃引の段数。サンプルを持たない世代は粗い階段になる */
-export function sweepSteps(profile: GenerationProfile): number {
+export function sweepSteps(profile: HardwareGenerationProfile): number {
   return profile.audio.sampleRate === 0 ? 3 : 6;
 }
 
@@ -67,7 +65,7 @@ export function sweepSteps(profile: GenerationProfile): number {
 export const MAX_SFX_LAYERS = 3;
 
 /** 重ねる層の数。24 声ごとに 1 層増える */
-export function sfxLayers(profile: GenerationProfile): number {
+export function sfxLayers(profile: HardwareGenerationProfile): number {
   return Math.min(MAX_SFX_LAYERS, 1 + Math.floor(profile.audio.channels / 24));
 }
 
@@ -87,7 +85,7 @@ export interface SfxOptions {
  */
 export function sfxRequests(
   id: SfxId,
-  profile: GenerationProfile,
+  profile: HardwareGenerationProfile,
   when: number,
   options: SfxOptions = {},
 ): PlayRequest[] {
@@ -121,6 +119,6 @@ export function sfxRequests(
 }
 
 /** 効果音 1 回分の長さ（秒）。残響のある世代は尾が伸びる */
-export function sfxDurationSeconds(id: SfxId, profile: GenerationProfile): number {
+export function sfxDurationSeconds(id: SfxId, profile: HardwareGenerationProfile): number {
   return SFX[id].durationSeconds * (profile.audio.reverb ? 1.25 : 1);
 }

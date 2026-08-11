@@ -1,6 +1,10 @@
 import { describe, it, expect } from 'vitest';
-import { applyScanlineLimit, createFlickerState, type SpriteDrawItem } from '@/render/sprite_limit';
-import { PROFILES } from '@/generation/profiles';
+import {
+  HARDWARE_GENERATION_PROFILES,
+  applyScanlineLimit,
+  createFlickerState,
+  type SpriteDrawItem,
+} from '@console-chaos/engine';
 
 const SCREEN_HEIGHT = 224;
 
@@ -11,7 +15,7 @@ function row(count: number, y = 100, height = 8): SpriteDrawItem[] {
 
 describe('FC 走査線スプライト制限（V5）', () => {
   it('上限までは表示され、9 個目以降が破棄される', () => {
-    const limit = PROFILES.FC.video.spritesPerScanline;
+    const limit = HARDWARE_GENERATION_PROFILES.FC.video.spritesPerScanline;
     expect(limit).toBe(8);
 
     const { visible, culled } = applyScanlineLimit(row(12), limit, SCREEN_HEIGHT);
@@ -50,14 +54,14 @@ describe('FC 走査線スプライト制限（V5）', () => {
   });
 
   it('上限が 0 以下なら「制限なし」（第3・第4世代は -1）', () => {
-    expect(PROFILES.PS1.video.spritesPerScanline).toBe(-1);
+    expect(HARDWARE_GENERATION_PROFILES.PS1.video.spritesPerScanline).toBe(-1);
     const { visible, culled } = applyScanlineLimit(row(100), -1, SCREEN_HEIGHT);
     expect(visible).toHaveLength(100);
     expect(culled).toEqual([]);
   });
 
   it('第2世代は上限が緩い（同じ規則で値だけが違う）', () => {
-    const limit = PROFILES.SFC.video.spritesPerScanline;
+    const limit = HARDWARE_GENERATION_PROFILES.SFC.video.spritesPerScanline;
     expect(limit).toBe(32);
     const { culled } = applyScanlineLimit(row(32), limit, SCREEN_HEIGHT);
     expect(culled).toEqual([]);

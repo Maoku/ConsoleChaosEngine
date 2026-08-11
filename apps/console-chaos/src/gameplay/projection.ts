@@ -9,8 +9,7 @@
  *   2D 用の状態を別に持たない。世代切替はシミュレーションの真実を変えず、
  *   変わるのは「衝突判定で Z を見るかどうか」だけである。
  */
-import type { ProjectionMode } from '@/generation/profiles';
-import type { Entity } from '@/core/ecs/world';
+import type { Entity, ProjectionMode } from '@console-chaos/engine';
 
 export type { ProjectionMode };
 

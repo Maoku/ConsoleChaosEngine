@@ -18,14 +18,13 @@ import {
   type PlayerStateData,
 } from '@/gameplay/player';
 import { overlaps, aabbFromCenter } from '@/gameplay/projection';
-import { createWorld, type World } from '@/core/ecs/world';
+import { TICK_MS, createWorld, type World } from '@console-chaos/engine';
 import {
   createConsoleChaosActionMap,
   type ConsoleChaosActionSnapshot,
 } from '@/config/actions';
 import { BUFFER_FRAMES } from '@/input/buffer';
-import { GENERATION_IDS, PROFILES, type GenerationId } from '@/generation/profiles';
-import { TICK_MS } from '@/core/time';
+import { GENERATION_IDS, GENERATION_VIEWS, type GenerationId } from '../generations';
 import { sampleActions, type TestActionInput } from './session-testkit';
 
 /** 1 体のプレイヤーと、その世代の入力経路を持つ試験台 */
@@ -39,7 +38,7 @@ function harness(generation: GenerationId) {
 
   /** 生入力 → 制約適用 → 1 ティック分の更新。実際の §4.4 と同じ順序で通す */
   function tick(raw: Partial<TestActionInput> = {}): ConsoleChaosActionSnapshot {
-    const profile = PROFILES[current];
+    const profile = GENERATION_VIEWS[current];
     const snapshot = sampleActions(actions, current, raw, TICK_MS);
     updatePlayer(world, body, state, { snapshot, profile });
     return snapshot;
@@ -55,7 +54,7 @@ function harness(generation: GenerationId) {
       current = next;
     },
     get profile() {
-      return PROFILES[current];
+      return GENERATION_VIEWS[current];
     },
   };
 }
@@ -68,14 +67,14 @@ describe('gameplay/player の移動（GAME_PLAN §5.3）', () => {
       // どの世代でも「倒し切ったときの速さ」が moveSpeed であることは変わらない
       player.tick({ move: [1, 0] });
       const speed = Math.hypot(player.body.velocity[0], player.body.velocity[2]);
-      expect(speed, id).toBeCloseTo(PROFILES[id].action.moveSpeed, 6);
+      expect(speed, id).toBeCloseTo(GENERATION_VIEWS[id].theme.action.moveSpeed, 6);
     }
   });
 
   it('入力はカメラ相対に読み替えられる（T2-08）', () => {
     // 背後視点の第4世代：奥へ倒すと画面の奥（通路の +X）へ進む
     const behind = harness('PS2');
-    const speed = PROFILES.PS2.action.moveSpeed;
+    const speed = GENERATION_VIEWS.PS2.theme.action.moveSpeed;
     behind.tick({ move: [0, -1] });
     expect(behind.body.velocity[0]).toBeCloseTo(speed, 6);
     expect(behind.body.velocity[2]).toBeCloseTo(0, 6);
@@ -95,7 +94,7 @@ describe('gameplay/player の移動（GAME_PLAN §5.3）', () => {
     // 真横から見る世代は改訂前と同じ：入力の左右がそのままワールドの X
     const sideOn = harness('PS1');
     sideOn.tick({ move: [1, 0] });
-    expect(sideOn.body.velocity[0]).toBeCloseTo(PROFILES.PS1.action.moveSpeed, 6);
+    expect(sideOn.body.velocity[0]).toBeCloseTo(GENERATION_VIEWS.PS1.theme.action.moveSpeed, 6);
     expect(sideOn.body.velocity[2]).toBeCloseTo(0, 6);
   });
 
@@ -103,12 +102,12 @@ describe('gameplay/player の移動（GAME_PLAN §5.3）', () => {
     // 半分だけ倒した入力
     const analog = harness('PS1');
     analog.tick({ move: [0.5, 0] });
-    expect(analog.body.velocity[0]).toBeCloseTo(PROFILES.PS1.action.moveSpeed * 0.5, 6);
+    expect(analog.body.velocity[0]).toBeCloseTo(GENERATION_VIEWS.PS1.theme.action.moveSpeed * 0.5, 6);
 
     // 方向キー相当の世代では符号に落ちるため、常に最高速度
     const digital = harness('SFC');
     digital.tick({ move: [0.5, 0] });
-    expect(digital.body.velocity[0]).toBeCloseTo(PROFILES.SFC.action.moveSpeed, 6);
+    expect(digital.body.velocity[0]).toBeCloseTo(GENERATION_VIEWS.SFC.theme.action.moveSpeed, 6);
   });
 
   it('2D 投影の世代では奥行きへ動けない（§5.5.1）', () => {
@@ -118,7 +117,7 @@ describe('gameplay/player の移動（GAME_PLAN §5.3）', () => {
 
     const ps1 = harness('PS1');
     ps1.tick({ move: [0, 1] });
-    expect(ps1.body.velocity[2]).toBeCloseTo(PROFILES.PS1.action.moveSpeed, 6);
+    expect(ps1.body.velocity[2]).toBeCloseTo(GENERATION_VIEWS.PS1.theme.action.moveSpeed, 6);
   });
 
   it('第1世代は手を離すとグリッドに吸着する（狙った場所にぴたりと止まれる）', () => {
@@ -356,7 +355,7 @@ describe('gameplay/player のシステム接続（§4.4 の段階 4）', () => {
 
     let generation: GenerationId = 'PS1';
     const system = playerSystem(() => {
-      const profile = PROFILES[generation];
+      const profile = GENERATION_VIEWS[generation];
       return {
         profile,
         snapshot: sampleActions(actions, generation, { move: [0.5, 0.5] }, TICK_MS),
@@ -371,7 +370,7 @@ describe('gameplay/player のシステム接続（§4.4 の段階 4）', () => {
     generation = 'FC';
     system(world, 1);
     // 第1世代：4 方向化され、2D なので奥行きは死ぬ
-    expect(body.velocity[0]).toBeCloseTo(PROFILES.FC.action.moveSpeed, 6);
+    expect(body.velocity[0]).toBeCloseTo(GENERATION_VIEWS.FC.theme.action.moveSpeed, 6);
     expect(body.velocity[2]).toBe(0);
     expect(state.facing).toBe(1);
   });

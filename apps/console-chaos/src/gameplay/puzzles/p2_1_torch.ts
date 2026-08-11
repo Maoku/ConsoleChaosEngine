@@ -19,8 +19,8 @@
  * これは投影ルール（不変条件 I1）の一貫した帰結であり、抜け道ではない
  *（渡れても刻印は反応しないので、P2-1 が解けるのは CH 4 だけのまま）。
  */
-import { pick } from '@/core/rng';
-import type { GenerationProfile } from '@/generation/profiles';
+import { pick } from '@console-chaos/engine';
+import type { ConsoleChaosGenerationView } from '@/config/generation';
 import { bodyOf, boxOf, playerTouches, type PuzzleContext, type PuzzleDefinition } from './types';
 
 /** 渡り廊下の板の数 */
@@ -42,8 +42,8 @@ const BASE_X = 'baseX';
 const BASE_Y = 'baseY';
 
 /** 松明を持つか（＝動的ライティングを持つか） */
-function hasTorch(profile: GenerationProfile): boolean {
-  return profile.video.dynamicLight;
+function hasTorch(profile: ConsoleChaosGenerationView): boolean {
+  return profile.hardware.video.dynamicLight;
 }
 
 /**

@@ -19,7 +19,7 @@ import {
   usedHintCount,
   type HintState,
 } from '@/gameplay/hints';
-import { TICK_MS } from '@/core/time';
+import { TICK_MS } from '@console-chaos/engine';
 import { loadLevelFile } from './replay/harness';
 import { createTestSession, tickSession } from './session-testkit';
 

@@ -10,7 +10,7 @@
  *
  * これが本作の設計の理想形：中核ルールが遊びを作り、パズルは配置と宣言に徹する。
  */
-import type { GenerationProfile } from '@/generation/profiles';
+import type { ConsoleChaosGenerationView } from '@/config/generation';
 import { playerTouches, type PuzzleContext, type PuzzleDefinition } from './types';
 
 /** 手前の壁。2D では Z 無限の柱として通せんぼになる */
@@ -18,8 +18,8 @@ export const P1_1_WALL = 'p1_1_wall';
 /** 壁の裏のスイッチ */
 export const P1_1_SWITCH = 'p1_1_switch';
 
-function hasDepth(profile: GenerationProfile): boolean {
-  return profile.video.projection === 'perspective3d';
+function hasDepth(profile: ConsoleChaosGenerationView): boolean {
+  return profile.hardware.video.projection === 'perspective3d';
 }
 
 export const p1BackSide: PuzzleDefinition = {

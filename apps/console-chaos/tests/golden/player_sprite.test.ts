@@ -16,7 +16,8 @@ import { readFileSync, existsSync } from 'node:fs';
 import { join } from 'node:path';
 import { decodePng, type RgbaImage } from '../../tools/png';
 import { spriteCellCount } from '@/render/sprite_sheet';
-import { GENERATION_IDS, PROFILES, type PlayerClip, type PlayerSpriteProfile } from '@/generation/profiles';
+import { CONSOLE_CHAOS_GENERATION_THEMES, type PlayerClip, type PlayerSpriteProfile } from '@/config/generation';
+import { GENERATION_IDS } from '../generations';
 import { PIXELS_PER_WORLD_UNIT } from '@/level/schema';
 
 const SPRITE_DIR = 'public/assets/sprites';
@@ -35,7 +36,7 @@ const GROUNDED: PlayerClip[] = ['idle', 'walk'];
 
 /** 絵で描く世代（第1・第2世代）。ここが空になったらテストごと落とす */
 const SPRITE_GENERATIONS = GENERATION_IDS.flatMap((id) => {
-  const player = PROFILES[id].player;
+  const player = CONSOLE_CHAOS_GENERATION_THEMES[id].player;
   return player.kind === 'sprite' ? [{ id, sprite: player as PlayerSpriteProfile }] : [];
 });
 

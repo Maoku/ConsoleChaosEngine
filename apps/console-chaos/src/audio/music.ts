@@ -28,8 +28,14 @@
  * 曲を跨いだ切替では**テンポが違うので位相は保てない**（`songs.ts` の注記）。
  * 世代切替の位相同期は「同じ曲の中で」の約束であって、選曲には及ばない。
  */
-import type { GenerationProfile } from '@/generation/profiles';
-import { scoreLengthTicks, type Note, type Score, type Track, type TrackRole } from './score';
+import {
+  scoreLengthTicks,
+  type HardwareGenerationProfile,
+  type Note,
+  type Score,
+  type Track,
+  type TrackRole,
+} from '@console-chaos/engine';
 
 /** 編曲の分岐点。すべて「同時発音数がいくつ以上あるか」で書く（§9.1 の 5 / 8 / 24 / 48） */
 export const PAD_MIN_CHANNELS = 8;
@@ -339,7 +345,7 @@ function shifted(source: readonly Note[], semitones: number, velocityScale: numb
  * | ハーモニーを載せる | 同時発音数 >= 24 | 主旋律の音階上 3 度下 |
  * | 環境レイヤを載せる | 同時発音数 >= 48 | 1 オクターブ上の薄いパッド（§9.3 の「意味のある音が埋もれる」） |
  */
-export function arrangeFor(profile: GenerationProfile, base: Score = AREA1_SONG_POP): Score {
+export function arrangeFor(profile: HardwareGenerationProfile, base: Score = AREA1_SONG_POP): Score {
   const channels = profile.audio.channels;
   const lead = trackNotes(base, 'lead');
   const tracks: Track[] = [

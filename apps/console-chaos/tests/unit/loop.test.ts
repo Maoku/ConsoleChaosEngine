@@ -1,6 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { createLoop, MAX_CATCHUP_TICKS, type LoopHost } from '@/core/loop';
-import { TICK_MS } from '@/core/time';
+import { createLoop, MAX_CATCHUP_TICKS, TICK_MS, type LoopHost } from '@console-chaos/engine';
 
 interface Harness {
   loop: ReturnType<typeof createLoop>;

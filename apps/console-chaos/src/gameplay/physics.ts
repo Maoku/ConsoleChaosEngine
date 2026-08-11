@@ -15,11 +15,7 @@
  * ブロードフェーズ（XY 平面の一様グリッド、§5.5.1）はまだ入れていない。
  * エリア 1 規模では総当たりで足り、必要になった時点で `solidsFor` の中だけが変わる。
  */
-import { defineComponent } from '@/core/ecs/component';
-import { query1 } from '@/core/ecs/query';
-import type { System } from '@/core/ecs/system';
-import type { Entity, World } from '@/core/ecs/world';
-import { TICK_SECONDS } from '@/core/time';
+import { TICK_SECONDS, defineComponent, query1, type Entity, type System, type World } from '@console-chaos/engine';
 import {
   aabbFromCenter,
   clearGroundAnchor,

@@ -10,7 +10,7 @@
  * 「基準画のどの色を、54 色のどれで担うか」を `FC_PALETTE` が宣言する。
  * **これは最近傍ではなく宣言である**（§2 の実測を参照）。
  */
-import { MASTER_PALETTE_RGB, nearestMasterIndex } from './quantize/master_palette';
+import { MASTER_PALETTE_RGB, nearestMasterIndex } from '@console-chaos/engine';
 
 export type Rgb = readonly [number, number, number];
 

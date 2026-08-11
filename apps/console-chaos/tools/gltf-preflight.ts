@@ -8,7 +8,7 @@
 import { readdirSync, readFileSync, existsSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join, basename } from 'node:path';
-import { computeGlobalMatrices, createPose, loadGltf, type GltfIO, type GltfModel } from '../src/render/loader/gltf';
+import { computeGlobalMatrices, createPose, loadGltf, type GltfIO, type GltfModel } from '@console-chaos/engine';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 const MODEL_DIR = join(ROOT, 'public/assets/models');
