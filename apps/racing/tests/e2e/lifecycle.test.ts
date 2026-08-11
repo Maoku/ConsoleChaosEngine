@@ -30,6 +30,7 @@ describe('racing public-engine integration', () => {
     input.set(createDeviceSnapshot());
     for (let time = 34; time < 3_200; time += 17) host.frame(time);
     expect(audio.tones.length).toBeGreaterThan(0);
+    expect(audio.requests.some((request) => request.frequency >= 80 && request.frequency <= 352)).toBe(true);
     host.dispose();
     expect(host.context.assets.activeCount).toBe(0);
     expect(host.context.events.listenerCount('generationSwitch')).toBe(0);

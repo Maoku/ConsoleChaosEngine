@@ -44,17 +44,17 @@ export function createRacingGameModule(hooks: RacingModuleHooks = {}): GameModul
         },
         fixedUpdate(): void {
           if (!input) return;
+          if (pressed(input.reset)) audio.resetVehicleSound();
           const events = updateRace(state, {
             steer: input.steer,
             accelerate: input.accelerate.value,
             brake: input.brake.value,
           }, pressed(input.reset));
-          for (const event of events) {
-            if (event === 'countdown') context.audio.playTone(440, 0.08);
-            else if (event === 'start') context.audio.playTone(880, 0.18);
-            else if (event === 'lap') context.audio.playTone(660, 0.12);
-            else context.audio.playTone(990, 0.4);
-          }
+          audio.updateVehicles(state, {
+            throttle: input.accelerate.value,
+            brake: input.brake.value,
+          }, context.generation.profile);
+          audio.playRaceEvents(events, context.generation.profile);
           hooks.onFixedUpdate?.(state, context.generation.generation, events);
         },
         buildRenderFrame(frame): void {
@@ -63,6 +63,7 @@ export function createRacingGameModule(hooks: RacingModuleHooks = {}): GameModul
         dispose(): void {
           actions.reset();
           disconnectAudio();
+          audio.resetVehicleSound();
           hooks.onDispose?.(state);
           restartRace(state);
         },

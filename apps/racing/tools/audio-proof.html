@@ -1,0 +1,25 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Racing offline audio proof</title>
+    <style>
+      body { margin: 0; padding: 2rem; color: #e8f4ff; background: #101822; font: 16px/1.5 ui-monospace, monospace; }
+      table { border-collapse: collapse; }
+      th, td { padding: .55rem .8rem; border: 1px solid #42617c; text-align: right; }
+      th:first-child, td:first-child { text-align: left; }
+      [data-status="pass"] { color: #7fffb3; }
+      [data-status="fail"] { color: #ff8b8b; }
+    </style>
+  </head>
+  <body>
+    <h1>Racing offline audio proof</h1>
+    <p id="status">Rendering…</p>
+    <table>
+      <thead><tr><th>Generation</th><th>Peak</th><th>Silent windows</th><th>Clipped samples</th><th>Frames</th></tr></thead>
+      <tbody id="results"></tbody>
+    </table>
+    <script type="module" src="/src/audio/offline-proof.ts"></script>
+  </body>
+</html>

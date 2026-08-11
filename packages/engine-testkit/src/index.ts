@@ -8,6 +8,7 @@ import {
   type GenerationController,
   type HardwareGenerationProfile,
   type LoopHost,
+  type PlayRequest,
   type RenderFrame,
   type Score,
 } from '@console-chaos/engine';
@@ -89,6 +90,7 @@ export interface RecordingAudioService extends AudioService {
   readonly tones: Array<{ frequency: number; duration: number; gain: number }>;
   readonly profiles: HardwareGenerationProfile[];
   readonly scores: Score[];
+  readonly requests: PlayRequest[];
   advance(seconds: number): void;
 }
 
@@ -98,6 +100,7 @@ export function createRecordingAudioService(bpm = 120): RecordingAudioService {
   const tones: RecordingAudioService['tones'] = [];
   const profiles: HardwareGenerationProfile[] = [];
   const scores: Score[] = [];
+  const requests: PlayRequest[] = [];
   const clock = createTransportClock(bpm);
   clock.start(0);
   return {
@@ -114,6 +117,7 @@ export function createRecordingAudioService(bpm = 120): RecordingAudioService {
     tones,
     profiles,
     scores,
+    requests,
     unlock: async () => {},
     setGenerationVoiceLimit: () => {},
     setGenerationProfile: (profile) => {
@@ -122,11 +126,14 @@ export function createRecordingAudioService(bpm = 120): RecordingAudioService {
     },
     playScore: (score) => scores.push(score),
     useScore: (score) => scores.push(score),
-    playOneShot: (request) => tones.push({
-      frequency: request.frequency,
-      duration: request.durationSeconds,
-      gain: request.velocity,
-    }),
+    playOneShot: (request) => {
+      requests.push(request);
+      tones.push({
+        frequency: request.frequency,
+        duration: request.durationSeconds,
+        gain: request.velocity,
+      });
+    },
     playTone: (frequency, duration, gain = 0.04) => tones.push({ frequency, duration, gain }),
     setMuted: () => {},
     setVolume: () => {},
