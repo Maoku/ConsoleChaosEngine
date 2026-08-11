@@ -77,9 +77,12 @@ hold、pressure semantics を適用する。focus loss 時は browser input sour
 ## render / assets
 
 - `RenderFrame`: camera、mesh、skinned mesh、sprite、light、background、material、overlay の平坦な command buffer。
-- `createGenerationCanvasRenderer()`: 4世代の target を起動時に確保し、通常1枚、transition 中2枚を合成する。
+- `createGenerationWebGlRenderer()`: production renderer。4世代のFBO/postfx targetを起動時に確保し、
+  通常1世代、transition 中だけ旧/新2世代を描画・合成する。Console/Racingの語彙は持たない。
+- `createGenerationCanvasRenderer()`: testkitや軽量fallback向けのgeneric command renderer。
 - `AssetManager`: pending load と参照数を key ごとに共有する。text/binary/image/glTF/GPU resource を扱い、
   最後の `release()` で解放する。`restoreGpuResources()` は context 再構築時に active GPU handle を差し替える。
+- `orientImageBitmap()`: `UNPACK_FLIP_Y_WEBGL` が効かない `ImageBitmap` の上下方向をupload前に確定する。
 - 公開 utility: WebGL wrapper、camera、geometry、triangle sort、sprite limit、master palette、glTF subset loader。
 
 ## audio
@@ -87,7 +90,7 @@ hold、pressure semantics を適用する。focus loss 時は browser input sour
 `createGenerationAudioService()` は transport clock と4種類の generation source factory を所有する。
 `setGenerationProfile()` は hardware の synth/channel/sample rate/reverb/positional 値だけから source を選ぶ。
 app は `Score` と `PlayRequest` を作り、曲名やSFX IDを engine へ持ち込まない。source 切替後も bar position は
-共通 clock を正本にする。
+共通 clock を正本にする。mute中の曲変更と再開tickもtransport上で保持する。
 
 ## Console と Racing
 
@@ -101,5 +104,5 @@ Racing の car/lap/race rule は各 app 内に留まる。
 `@console-chaos/engine-testkit` は manual loop、mutable input、recording renderer/audio を提供する。
 production browser global を作らず module lifecycle と replay を検査できる。
 
-最終検査は root の `npm run verify`。boundary/migration fixture、resource lifecycle、reference snapshot、
-Console bundle source map の legacy exclusion、全 unit/contract/E2E/build を含む。
+最終検査は root の `npm run verify`。boundary/migration fixture、resource/context-loss lifecycle、reference snapshot、
+Console bundle source map の legacy exclusion、Console/Racing双方のhost E2E、render/PCM golden、全buildを含む。

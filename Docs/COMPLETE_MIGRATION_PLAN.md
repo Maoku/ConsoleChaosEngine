@@ -601,31 +601,31 @@ performance/resource lifecycle checks
 
 次をすべて満たした場合だけ完全移行完了とする。
 
-- [ ] Consoleの通常production URLが `GameHost` と `ConsoleChaos GameModule` だけで起動する。
-- [ ] app sourceに独自loopと第2のgeneration controllerが存在しない。
-- [ ] hardware generation profileがengineに一意で、appに値の複製がない。
-- [ ] app themeが旧profileから生成されず、作品側の正本になっている。
-- [ ] Console gameplayがengine ActionMap snapshotを直接使う。
-- [ ] 旧RawInput/mapper/constraints/device sourceが削除されている。
-- [ ] Console本編がengine RenderFrame commandだけを構築する。
-- [ ] player/torch/plane/backdrop固定fieldを持つlegacy Frameが削除されている。
-- [ ] FBO、CRT、palette quantization、transition composeがengine所有である。
-- [ ] `renderer3d.ts` monolithが削除され、generic passとapp presentationの境界が明確である。
-- [ ] image/glTF/GPU resourceがAssetManager経由で取得・解放される。
-- [ ] generation audio source選択、voice limit、位相維持がengine所有である。
-- [ ] engineがConsoleの曲名、SFX ID、puzzle、asset pathを知らない。
-- [ ] Console projection/puzzle/theme/contentがapp側に留まっている。
-- [ ] `main.ts`と全legacy adapter/re-export shimが削除されている。
-- [ ] Console host replayが既存state hashと一致する。
-- [ ] 4世代、切替途中、6puzzleのrender captureがparity合格する。
-- [ ] PCM、音楽位相、SFX、voice limitがparity合格する。
-- [ ] 既存query URL、HUD、設定、playtest/debug操作が維持される。
-- [ ] Console/Racing双方のproduction browser E2Eが合格する。
-- [ ] dispose/context lost/performance/resource予算を満たす。
-- [ ] migration checkerが残存0件かつ違反fixtureを検出する。
-- [ ] root `npm run verify`が旧runtimeなしで合格する。
-- [ ] `PARITY_MATRIX.md`と`ENGINE_API.md`が実装後の事実に更新されている。
-- [ ] `../Opus5ConsoleChaos` が基準commitのままcleanで、531file snapshotが一致する。
+- [x] Consoleの通常production URLが `GameHost` と `ConsoleChaos GameModule` だけで起動する。
+- [x] app sourceに独自loopと第2のgeneration controllerが存在しない。
+- [x] hardware generation profileがengineに一意で、appに値の複製がない。
+- [x] app themeが旧profileから生成されず、作品側の正本になっている。
+- [x] Console gameplayがengine ActionMap snapshotを直接使う。
+- [x] 旧RawInput/mapper/constraints/device sourceが削除されている。
+- [x] Console本編がengine RenderFrame commandだけを構築する。
+- [x] player/torch/plane/backdrop固定fieldを持つlegacy Frameが削除されている。
+- [x] FBO、CRT、palette quantization、transition composeがengine所有である。
+- [x] `renderer3d.ts` monolithが削除され、generic passとapp presentationの境界が明確である。
+- [x] image/glTF/GPU resourceがAssetManager経由で取得・解放される。
+- [x] generation audio source選択、voice limit、位相維持がengine所有である。
+- [x] engineがConsoleの曲名、SFX ID、puzzle、asset pathを知らない。
+- [x] Console projection/puzzle/theme/contentがapp側に留まっている。
+- [x] `main.ts`と全legacy adapter/re-export shimが削除されている。
+- [x] Console host replayが既存state hashと一致する。
+- [x] 4世代、切替途中、6puzzleのrender captureがparity合格する。
+- [x] PCM、音楽位相、SFX、voice limitがparity合格する。
+- [x] 既存query URL、HUD、設定、playtest/debug操作が維持される。
+- [x] Console/Racing双方のproduction browser E2Eが合格する。
+- [x] dispose/context lost/performance/resource予算を満たす。
+- [x] migration checkerが残存0件かつ違反fixtureを検出する。
+- [x] root `npm run verify`が旧runtimeなしで合格する。
+- [x] `PARITY_MATRIX.md`と`ENGINE_API.md`が実装後の事実に更新されている。
+- [x] `../Opus5ConsoleChaos` が基準commitのままcleanで、531file snapshotが一致する。
 
 ---
 
