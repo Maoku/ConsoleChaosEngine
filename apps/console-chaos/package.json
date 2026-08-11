@@ -11,6 +11,7 @@
     "build": "vite build",
     "preview": "vite preview",
     "test": "vitest run --passWithNoTests",
+    "test:e2e": "vitest run tests/e2e",
     "test:watch": "vitest",
     "lint": "eslint . && tsc --noEmit -p tsconfig.json && tsc --noEmit -p tsconfig.node.json",
     "check:budget": "tsx tools/check-line-budget.ts",
@@ -23,7 +24,7 @@
     "bench:sort": "tsx tools/bench-sort.ts",
     "playtest": "vite build && vite preview --host --port 4173",
     "playtest:report": "tsx tools/playtest-report.ts",
-    "verify": "npm run lint && npm run test && npm run check:budget && npm run check:levels && npm run check:trademark && npm run check:assets && npm run build"
+    "verify": "npm run lint && npm run test && npm run test:e2e && npm run check:budget && npm run check:levels && npm run check:trademark && npm run check:assets && npm run build"
   },
   "dependencies": {
     "@console-chaos/engine": "0.1.0",
