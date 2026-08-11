@@ -40,6 +40,31 @@ describe('asset manager', () => {
     binary.release();
     manager.dispose();
   });
+
+  it('rebuilds context resources repeatedly without growing the registry', async () => {
+    const created: number[] = [];
+    const released: number[] = [];
+    const manager = createAssetManager();
+    const resource = await manager.acquireGpu(
+      'context-resource',
+      () => {
+        const value = created.length + 1;
+        created.push(value);
+        return value;
+      },
+      (value) => released.push(value),
+    );
+    for (let restore = 0; restore < 10; restore++) {
+      await manager.restoreGpuResources();
+      expect(manager.activeCount).toBe(1);
+      expect(manager.gpuCount).toBe(1);
+    }
+    expect(resource.value).toBe(11);
+    expect(released).toEqual(created.slice(0, -1));
+    resource.release();
+    expect(released).toEqual(created);
+    expect(manager.activeCount).toBe(0);
+  });
 });
 
 describe('physics helpers', () => {

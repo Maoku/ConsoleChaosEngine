@@ -1,7 +1,7 @@
 /**
  * 行数バジェット検査（IMPLEMENTATION_PLAN §5.3.3）。
  *
- * `src/render/gl/` は合計 1,500 行を上限とし、ファイル別にも上限を配分する。
+ * engine の `src/render/gl/` は合計 1,500 行を上限とし、ファイル別にも上限を配分する。
  * 超過時の対応は「バジェットを上げる」ではなく「ゲーム側の要求を削る」を第一候補とする。
  * バジェットの変更は IMPLEMENTATION_PLAN の改訂を伴う。
  */
@@ -9,25 +9,25 @@ import { readFileSync, existsSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join, relative } from 'node:path';
 
-const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
+const ROOT = join(dirname(fileURLToPath(import.meta.url)), '../../..');
 
 /** ファイル別の上限（§5.3.3、および §4.3 の ECS 上限） */
 const FILE_BUDGETS: Record<string, number> = {
-  'src/render/gl/context.ts': 150,
-  'src/render/gl/shader.ts': 250,
-  'src/render/gl/buffer.ts': 250,
-  'src/render/gl/texture.ts': 250,
-  'src/render/gl/framebuffer.ts': 200,
-  'src/render/gl/state.ts': 250,
-  'src/render/gl/index.ts': 100,
+  'packages/engine/src/render/gl/context.ts': 150,
+  'packages/engine/src/render/gl/shader.ts': 250,
+  'packages/engine/src/render/gl/buffer.ts': 250,
+  'packages/engine/src/render/gl/texture.ts': 250,
+  'packages/engine/src/render/gl/framebuffer.ts': 200,
+  'packages/engine/src/render/gl/state.ts': 250,
+  'packages/engine/src/render/gl/index.ts': 100,
 };
 
 /** ECS は合計 400 行を上限とする（§4.3）。凝った最適化はしない方針の担保 */
 const ECS_FILES = [
-  'src/core/ecs/world.ts',
-  'src/core/ecs/component.ts',
-  'src/core/ecs/query.ts',
-  'src/core/ecs/system.ts',
+  'packages/engine/src/core/world.ts',
+  'packages/engine/src/core/component.ts',
+  'packages/engine/src/core/query.ts',
+  'packages/engine/src/core/system.ts',
 ];
 const ECS_BUDGET = 400;
 
@@ -80,7 +80,7 @@ console.log(`  ${total > TOTAL_BUDGET ? '✗' : '✓'} ${'合計'.padEnd(width)}
 
 if (total > TOTAL_BUDGET) {
   failed = true;
-  console.error(`✗ src/render/gl/ の合計 ${total} 行が上限 ${TOTAL_BUDGET} 行を超えている`);
+  console.error(`✗ packages/engine/src/render/gl/ の合計 ${total} 行が上限 ${TOTAL_BUDGET} 行を超えている`);
 }
 
 // --- ECS（§4.3） ---

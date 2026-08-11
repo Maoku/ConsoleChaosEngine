@@ -18,6 +18,7 @@
     "test:e2e": "npm run test:e2e -w @console-chaos/racing",
     "check:boundaries": "tsx tools/check-boundaries.ts",
     "check:console-migration": "tsx tools/check-console-migration.ts --strict",
+    "check:console-bundle": "tsx tools/check-console-bundle.ts",
     "check:budget": "npm run check:budget -w @console-chaos/console-chaos",
     "check:levels": "npm run check:levels -w @console-chaos/console-chaos",
     "check:assets": "npm run check:assets -w @console-chaos/console-chaos",
@@ -28,7 +29,7 @@
     "build:console": "npm run build -w @console-chaos/console-chaos",
     "build:racing": "npm run build -w @console-chaos/racing",
     "verify:console-baseline": "npm run verify -w @console-chaos/console-chaos",
-    "verify": "npm run lint && npm run test:engine && npm run test:console && npm run test:racing && npm run test:e2e && npm run check:boundaries && npm run check:console-migration && npm run check:budget && npm run check:levels && npm run check:assets && npm run check:trademark && npm run check:reference && npm run build:engine && npm run build:testkit && npm run build:console && npm run build:racing"
+    "verify": "npm run lint && npm run test:engine && npm run test:console && npm run test:racing && npm run test:e2e && npm run check:boundaries && npm run check:console-migration && npm run check:budget && npm run check:levels && npm run check:assets && npm run check:trademark && npm run check:reference && npm run build:engine && npm run build:testkit && npm run build:console && npm run check:console-bundle && npm run build:racing"
   },
   "devDependencies": {
     "@eslint/js": "^9.13.0",

@@ -88,7 +88,9 @@ export function createCanvasCommandRenderer(canvas: HTMLCanvasElement): FrameRen
         internal.height = profile.video.internalHeight;
       }
       const palette = profile.video.paletteMode === 'fixed54' ? fixedPaletteColor : (color: string) => color;
-      const background = frame.backgrounds.at(-1);
+      // Textured/parallax layers are optional decorations. The untextured layer
+      // remains the clear-color authority even when a backend cannot sample them.
+      const background = frame.backgrounds.find((candidate) => !candidate.texture) ?? frame.backgrounds.at(0);
       if (background?.secondaryColor) {
         const gradient = context.createLinearGradient(0, 0, 0, internal.height);
         gradient.addColorStop(0, palette(background.secondaryColor));
