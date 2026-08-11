@@ -88,6 +88,17 @@ describe('Console ActionMap contract', () => {
     expect(source.poll().keys.size).toBe(0);
     source.dispose();
   });
+
+  it('latches a complete key tap until the next input poll', () => {
+    const target = new EventTarget();
+    const source = createKeyboardGamepadSource(target as Window);
+    target.dispatchEvent(Object.assign(new Event('keydown'), { code: 'Digit4' }));
+    target.dispatchEvent(Object.assign(new Event('keyup'), { code: 'Digit4' }));
+
+    expect(source.poll().keys.has('Digit4')).toBe(true);
+    expect(source.poll().keys.has('Digit4')).toBe(false);
+    source.dispose();
+  });
 });
 
 describe('generic action buffer', () => {
