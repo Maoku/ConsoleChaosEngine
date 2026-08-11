@@ -11,7 +11,6 @@ import { readFileSync } from 'node:fs';
 import type { Session } from '@/gameplay/session';
 import { createScene, type Scene } from '@/gameplay/scene';
 import { parseLevel } from '@/level/loader';
-import { createRawInput } from '@/input/mapper';
 import { unsealShaderCompilation } from '@/render/gl/index';
 import { PROFILES, type GenerationId } from '@/generation/profiles';
 import {
@@ -30,7 +29,7 @@ const area1 = parseLevel(JSON.parse(readFileSync('public/assets/levels/area1.jso
 function run(generation: GenerationId): { session: Session; scene: Scene; boxes: ColliderBox[] } {
   const session = createTestSession({ level: area1, generation });
   const scene = createScene(session);
-  const neutral = createRawInput();
+  const neutral = {};
   // 出発地点は少し宙に浮いているので、着地するまで回す（接触の一覧を見るため）
   for (let i = 0; i < 16; i++) {
     tickSession(session, neutral);

@@ -79,4 +79,33 @@ describe('generic action map', () => {
     expect(ps2.move[1]).toBeCloseTo(-Math.SQRT1_2);
     expect(ps2.fire.pressed).toBe(false);
   });
+
+  it('uses the last keyboard axis to resolve equal four-way input', () => {
+    const input = createDeviceSnapshot(['KeyD', 'KeyS'], [], [], 1);
+    expect(map.sample(input, HARDWARE_GENERATION_PROFILES.FC).move).toEqual([1, 0]);
+
+    const lastAxisMap = createActionMap(actions, {
+      move: {
+        leftKeys: ['KeyA'], rightKeys: ['KeyD'], upKeys: ['KeyW'], downKeys: ['KeyS'], tieBreak: 'last',
+      },
+      fire: { keys: ['Space'] },
+      steer: {},
+    });
+    expect(lastAxisMap.sample(input, HARDWARE_GENERATION_PROFILES.FC).move).toEqual([0, 1]);
+  });
+
+  it('applies a rescaled gamepad deadzone and keyboard pressure ramp', () => {
+    const pressureActions = defineActions({ move: 'axis2d', pressure: 'button' });
+    const pressureMap = createActionMap(pressureActions, {
+      move: { gamepadAxes: [0, 1], gamepadDeadzone: 0.25 },
+      pressure: { keys: ['KeyL'], gamepadButtons: [7], holdRampMs: 500, requiresPressure: true },
+    });
+    let sampled = pressureMap.sample(createDeviceSnapshot(['KeyL'], [], [0.1, 1]), HARDWARE_GENERATION_PROFILES.PS2, 250);
+    expect(sampled.move).toEqual([0, 1]);
+    expect(sampled.pressure.value).toBe(0);
+    sampled = pressureMap.sample(createDeviceSnapshot(['KeyL'], [], [0.25, 1]), HARDWARE_GENERATION_PROFILES.PS2, 250);
+    expect(sampled.move[0]).toBe(0);
+    expect(sampled.pressure.value).toBe(0.5);
+    expect(pressureMap.sample(createDeviceSnapshot(['KeyL']), HARDWARE_GENERATION_PROFILES.FC).pressure.value).toBe(0);
+  });
 });

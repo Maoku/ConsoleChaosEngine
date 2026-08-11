@@ -19,11 +19,14 @@ import {
 } from '@/gameplay/player';
 import { overlaps, aabbFromCenter } from '@/gameplay/projection';
 import { createWorld, type World } from '@/core/ecs/world';
-import { applyConstraints } from '@/input/constraints';
-import { createMapper, createRawInput, type InputSnapshot, type RawInput } from '@/input/mapper';
+import {
+  createConsoleChaosActionMap,
+  type ConsoleChaosActionSnapshot,
+} from '@/config/actions';
 import { BUFFER_FRAMES } from '@/input/buffer';
 import { GENERATION_IDS, PROFILES, type GenerationId } from '@/generation/profiles';
 import { TICK_MS } from '@/core/time';
+import { sampleActions, type TestActionInput } from './session-testkit';
 
 /** 1 体のプレイヤーと、その世代の入力経路を持つ試験台 */
 function harness(generation: GenerationId) {
@@ -31,13 +34,13 @@ function harness(generation: GenerationId) {
   const entity = world.create();
   const body = world.add(entity, PlayerBody);
   const state = world.add(entity, PlayerState);
-  const mapper = createMapper();
+  const actions = createConsoleChaosActionMap();
   let current: GenerationId = generation;
 
   /** 生入力 → 制約適用 → 1 ティック分の更新。実際の §4.4 と同じ順序で通す */
-  function tick(raw: Partial<RawInput> = {}): InputSnapshot {
+  function tick(raw: Partial<TestActionInput> = {}): ConsoleChaosActionSnapshot {
     const profile = PROFILES[current];
-    const snapshot = applyConstraints(mapper.sample({ ...createRawInput(), ...raw }, TICK_MS), profile);
+    const snapshot = sampleActions(actions, current, raw, TICK_MS);
     updatePlayer(world, body, state, { snapshot, profile });
     return snapshot;
   }
@@ -349,17 +352,14 @@ describe('gameplay/player のシステム接続（§4.4 の段階 4）', () => {
     const entity = world.create();
     const body: PlayerBodyData = world.add(entity, PlayerBody);
     const state: PlayerStateData = world.add(entity, PlayerState);
-    const mapper = createMapper();
+    const actions = createConsoleChaosActionMap();
 
     let generation: GenerationId = 'PS1';
     const system = playerSystem(() => {
       const profile = PROFILES[generation];
       return {
         profile,
-        snapshot: applyConstraints(
-          mapper.sample({ ...createRawInput(), move: [0.5, 0.5] }, TICK_MS),
-          profile,
-        ),
+        snapshot: sampleActions(actions, generation, { move: [0.5, 0.5] }, TICK_MS),
       };
     });
 

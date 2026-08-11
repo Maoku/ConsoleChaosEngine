@@ -11,7 +11,6 @@ import type { Session } from '@/gameplay/session';
 import { buildDrawables, createScene, interiorSectorIds } from '@/gameplay/scene';
 import { parseLevel } from '@/level/loader';
 import { materialFor } from '@/render/material';
-import { createRawInput } from '@/input/mapper';
 import { GENERATION_IDS, PROFILES, type GenerationId } from '@/generation/profiles';
 import { createTestSession, tickSession } from './session-testkit';
 
@@ -21,7 +20,7 @@ const area1 = parseLevel(JSON.parse(readFileSync('public/assets/levels/area1.jso
 function visibilityIn(generation: GenerationId): Map<string, boolean> {
   const session: Session = createTestSession({ level: area1, generation });
   const scene = createScene(session);
-  const neutral = createRawInput();
+  const neutral = {};
   for (let i = 0; i < 4; i++) {
     tickSession(session, neutral);
     scene.update(1 / 60);
@@ -79,7 +78,7 @@ describe('装飾（SG-05、上位計画 §3 の決定 2）', () => {
     for (const generation of GENERATION_IDS) {
       const session = createTestSession({ level: area1, generation });
       const scene = createScene(session);
-      const neutral = createRawInput();
+      const neutral = {};
       tickSession(session, neutral);
       scene.update(1 / 60);
       for (const entity of decor) {
@@ -132,7 +131,7 @@ describe('カメラの構図（T2-08）', () => {
   function run(generation: GenerationId, ticks = 8, move: [number, number] = [0, 0]) {
     const session: Session = createTestSession({ level: area1, generation });
     const scene = createScene(session);
-    const input = { ...createRawInput(), move: [...move] as [number, number] };
+    const input = { move: [...move] as [number, number] };
     for (let i = 0; i < ticks; i++) {
       tickSession(session, input);
       scene.update(1 / 60);
@@ -254,7 +253,7 @@ describe('空の見えない部屋（BR-03）', () => {
   function brightnessAt(generation: GenerationId, spawn: [number, number, number], seconds: number): number {
     const session: Session = createTestSession({ level: area1, generation, spawn });
     const scene = createScene(session);
-    const neutral = createRawInput();
+    const neutral = {};
     for (let i = 0; i < Math.round(seconds * 60); i++) {
       tickSession(session, neutral);
       scene.update(1 / 60);

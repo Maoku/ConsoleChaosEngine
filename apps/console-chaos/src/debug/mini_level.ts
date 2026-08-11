@@ -9,7 +9,12 @@
  * 投影ルール・物理・パズルは `gameplay/` の本実装をそのまま使う。
  */
 import type { GLContext } from '@/render/gl/index';
-import { createGenerationController } from '@console-chaos/engine';
+import {
+  GENERATION_IDS,
+  createGenerationController,
+  createKeyboardGamepadSource,
+} from '@console-chaos/engine';
+import { createConsoleChaosActionMap } from '@/config/actions';
 import { createPipeline, type Pipeline } from '@/render/pipeline';
 import { createRenderer3d, type Renderer3d } from '@/render/renderer3d';
 import type { CrtPreset, CrtQuality } from '@/render/postfx/presets';
@@ -17,9 +22,6 @@ import type { GenerationId } from '@/generation/profiles';
 import { aabbFromCenter, overlaps } from '@/gameplay/projection';
 import { TRANSITION_DURATION_MS } from '@/generation/transition';
 import { TICK_MS, TICK_SECONDS } from '@/core/time';
-import { combineRawInputs, createRawInput, type RawInput } from '@/input/mapper';
-import { createKeyboardSource, type KeyboardSource } from '@/input/source_keyboard';
-import { createGamepadSource, type GamepadSource } from '@/input/source_gamepad';
 import type { PlayerBodyData, PlayerStateData } from '@/gameplay/player';
 import { createSession, type Session } from '@/gameplay/session';
 import { buildDrawables, createScene, type Scene } from '@/gameplay/scene';
@@ -60,14 +62,7 @@ export interface MiniLevel {
    * 読み上げ（`collider_hud.ts`）が同じものを文字にする
    */
   readonly colliderBoxes: readonly ColliderBox[];
-  /**
-   * デバッグ用の疑似入力ソース。キーボード・ゲームパッドと同じ `RawInput` の形で持ち、
-   * 3 つを `combineRawInputs` でまとめる（入力ソースの追加が波及しない構造。GAME_PLAN §10.3）
-   */
-  readonly input: RawInput;
   switchTo(generation: GenerationId): void;
-  /** 実ブラウザのキーボードへ接続する。戻り値を呼ぶと解除される */
-  attach(target: EventTarget): () => void;
   tick(): void;
   draw(screenWidth: number, screenHeight: number): void;
   reset(): void;
@@ -116,10 +111,8 @@ export async function createMiniLevel(
   /** 当たり判定の線。表示中だけ毎フレーム組み立て直す */
   let colliderBoxes: ColliderBox[] = [];
 
-  // 入力は T1-04 の実装をそのまま使う（キーボード + ゲームパッド + 世代制約）
-  const input: RawInput = createRawInput();
-  const keyboard: KeyboardSource = createKeyboardSource();
-  const gamepad: GamepadSource = createGamepadSource();
+  const device = createKeyboardGamepadSource();
+  const actions = createConsoleChaosActionMap();
 
   const pipeline: Pipeline = createPipeline(ctx, {
     quality: () => levelState.crtQuality,
@@ -127,10 +120,14 @@ export async function createMiniLevel(
   });
 
   function tick(): void {
-    // 3 つのソースを 1 つの生入力にまとめて渡す。以降の進行順序は session が持つ
-    session.prepare(combineRawInputs([keyboard.read(), gamepad.read(), input]));
+    const snapshot = actions.sample(device.poll(), generation.profile, TICK_MS);
+    if (snapshot.switchPrevious.pressed) generation.cycle(-1);
+    if (snapshot.switchNext.pressed) generation.cycle(1);
+    const direct = [snapshot.switch1, snapshot.switch2, snapshot.switch3, snapshot.switch4]
+      .findIndex((button) => button.pressed);
+    if (direct >= 0) generation.request(GENERATION_IDS[direct] ?? generation.generation);
     generation.advance(TICK_MS);
-    session.tick();
+    session.tick(snapshot);
     levelState.generation = generation.generation;
 
     // 走査線制限（§4.4 の段階 9）。画面 Y は描画側の計算なのでここで作る
@@ -170,7 +167,6 @@ export async function createMiniLevel(
     state: levelState,
     session,
     scene,
-    input,
     get triangleCount() {
       return renderer.triangleCount;
     },
@@ -178,7 +174,6 @@ export async function createMiniLevel(
       return colliderBoxes;
     },
     switchTo,
-    attach: (target) => keyboard.attach(target),
     tick,
     draw(screenWidth, screenHeight): void {
       // 線はシーンと同じ経路で描く（同じカメラ・同じ内部解像度なので位置がずれない）
@@ -210,6 +205,8 @@ export async function createMiniLevel(
       colliderView.dispose();
       renderer.dispose();
       session.dispose();
+      actions.reset();
+      device.dispose();
     },
   };
 }
@@ -219,7 +216,6 @@ export async function createMiniLevel(
  * ここが足すのはデバッグ専用のキー（`R` でやり直し / `C` で当たり判定表示）だけ。
  */
 export function bindMiniLevelKeys(level: MiniLevel, onReset?: () => void): () => void {
-  const detachInput = level.attach(window);
   const down = (e: KeyboardEvent): void => {
     const key = e.key.toLowerCase();
     if (key === 'c') {
@@ -232,7 +228,6 @@ export function bindMiniLevelKeys(level: MiniLevel, onReset?: () => void): () =>
   };
   window.addEventListener('keydown', down);
   return () => {
-    detachInput();
     window.removeEventListener('keydown', down);
   };
 }

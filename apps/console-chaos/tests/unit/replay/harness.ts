@@ -12,12 +12,11 @@ import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 import type { GenerationId } from '@/generation/profiles';
-import { createRawInput, type RawInput } from '@/input/mapper';
 import type { Vec3 } from '@/gameplay/projection';
 import { parseLevel } from '@/level/loader';
 import { PIXELS_PER_WORLD_UNIT, type LevelFile } from '@/level/schema';
 import { applyScanlineLimit, type SpriteDrawItem } from '@/render/sprite_limit';
-import { createTestSession, tickSession } from '../session-testkit';
+import { createTestSession, tickSession, type TestActionInput } from '../session-testkit';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '../../..');
 
@@ -100,13 +99,12 @@ export function runReplay(record: ReplayRecord): ReplayResult {
     ...(record.seed === undefined ? {} : { seed: record.seed }),
   });
 
-  const raw: RawInput = createRawInput();
+  const raw: Partial<TestActionInput> = {};
   let solvedAtTick: number | null = null;
 
   for (const segment of record.inputs) {
     for (let i = 0; i < segment.ticks; i++) {
-      raw.move[0] = segment.move?.[0] ?? 0;
-      raw.move[1] = segment.move?.[1] ?? 0;
+      raw.move = segment.move ?? [0, 0];
       raw.jump = segment.jump ?? false;
       raw.action = segment.action ?? false;
       // 切替はセグメントの先頭の 1 ティックだけ押す（押しっぱなしにしない）

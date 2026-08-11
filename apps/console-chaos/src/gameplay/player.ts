@@ -27,7 +27,7 @@ import {
   updateActionBuffer,
   type ActionBuffer,
 } from '@/input/buffer';
-import type { InputSnapshot } from '@/input/mapper';
+import type { ConsoleChaosActionSnapshot } from '@/config/actions';
 import { aabbFromCenter, constrainVelocity, type AABB, type Vec3 } from './projection';
 
 /** ジャンプの初速（m/s）。全世代で同じ高さから始め、可変ジャンプだけが途中で切る */
@@ -53,6 +53,7 @@ export const ATTACK_CHARGE_BONUS = 0.8;
 
 /** 溜め切るまでの時間（ミリ秒） */
 export const CHARGE_FULL_MS = 600;
+export const FINE_MOVE_SCALE = 0.45;
 
 /** ロックオンが成立する距離（メートル） */
 export const LOCK_ON_RANGE = 6;
@@ -111,7 +112,7 @@ export const LockTarget = defineComponent<{ position: Vec3 }>('LockTarget');
 
 /** このティックの入力と世代。システムの外から与える（§4.4 の段階 3 の結果） */
 export interface PlayerFrame {
-  snapshot: InputSnapshot;
+  snapshot: ConsoleChaosActionSnapshot;
   profile: GenerationProfile;
 }
 
@@ -194,7 +195,7 @@ function updateAim(
   state.aim = normalizeXZ(moveXZ[0], moveXZ[1], forward);
 }
 
-function updateAttack(state: PlayerStateData, snapshot: InputSnapshot, profile: GenerationProfile): void {
+function updateAttack(state: PlayerStateData, snapshot: ConsoleChaosActionSnapshot, profile: GenerationProfile): void {
   if (state.attackCooldown > 0) state.attackCooldown--;
   if (state.attackTicks > 0) state.attackTicks--;
 
@@ -219,10 +220,10 @@ function updateAttack(state: PlayerStateData, snapshot: InputSnapshot, profile: 
   state.chargeMs = 0;
   if (!snapshot.action.pressed || state.attackCooldown > 0) return;
   // 感圧を持つ世代は押し込み量が強さになる。持たない世代は常に基本の強さ
-  fire(profile.input.pressureSensitive ? snapshot.pressure : 0);
+  fire(profile.input.pressureSensitive ? snapshot.pressure.value : 0);
 }
 
-function updateJump(body: PlayerBodyData, state: PlayerStateData, snapshot: InputSnapshot, profile: GenerationProfile): void {
+function updateJump(body: PlayerBodyData, state: PlayerStateData, snapshot: ConsoleChaosActionSnapshot, profile: GenerationProfile): void {
   updateActionBuffer(state.jump, snapshot.jump.pressed, body.grounded);
 
   if (consumeActionBuffer(state.jump)) {
@@ -258,7 +259,10 @@ export function updatePlayer(
 
   // --- 移動。入力はカメラ相対に読み替える（T2-08）。
   //     アナログの世代では倒し込みがそのまま速度になる（微調整） ---
-  const move = moveToWorldXZ(snapshot.move, profile.camera.forward);
+  const moveInput: readonly [number, number] = snapshot.fine.down && profile.action.fineControl
+    ? [snapshot.move[0] * FINE_MOVE_SCALE, snapshot.move[1] * FINE_MOVE_SCALE]
+    : snapshot.move;
+  const move = moveToWorldXZ(moveInput, profile.camera.forward);
   body.velocity[0] = move[0] * profile.action.moveSpeed;
   body.velocity[2] = move[1] * profile.action.moveSpeed;
   // 2D 投影の世代では Z 方向へ動けない（§5.5.1）。判定は投影ルールに委ねる

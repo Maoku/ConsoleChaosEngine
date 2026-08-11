@@ -21,10 +21,12 @@ import { createWorld, type Entity, type World } from '@/core/ecs/world';
 import { hash32 } from '@/core/rng';
 import { TICK_MS } from '@/core/time';
 import type { GenerationController } from '@console-chaos/engine';
+import {
+  createNeutralConsoleChaosActions,
+  type ConsoleChaosActionSnapshot,
+} from '@/config/actions';
 import { composeLegacyGenerationProfile } from '@/config/generation';
 import type { GenerationProfile } from '@/generation/profiles';
-import { applyConstraints } from '@/input/constraints';
-import { createMapper, createRawInput, type InputSnapshot, type Mapper, type RawInput } from '@/input/mapper';
 import type { LevelEntity, LevelFile } from '@/level/schema';
 import {
   advanceRespawn,
@@ -114,14 +116,10 @@ export interface Session {
   readonly activePuzzleId: string | null;
   /** プレイヤーがヒントを要求した。段階を 1 つ進めて返す */
   requestHint(): HintMessage | null;
-  readonly snapshot: InputSnapshot;
   readonly profile: GenerationProfile;
   readonly tickIndex: number;
-  /** §4.4 の段階 1〜8。生入力は複数ソースをまとめたもの */
-  /** prepare phase: sample input and submit generation requests without advancing gameplay. */
-  prepare(raw: RawInput | null): void;
-  /** fixed phase: consume the generation state already advanced by GameHost. */
-  tick(): void;
+  /** §4.4 の段階 3〜8。GameHost が generation を進めた後の ActionMap snapshot を受け取る。 */
+  tick(actions: ConsoleChaosActionSnapshot): void;
   /** 段階 9 の結果を次ティックへ書き戻す（描画側が呼ぶ） */
   commitCulled(culled: readonly Entity[]): void;
   reset(): void;
@@ -196,12 +194,12 @@ export function createSession(options: SessionOptions): Session {
   projection.safePosition = [...spawn] as Vec3;
 
   const checkpoints: CheckpointState = createCheckpointState(spawn);
-  const mapper: Mapper = createMapper();
-  const neutral: RawInput = createRawInput();
-
   /** Z 吸着の状態（§5.5.3）。切替時に決まり、トランジションの尺で消化する */
   const slide: { z: ((progress: number) => number) | null; y: number | null } = { z: null, y: null };
-  let frame = { snapshot: mapper.snapshot, profile: composeLegacyGenerationProfile(startGeneration) };
+  let frame = {
+    snapshot: createNeutralConsoleChaosActions(),
+    profile: composeLegacyGenerationProfile(startGeneration),
+  };
 
   const disconnectGeneration = generation.onBeforeSwitch((event) => {
     slide.z = null;
@@ -299,31 +297,10 @@ export function createSession(options: SessionOptions): Session {
     return best;
   }
 
-  let prepared = false;
-
-  function prepare(raw: RawInput | null): void {
-    // 復帰の演出中は入力を無視する（§6.6-4：やり直しの摩擦を小さくする）
-    const playable = isPlayable(checkpoints);
-    const snapshot = mapper.sample(playable ? raw : neutral, TICK_MS);
-
-    // 段階 2 の要求だけを prepare で行う。時間を進めるのは GameHost。
-    if (playable) {
-      if (snapshot.switchTo !== null) generation.request(snapshot.switchTo);
-      else if (snapshot.switchCycle !== 0) generation.cycle(snapshot.switchCycle);
-    }
-    prepared = true;
-  }
-
-  function tick(): void {
-    if (!prepared) mapper.sample(neutral, TICK_MS);
-    prepared = false;
-
+  function tick(actions: ConsoleChaosActionSnapshot): void {
     const profile = composeLegacyGenerationProfile(generation.generation);
-    const snapshot = mapper.snapshot;
+    const snapshot = isPlayable(checkpoints) ? actions : createNeutralConsoleChaosActions();
     projection.mode = profile.video.projection;
-
-    // 段階 3：世代による入力制約
-    applyConstraints(snapshot, profile);
     frame = { snapshot, profile };
 
     // 段階 4・5：プレイヤーの意図 → 物理
@@ -391,16 +368,12 @@ export function createSession(options: SessionOptions): Session {
       return activePuzzleId;
     },
     requestHint: () => requestHint(hints, activePuzzleId),
-    get snapshot() {
-      return mapper.snapshot;
-    },
     get profile() {
       return composeLegacyGenerationProfile(generation.generation);
     },
     get tickIndex() {
       return tickIndex;
     },
-    prepare,
     tick,
     commitCulled(next): void {
       culled = new Set(next);

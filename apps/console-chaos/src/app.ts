@@ -1,34 +1,16 @@
 import {
   GENERATION_IDS,
   validateSceneReferences,
-  type ActionSnapshot,
   type GameModule,
   type RenderFrame,
 } from '@console-chaos/engine';
-import { createConsoleChaosActionMap, type CONSOLE_CHAOS_ACTIONS } from '@/config/actions';
+import {
+  createConsoleChaosActionMap,
+  createNeutralConsoleChaosActions,
+} from '@/config/actions';
 import { adaptConsoleChaosLevel } from '@/content/level-adapter';
-import { createRawInput, type RawInput } from '@/input/mapper';
 import type { LevelFile } from '@/level/schema';
 import { createSession } from '@/gameplay/session';
-
-type ConsoleActions = ActionSnapshot<typeof CONSOLE_CHAOS_ACTIONS>;
-
-function inputFor(actions: ConsoleActions): RawInput {
-  const input = createRawInput();
-  input.move[0] = actions.move[0];
-  input.move[1] = actions.move[1];
-  input.fine = actions.fine.down;
-  input.jump = actions.jump.down;
-  input.action = actions.action.down;
-  input.subAction = actions.subAction.down;
-  input.pressureButton = actions.pressure.down;
-  input.pressureAnalog = actions.pressure.value;
-  input.switchCycle = actions.switchPrevious.pressed ? -1 : actions.switchNext.pressed ? 1 : 0;
-  const direct = [actions.switch1, actions.switch2, actions.switch3, actions.switch4]
-    .findIndex((button) => button.pressed);
-  input.switchTo = direct < 0 ? null : (GENERATION_IDS[direct] ?? null);
-  return input;
-}
 
 /**
  * Console Chaos の決定的セッションを engine lifecycle へ載せるアダプタ。
@@ -49,14 +31,20 @@ export function createConsoleChaosModule(level: LevelFile): GameModule {
         world: context.world,
         generation: context.generation,
       });
+      let snapshot = createNeutralConsoleChaosActions();
       return {
         prepareFixedUpdate({ dtMs }): void {
-          const snapshot = actions.sample(context.input.snapshot, context.generation.profile, dtMs);
-          const raw = inputFor(snapshot);
-          session.prepare(raw);
+          snapshot = actions.sample(context.input.snapshot, context.generation.profile, dtMs);
+          if (snapshot.switchPrevious.pressed) context.generation.cycle(-1);
+          if (snapshot.switchNext.pressed) context.generation.cycle(1);
+          const direct = [snapshot.switch1, snapshot.switch2, snapshot.switch3, snapshot.switch4]
+            .findIndex((button) => button.pressed);
+          if (direct >= 0) {
+            context.generation.request(GENERATION_IDS[direct] ?? context.generation.generation);
+          }
         },
         fixedUpdate(): void {
-          session.tick();
+          session.tick(snapshot);
         },
         buildRenderFrame(frame: RenderFrame): void {
           const profile = session.profile;
