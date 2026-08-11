@@ -143,7 +143,7 @@ function buildScene(
 export function createConsoleDebugModule(scene: ConsoleDebugScene, options: ConsoleDebugModuleOptions): GameModule {
   return {
     id: `console-debug-${scene}`,
-    create(context) {
+    async create(context) {
       const actions = createConsoleChaosActionMap();
       let time = 0;
       let yaw = 0.5;
