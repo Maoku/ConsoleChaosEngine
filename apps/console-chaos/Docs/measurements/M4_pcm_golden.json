@@ -1,0 +1,15 @@
+{
+  "capturedAt": "2026-08-11",
+  "renderer": "web-audio-engine@0.13.4",
+  "sampleRate": 48000,
+  "channels": 2,
+  "captureSeconds": 14.4,
+  "rmsWindowSeconds": 0.25,
+  "score": "pop",
+  "measurements": [
+    { "generation": "FC", "peak": 0.224244, "rms": 0.051014, "silentWindows": 0, "fingerprint": "48ef2fd1" },
+    { "generation": "SFC", "peak": 0.251418, "rms": 0.049637, "silentWindows": 0, "fingerprint": "4ee19855" },
+    { "generation": "PS1", "peak": 0.23664, "rms": 0.039289, "silentWindows": 0, "fingerprint": "b0794545" },
+    { "generation": "PS2", "peak": 0.190049, "rms": 0.025642, "silentWindows": 0, "fingerprint": "d88ed7fb" }
+  ]
+}

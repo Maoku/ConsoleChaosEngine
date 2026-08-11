@@ -13,12 +13,15 @@ import type { LevelFile } from '@/level/schema';
 import { createSession } from '@/gameplay/session';
 import { createConsoleChaosPresentation } from '@/presentation/frame';
 import { createConsoleAudioPresenter } from '@/audio/presenter';
+import type { ConsoleAudioPresenter } from '@/audio/presenter';
 import { createCueTracker, pollCues } from '@/gameplay/audio_cues';
 import { songOf } from '@/audio/songs';
 import type { Session } from '@/gameplay/session';
+import type { Score } from '@console-chaos/engine';
 
 export interface ConsoleChaosModuleHooks {
-  onCreate?(session: Session): void;
+  initialSong?: Score;
+  onCreate?(session: Session, audio: ConsoleAudioPresenter): void;
   onFixedUpdate?(session: Session): void;
   onRender?(session: Session): void;
   onDispose?(session: Session): void;
@@ -40,14 +43,14 @@ export function createConsoleChaosModule(level: LevelFile, hooks: ConsoleChaosMo
         world: context.world,
         generation: context.generation,
       });
-      const audio = createConsoleAudioPresenter(context.audio, songOf(null).score);
+      const audio = createConsoleAudioPresenter(context.audio, hooks.initialSong ?? songOf(null).score);
       const presentation = createConsoleChaosPresentation(level);
       const cues = createCueTracker();
       audio.start(context.generation.profile);
       const disconnectAudio = context.events.on('generationSwitch', (event) => {
         audio.applyGeneration(event.toProfile);
       });
-      hooks.onCreate?.(session);
+      hooks.onCreate?.(session, audio);
       let snapshot = createNeutralConsoleChaosActions();
       return {
         prepareFixedUpdate({ dtMs }): void {

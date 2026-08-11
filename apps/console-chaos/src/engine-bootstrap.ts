@@ -11,7 +11,9 @@ import {
   type AudioService,
 } from '@console-chaos/engine';
 import { createConsoleChaosModule } from './app';
+import type { ConsoleAudioPresenter } from './audio/presenter';
 import { songOf } from './audio/songs';
+import { bgmStatusText, createBgmControl } from './debug/bgm_control';
 import { createNoticeHud } from './debug/notice_hud';
 import { createPlaytestLog, saveStoredRecords, storedRecords, type PlaytestLog } from './debug/playtest_log';
 import { createPlaytestHud } from './debug/playtest_hud';
@@ -76,8 +78,14 @@ const playtestHud = createPlaytestHud();
 fitCanvasToStage();
 const notice = createNoticeHud();
 let session: Session | null = null;
+let audioPresenter: ConsoleAudioPresenter | null = null;
 let hud: Hud | null = null;
 let playtest: PlaytestLog | null = null;
+const bgm = createBgmControl({
+  audio: () => audioPresenter,
+  songId: initialSong.id,
+  onChange: (status) => notice.show(bgmStatusText(status)),
+});
 
 const host = createGameHost({
   loopHost: createBrowserLoopHost(),
@@ -90,8 +98,11 @@ const host = createGameHost({
 });
 
 await host.start(createConsoleChaosModule(level, {
-  onCreate(created) {
+  initialSong: initialSong.score,
+  onCreate(created, presenter) {
     session = created;
+    audioPresenter = presenter;
+    bgm.sync();
     hud = createHud(canvas);
     playtest = createPlaytestLog(created, levelId);
   },
@@ -101,6 +112,7 @@ await host.start(createConsoleChaosModule(level, {
   },
   onDispose(current) {
     if (session === current) session = null;
+    audioPresenter = null;
     playtest?.keep();
     hud?.dispose();
     hud = null;
@@ -117,6 +129,8 @@ window.addEventListener('resize', windowResize);
 const keydown = (event: KeyboardEvent): void => {
   const key = event.key.toLowerCase();
   if (key === 'h') session?.requestHint();
+  if (key === 'b') bgm.nextSong();
+  if (key === 'm') bgm.toggleMute();
   if (key === 'p') playtest?.save();
   if (key === 'r') {
     playtest?.keep();

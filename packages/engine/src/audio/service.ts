@@ -185,6 +185,7 @@ export function createGenerationAudioService(
   const clock = createTransportClock(initialScore.bpm, initialScore.beatsPerBar);
   clock.start(context.currentTime);
   let muted = false;
+  let pausedAtTick = 0;
 
   const setGenerationProfile = (profile: HardwareGenerationProfile): void => {
     const key = profile.audio.synth;
@@ -216,6 +217,8 @@ export function createGenerationAudioService(
     setGenerationVoiceLimit: () => {},
     setGenerationProfile,
     playScore(score, fromTick = 0): void {
+      pausedAtTick = fromTick;
+      engine.useArrangement(score);
       if (!muted) engine.startMusic(score, fromTick);
     },
     useScore: (score) => engine.useArrangement(score),
@@ -231,9 +234,10 @@ export function createGenerationAudioService(
     },
     setMuted(value): void {
       if (value === muted) return;
+      if (value) pausedAtTick = engine.clock.tickAt(context.currentTime);
       muted = value;
       if (muted) engine.stopMusic();
-      else engine.startMusic(engine.clock.score, engine.clock.tickAt(context.currentTime));
+      else engine.startMusic(engine.clock.score, pausedAtTick);
     },
     setVolume(value): void {
       master.gain.value = Math.min(Math.max(value, 0), 1);
