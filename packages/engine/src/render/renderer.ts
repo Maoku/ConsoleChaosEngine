@@ -1,5 +1,5 @@
 import type { GenerationController } from '../generation/controller';
-import type { HardwareGenerationProfile } from '../generation/profiles';
+import { HARDWARE_GENERATION_PROFILES, type HardwareGenerationProfile } from '../generation/profiles';
 import type { GeometryCommand, MeshCommand, RenderFrame, Vec2, Vec3 } from './frame';
 
 export interface FrameRenderer {
@@ -143,8 +143,8 @@ export function createCanvasCommandRenderer(canvas: HTMLCanvasElement): FrameRen
         for (let y = 1; y < internal.height; y += 2) context.fillRect(0, y, internal.width, 1);
       }
 
-      const width = Math.max(canvas.clientWidth, 1);
-      const height = Math.max(canvas.clientHeight, 1);
+      const width = Math.max(canvas.clientWidth || canvas.width, 1);
+      const height = Math.max(canvas.clientHeight || canvas.height, 1);
       if (canvas.width !== width || canvas.height !== height) {
         canvas.width = width;
         canvas.height = height;
@@ -167,3 +167,65 @@ export function createCanvasCommandRenderer(canvas: HTMLCanvasElement): FrameRen
   };
 }
 
+export interface GenerationRendererStats {
+  readonly allocatedTargets: number;
+  readonly renderedGenerations: number;
+}
+
+/**
+ * Preallocates one render target per hardware generation and composites exactly
+ * one target normally or two while a transition is active.
+ */
+export function createGenerationCanvasRenderer(canvas: HTMLCanvasElement): FrameRenderer & GenerationRendererStats {
+  const output = canvas.getContext('2d', { alpha: false });
+  if (!output) throw new Error('Canvas 2D is unavailable');
+  const targets = new Map<string, { canvas: HTMLCanvasElement; renderer: FrameRenderer }>();
+  for (const [generation, profile] of Object.entries(HARDWARE_GENERATION_PROFILES)) {
+    const target = document.createElement('canvas');
+    target.width = profile.video.internalWidth;
+    target.height = profile.video.internalHeight;
+    targets.set(generation, { canvas: target, renderer: createCanvasCommandRenderer(target) });
+  }
+  let renderedGenerations = 0;
+
+  return {
+    get allocatedTargets() {
+      return targets.size;
+    },
+    get renderedGenerations() {
+      return renderedGenerations;
+    },
+    render(frame, _profile, generation): void {
+      const renderIds = generation.renderGenerations();
+      renderedGenerations = renderIds.length;
+      const width = Math.max(canvas.clientWidth || canvas.width, 1);
+      const height = Math.max(canvas.clientHeight || canvas.height, 1);
+      if (canvas.width !== width || canvas.height !== height) {
+        canvas.width = width;
+        canvas.height = height;
+      }
+      output.clearRect(0, 0, width, height);
+      renderIds.forEach((id, index) => {
+        const target = targets.get(id);
+        if (!target) return;
+        target.renderer.render(frame, HARDWARE_GENERATION_PROFILES[id], generation);
+        output.save();
+        output.globalAlpha = renderIds.length === 1
+          ? 1
+          : index === 0 ? 1 - generation.transition.blend : generation.transition.blend;
+        output.drawImage(target.canvas, 0, 0, width, height);
+        output.restore();
+      });
+    },
+    resize(): void {
+      canvas.width = Math.max(canvas.clientWidth || canvas.width, 1);
+      canvas.height = Math.max(canvas.clientHeight || canvas.height, 1);
+    },
+    dispose(): void {
+      for (const target of targets.values()) target.renderer.dispose();
+      targets.clear();
+      canvas.width = 1;
+      canvas.height = 1;
+    },
+  };
+}

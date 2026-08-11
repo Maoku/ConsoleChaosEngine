@@ -11,6 +11,7 @@ import {
 import { adaptConsoleChaosLevel } from '@/content/level-adapter';
 import type { LevelFile } from '@/level/schema';
 import { createSession } from '@/gameplay/session';
+import { buildConsoleChaosFrame } from '@/presentation/frame';
 
 /**
  * Console Chaos の決定的セッションを engine lifecycle へ載せるアダプタ。
@@ -47,20 +48,7 @@ export function createConsoleChaosModule(level: LevelFile): GameModule {
           session.tick(snapshot);
         },
         buildRenderFrame(frame: RenderFrame): void {
-          const profile = session.profile;
-          frame.camera = {
-            projection: profile.video.projection === 'ortho2d' ? 'orthographic' : 'perspective',
-            position: [session.player.position[0], 18, session.player.position[2]],
-            target: session.player.position,
-            zoom: 16,
-          };
-          frame.backgrounds.push({ color: '#22405a' });
-          frame.sprites.push({
-            id: 'player',
-            position: session.player.position,
-            size: [session.player.halfExtents[0] * 2, session.player.halfExtents[2] * 2],
-            color: '#f4dc7a',
-          });
+          buildConsoleChaosFrame(frame, session, level, context);
         },
         dispose(): void {
           actions.reset();
