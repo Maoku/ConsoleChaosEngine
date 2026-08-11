@@ -21,6 +21,7 @@ describe('Console Chaos production-host lifecycle', () => {
     const baseAudio = createNullAudioService(132);
     const audio = {
       ...baseAudio,
+      unlock: vi.fn(async () => {}),
       setGenerationVoiceLimit: vi.fn(),
       setGenerationProfile: vi.fn(),
       playScore: vi.fn(),
@@ -51,6 +52,8 @@ describe('Console Chaos production-host lifecycle', () => {
     }));
 
     expect(session).not.toBeNull();
+    await host.context.audio.unlock();
+    expect(audio.unlock).toHaveBeenCalledOnce();
     expect(audio.playScore).toHaveBeenCalledOnce();
     expect(audio.setGenerationProfile.mock.calls.at(-1)?.[0].id).toBe('PS1');
 
@@ -62,11 +65,25 @@ describe('Console Chaos production-host lifecycle', () => {
     expect(renderer.frames.at(-1)?.meshes).toBeGreaterThan(0);
     expect(renderer.frames.at(-1)?.sprites).toBeGreaterThan(0);
 
-    input.set(createDeviceSnapshot(['Digit4']));
-    host.frame(34);
-    expect(host.context.generation.generation).toBe('PS2');
-    expect(renderer.frames.at(-1)?.generation).toBe('PS2');
-    expect(audio.setGenerationProfile.mock.calls.at(-1)?.[0].id).toBe('PS2');
+    let now = 17;
+    for (const [key, generation] of [
+      ['Digit1', 'FC'],
+      ['Digit2', 'SFC'],
+      ['Digit3', 'PS1'],
+      ['Digit4', 'PS2'],
+    ] as const) {
+      input.set(createDeviceSnapshot([key]));
+      host.frame(now += 17);
+      input.set(createDeviceSnapshot());
+      host.frame(now += 17);
+      for (let frame = 0; frame < 21; frame++) host.frame(now += 17);
+      expect(host.context.generation.generation).toBe(generation);
+      expect(host.context.generation.transition.active).toBe(false);
+      expect(renderer.frames.at(-1)?.generation).toBe(generation);
+    }
+    expect(audio.setGenerationProfile.mock.calls.map(([profile]) => profile.id)).toEqual([
+      'PS1', 'FC', 'SFC', 'PS1', 'PS2',
+    ]);
 
     const tickBeforeReset = activeSession.tickIndex;
     activeSession.reset();
@@ -78,8 +95,8 @@ describe('Console Chaos production-host lifecycle', () => {
     host.dispose();
     host.dispose();
     expect(lifecycle.create).toBe(1);
-    expect(lifecycle.update).toBe(2);
-    expect(lifecycle.render).toBe(3);
+    expect(lifecycle.update).toBeGreaterThan(80);
+    expect(lifecycle.render).toBe(lifecycle.update + 1);
     expect(lifecycle.dispose).toBe(1);
     expect(disposedModule).toBe('console-chaos');
     expect(audio.dispose).toHaveBeenCalledOnce();
