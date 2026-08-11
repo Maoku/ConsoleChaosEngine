@@ -60,6 +60,12 @@ export interface SkinnedMeshCommand {
 
 export interface SpriteCommand {
   id: string;
+  /**
+   * Draw in generation-target pixels instead of world space. In this mode
+   * position.x/y are the sprite centre measured from the target's top-left
+   * and size is measured in target pixels.
+   */
+  screenSpace?: boolean;
   position: Vec3;
   size: Vec2;
   color: Color;

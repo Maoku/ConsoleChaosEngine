@@ -19,7 +19,9 @@ describe('racing public-engine integration', () => {
     expect(host.context.generation.generation).toBe('PS2');
     expect(renderer.frames.at(-1)?.generation).toBe('PS2');
     expect(renderer.frames.at(-1)?.meshes).toBeGreaterThan(2);
-    expect(renderer.frames.at(-1)?.sprites).toBe(0);
+    expect(renderer.frames.at(-1)?.sprites).toBeGreaterThanOrEqual(4);
+    expect(renderer.frames.at(-1)?.rasterSurfaces).toBe(1);
+    expect(renderer.frames.at(-1)?.affineSurfaces).toBe(1);
     expect(renderer.frames.at(-1)?.overlays).toBe(0);
     expect(audio.currentSourceKey).toBe('streaming');
     expect(audio.scores.length).toBeGreaterThanOrEqual(2);

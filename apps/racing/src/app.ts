@@ -8,7 +8,7 @@ import {
 import { createRacingAudioPresenter } from './audio/presenter';
 import { createRacingActionMap, type RacingActionDefinition } from './config/actions';
 import { RACING_MASTER_SCORE } from './content/audio/score';
-import { buildRacingFrame } from './presentation/frame';
+import { createRacingPresentation } from './presentation/frame';
 import { createRaceState, restartRace, updateRace, type RaceEvent, type RaceState } from './gameplay/race';
 
 const pressed = (button: ButtonActionValue): boolean => button.pressed;
@@ -25,6 +25,7 @@ export function createRacingGameModule(hooks: RacingModuleHooks = {}): GameModul
     async create(context) {
       const actions = createRacingActionMap();
       const state = createRaceState();
+      const presentation = createRacingPresentation();
       const audio = createRacingAudioPresenter(context.audio, RACING_MASTER_SCORE);
       let input: ActionSnapshot<RacingActionDefinition> | null = null;
       audio.start(context.generation.profile);
@@ -57,7 +58,7 @@ export function createRacingGameModule(hooks: RacingModuleHooks = {}): GameModul
           hooks.onFixedUpdate?.(state, context.generation.generation, events);
         },
         buildRenderFrame(frame): void {
-          buildRacingFrame(frame, state, context);
+          presentation.build(frame, state);
         },
         dispose(): void {
           actions.reset();

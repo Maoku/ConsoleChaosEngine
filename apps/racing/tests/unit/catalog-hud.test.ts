@@ -9,7 +9,17 @@ describe('Racing production presentation bootstrap', () => {
     const manifest = createRacingRenderManifest();
     expect(manifest.models).toEqual([]);
     expect(manifest.geometries).toEqual([{ kind: 'box' }]);
+    expect(manifest.atlases).toEqual([
+      { url: 'assets/gen1/sprites/cars.png', columns: 3, rows: 2 },
+      { url: 'assets/gen2/sprites/cars.png', columns: 3, rows: 2 },
+    ]);
     expect(manifest.textures.map((asset) => asset.url)).toContain(RACING_FALLBACK_TEXTURE);
+    expect(manifest.textures.map((asset) => asset.url)).toEqual(expect.arrayContaining([
+      'assets/gen1/backgrounds/coast.png',
+      'assets/gen1/road/road.png',
+      'assets/gen2/backgrounds/coast.png',
+      'assets/gen2/tiles/circuit.png',
+    ]));
     for (const generation of GENERATION_IDS) {
       expect(manifest.fallbackTextures[generation]).toBe(RACING_FALLBACK_TEXTURE);
     }

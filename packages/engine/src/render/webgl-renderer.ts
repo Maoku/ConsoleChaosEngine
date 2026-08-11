@@ -234,6 +234,7 @@ async function createGpuBackend(
   const state: StateCache = createStateCache(ctx);
   const camera = createCamera('perspective');
   const modelMatrix = mat4.create();
+  const spriteProjection = mat4.create();
   const partMatrix = mat4.create();
   const localCamera = new Float32Array(3);
   const materialById = new Map<string, MaterialCommand>();
@@ -469,6 +470,15 @@ async function createGpuBackend(
       cameraUniformPosition[axis] = active.camera.position[axis]!;
     }
     camera.update(profile.video.internalWidth / profile.video.internalHeight);
+    mat4.ortho(
+      spriteProjection,
+      0,
+      profile.video.internalWidth,
+      profile.video.internalHeight,
+      0,
+      -1,
+      1,
+    );
     if (appliedFilter !== profile.video.textureFilter) {
       for (const texture of textures.values()) texture.setFilter(profile.video.textureFilter);
       appliedFilter = profile.video.textureFilter;
@@ -740,7 +750,7 @@ async function createGpuBackend(
     sceneProgram.use();
     sceneProgram.setUniforms({
       uModel: modelMatrix as Float32Array,
-      uViewProjection: camera.viewProjection as Float32Array,
+      uViewProjection: (command.screenSpace ? spriteProjection : camera.viewProjection) as Float32Array,
       uResolution: [profile.video.internalWidth, profile.video.internalHeight],
       uQuantizeStep: profile.video.vertexQuantize,
       uAffineAmount: profile.video.affineTexture ? 1 : 0,
