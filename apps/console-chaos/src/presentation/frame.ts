@@ -20,6 +20,11 @@ import { PIXELS_PER_WORLD_UNIT, type LevelEntity, type LevelFile, type Vec3Tuple
 import { sectorAt } from '@/level/sector';
 import { materialFor, type Material } from '@/render/material';
 import { spriteCellOf } from '@/render/sprite_sheet';
+import {
+  appendColliderCommands,
+  collectColliderBoxes,
+  type ColliderBox,
+} from '@/debug/collider_view';
 
 const ROLE_COLORS = {
   background: '#728f62',
@@ -34,6 +39,9 @@ const BACKDROP_FADE_SECONDS = 0.25;
 const PLANE_RADIUS = 24;
 
 export interface ConsoleChaosPresentation {
+  readonly collidersEnabled: boolean;
+  readonly colliderBoxes: readonly ColliderBox[];
+  toggleColliders(): boolean;
   fixedUpdate(session: Session): void;
   build(frame: RenderFrame, session: Session, context: GameContext): void;
 }
@@ -124,8 +132,21 @@ export function createConsoleChaosPresentation(level: LevelFile): ConsoleChaosPr
   let animationSeconds = 0;
   let clip: PlayerClip = 'idle';
   let backdropBrightness = 1;
+  let collidersEnabled = false;
+  let colliderBoxes: ColliderBox[] = [];
 
   return {
+    get collidersEnabled() {
+      return collidersEnabled;
+    },
+    get colliderBoxes() {
+      return colliderBoxes;
+    },
+    toggleColliders(): boolean {
+      collidersEnabled = !collidersEnabled;
+      if (!collidersEnabled) colliderBoxes = [];
+      return collidersEnabled;
+    },
     fixedUpdate(session): void {
       const video = session.profile.hardware.video;
       const halfView = video.internalHeight / (2 * PIXELS_PER_WORLD_UNIT);
@@ -286,6 +307,8 @@ export function createConsoleChaosPresentation(level: LevelFile): ConsoleChaosPr
         intensity: 1,
         radius: 7,
       });
+      colliderBoxes = collidersEnabled ? collectColliderBoxes(session, frame) : [];
+      if (colliderBoxes.length > 0) appendColliderCommands(frame, colliderBoxes);
     },
   };
 }

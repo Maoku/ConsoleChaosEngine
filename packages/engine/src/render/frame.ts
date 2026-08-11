@@ -32,6 +32,7 @@ export interface MeshCommand {
   transform: TransformCommand;
   color: Color;
   stroke?: Color;
+  wireframe?: boolean;
   layer?: number;
   asset?: string;
   material?: string;

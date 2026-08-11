@@ -16,6 +16,7 @@ import { createConsoleChaosModule } from './app';
 import type { ConsoleAudioPresenter } from './audio/presenter';
 import { songOf } from './audio/songs';
 import { bgmStatusText, createBgmControl } from './debug/bgm_control';
+import { createColliderHud } from './debug/collider_hud';
 import { createNoticeHud } from './debug/notice_hud';
 import {
   createConsoleDebugModule,
@@ -26,6 +27,7 @@ import { createPlaytestLog, saveStoredRecords, storedRecords, type PlaytestLog }
 import { createPlaytestHud } from './debug/playtest_hud';
 import { loadLevel } from './level/loader';
 import { createConsoleChaosRenderManifest } from './presentation/catalog';
+import type { ConsoleChaosPresentation } from './presentation/frame';
 import { KEY_COLORS } from './render/key_palette';
 import type { Session } from './gameplay/session';
 import { createHud, hudModelFromSession, type Hud } from './ui/hud';
@@ -91,10 +93,12 @@ if (isMini) {
 const resize = observeCanvasResize(canvas, () => renderer.resize());
 const unlock = installAudioUnlock(document, () => audio.unlock());
 const playtestHud = isMini ? createPlaytestHud() : null;
+const colliderHud = isMini ? createColliderHud() : null;
 fitCanvasToStage();
 const notice = createNoticeHud();
 let session: Session | null = null;
 let audioPresenter: ConsoleAudioPresenter | null = null;
+let presentation: ConsoleChaosPresentation | null = null;
 let hud: Hud | null = null;
 let playtest: PlaytestLog | null = null;
 const bgm = isMini
@@ -119,9 +123,10 @@ const module: GameModule = debugScene
   ? createConsoleDebugModule(debugScene, { cycleQuality: cycleCrtQuality })
   : createConsoleChaosModule(level, {
       initialSong: initialSong.score,
-      onCreate(created, presenter) {
+      onCreate(created, presenter, createdPresentation) {
         session = created;
         audioPresenter = presenter;
+        presentation = createdPresentation;
         bgm?.sync();
         hud = createHud(canvas);
         playtest = createPlaytestLog(created, levelId);
@@ -130,9 +135,13 @@ const module: GameModule = debugScene
         hud?.update(hudModelFromSession(current));
         playtest?.update();
       },
+      onRender(current, currentPresentation) {
+        colliderHud?.update(current, currentPresentation.colliderBoxes);
+      },
       onDispose(current) {
         if (session === current) session = null;
         audioPresenter = null;
+        presentation = null;
         playtest?.keep();
         hud?.dispose();
         hud = null;
@@ -150,6 +159,7 @@ window.addEventListener('resize', windowResize);
 const keydown = (event: KeyboardEvent): void => {
   const key = event.key.toLowerCase();
   if (key === 'h') session?.requestHint();
+  if (key === 'c') presentation?.toggleColliders();
   if (key === 'b') bgm?.nextSong();
   if (key === 'm') bgm?.toggleMute();
   if (key === 'p') playtest?.save();
@@ -173,6 +183,7 @@ const pagehide = (): void => {
   unlock.dispose();
   notice.dispose();
   playtestHud?.dispose();
+  colliderHud?.dispose();
   host.dispose();
 };
 window.addEventListener('pagehide', pagehide, { once: true });

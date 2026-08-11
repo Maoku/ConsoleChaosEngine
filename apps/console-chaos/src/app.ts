@@ -11,7 +11,7 @@ import {
 import { adaptConsoleChaosLevel } from '@/content/level-adapter';
 import type { LevelFile } from '@/level/schema';
 import { createSession } from '@/gameplay/session';
-import { createConsoleChaosPresentation } from '@/presentation/frame';
+import { createConsoleChaosPresentation, type ConsoleChaosPresentation } from '@/presentation/frame';
 import { createConsoleAudioPresenter } from '@/audio/presenter';
 import type { ConsoleAudioPresenter } from '@/audio/presenter';
 import { createCueTracker, pollCues } from '@/gameplay/audio_cues';
@@ -21,9 +21,9 @@ import type { Score } from '@console-chaos/engine';
 
 export interface ConsoleChaosModuleHooks {
   initialSong?: Score;
-  onCreate?(session: Session, audio: ConsoleAudioPresenter): void;
+  onCreate?(session: Session, audio: ConsoleAudioPresenter, presentation: ConsoleChaosPresentation): void;
   onFixedUpdate?(session: Session): void;
-  onRender?(session: Session): void;
+  onRender?(session: Session, presentation: ConsoleChaosPresentation): void;
   onDispose?(session: Session): void;
 }
 
@@ -50,7 +50,7 @@ export function createConsoleChaosModule(level: LevelFile, hooks: ConsoleChaosMo
       const disconnectAudio = context.events.on('generationSwitch', (event) => {
         audio.applyGeneration(event.toProfile);
       });
-      hooks.onCreate?.(session, audio);
+      hooks.onCreate?.(session, audio, presentation);
       let snapshot = createNeutralConsoleChaosActions();
       return {
         prepareFixedUpdate({ dtMs }): void {
@@ -71,7 +71,7 @@ export function createConsoleChaosModule(level: LevelFile, hooks: ConsoleChaosMo
         },
         buildRenderFrame(frame: RenderFrame): void {
           presentation.build(frame, session, context);
-          hooks.onRender?.(session);
+          hooks.onRender?.(session, presentation);
         },
         dispose(): void {
           actions.reset();

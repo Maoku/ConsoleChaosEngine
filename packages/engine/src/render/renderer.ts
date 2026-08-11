@@ -114,8 +114,8 @@ export function createCanvasCommandRenderer(canvas: HTMLCanvasElement): FrameRen
         if (mesh.visible === false) continue;
         pathGeometry(mesh.geometry, mesh, frame);
         context.fillStyle = palette(mesh.color);
-        if (mesh.geometry.kind !== 'polyline') context.fill();
-        if (mesh.stroke || mesh.geometry.kind === 'polyline') {
+        if (!mesh.wireframe && mesh.geometry.kind !== 'polyline') context.fill();
+        if (mesh.wireframe || mesh.stroke || mesh.geometry.kind === 'polyline') {
           context.strokeStyle = palette(mesh.stroke ?? mesh.color);
           context.stroke();
         }

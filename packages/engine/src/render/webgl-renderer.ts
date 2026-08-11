@@ -108,6 +108,7 @@ interface Shape {
   vao: VertexArray;
   count: number;
   triangles: number;
+  mode?: 'triangles' | 'lines';
   local?: { matrix: mat4; inverse: mat4 };
   sortable?: {
     positions: Float32Array;
@@ -255,7 +256,7 @@ async function createGpuBackend(
   const backgroundProgram: Program = createProgram(ctx, 'command-background', backdropVertex, backdropFragment);
   disposables.push(sceneProgram, skinProgram, backgroundProgram);
 
-  function buildInterleaved(vertices: Float32Array, indices: Uint16Array): Shape {
+  function buildInterleaved(vertices: Float32Array, indices: Uint16Array, mode: 'triangles' | 'lines' = 'triangles'): Shape {
     const vbo = createBuffer(ctx, 'vertex', vertices);
     const ibo = createBuffer(ctx, 'index', indices);
     const vao = createVertexArray(ctx, [
@@ -264,7 +265,7 @@ async function createGpuBackend(
       { location: 2, size: 2, buffer: vbo, strideBytes: 32, offsetBytes: 24 },
     ], { buffer: ibo, type: 'ushort' });
     disposables.push(vbo, ibo, vao);
-    return { vao, count: indices.length, triangles: indices.length / 3 };
+    return { vao, count: indices.length, triangles: mode === 'triangles' ? indices.length / 3 : 0, mode };
   }
 
   function buildPrimitive(primitive: GltfPrimitive, skinned: boolean, sortable: boolean): Shape {
@@ -339,6 +340,19 @@ async function createGpuBackend(
   const shadowMesh = (() => {
     const mesh = quadMesh();
     return buildInterleaved(mesh.vertices, mesh.indices);
+  })();
+  const wireframeMesh = (() => {
+    const corners: Array<readonly [number, number, number]> = [
+      [-0.5, -0.5, -0.5], [0.5, -0.5, -0.5], [0.5, -0.5, 0.5], [-0.5, -0.5, 0.5],
+      [-0.5, 0.5, -0.5], [0.5, 0.5, -0.5], [0.5, 0.5, 0.5], [-0.5, 0.5, 0.5],
+    ];
+    const vertices = new Float32Array(corners.flatMap(([x, y, z]) => [x, y, z, 0, 1, 0, 0, 0]));
+    const edges = new Uint16Array([
+      0, 1, 1, 2, 2, 3, 3, 0,
+      4, 5, 5, 6, 6, 7, 7, 4,
+      0, 4, 1, 5, 2, 6, 3, 7,
+    ]);
+    return buildInterleaved(vertices, edges, 'lines');
   })();
 
   const atlases = new Map<string, AtlasGpu>();
@@ -420,7 +434,7 @@ async function createGpuBackend(
 
   function drawShape(shape: Shape): void {
     shape.vao.bind();
-    gl.drawElements(gl.TRIANGLES, shape.count, shape.vao.indexType, 0);
+    gl.drawElements(shape.mode === 'lines' ? gl.LINES : gl.TRIANGLES, shape.count, shape.vao.indexType, 0);
     triangleCount += shape.triangles;
   }
 
@@ -516,7 +530,7 @@ async function createGpuBackend(
     }
   }
 
-  function drawMesh(mesh: MeshCommand, profile: HardwareGenerationProfile, active: RenderFrame): void {
+  function drawMesh(mesh: MeshCommand, profile: HardwareGenerationProfile, active: RenderFrame, parts?: readonly Shape[]): void {
     const material = materialFor(mesh);
     transformFor(mesh, material, active);
     sceneProgram.use();
@@ -538,7 +552,7 @@ async function createGpuBackend(
       uAlphaCutoff: material.alphaCutoff ?? 0,
     });
     const shouldSort = material.polygonSort && !profile.video.depthBuffer && profile.video.projection === 'perspective3d';
-    for (const part of meshParts(mesh)) {
+    for (const part of parts ?? meshParts(mesh)) {
       if (part.local) mat4.multiply(partMatrix, modelMatrix, part.local.matrix);
       sceneProgram.setUniforms({ uModel: (part.local ? partMatrix : modelMatrix) as Float32Array });
       if (shouldSort && part.sortable) {
@@ -559,6 +573,7 @@ async function createGpuBackend(
     for (let index = 0; index < active.meshes.length; index++) {
       const mesh = active.meshes[index]!;
       if (mesh.visible === false || !applies(mesh, profile.id)) continue;
+      if (mesh.wireframe) continue;
       if ((mesh.layer ?? 0) < 0) continue;
       const material = materialFor(mesh);
       if ((material.blendMode === 'additive' || material.blendMode === 'alpha') !== translucent) continue;
@@ -737,7 +752,7 @@ async function createGpuBackend(
     drawBackground(profile, active);
     sceneProgram.use();
     for (const mesh of active.meshes) {
-      if (mesh.visible === false || !applies(mesh, profile.id) || (mesh.layer ?? 0) >= 0) continue;
+      if (mesh.visible === false || !applies(mesh, profile.id) || mesh.wireframe || (mesh.layer ?? 0) >= 0) continue;
       const material = materialFor(mesh);
       if (material.blendMode !== 'additive' && material.blendMode !== 'alpha') drawMesh(mesh, profile, active);
     }
@@ -755,6 +770,20 @@ async function createGpuBackend(
       for (let slot = 0; slot < translucent; slot++) drawMesh(active.meshes[order[slot]!]!, profile, active);
       fog[3] = density;
       state.apply({ blend: 'none', depthWrite: profile.video.depthBuffer });
+    }
+    const wireframes = active.meshes.filter((mesh) => mesh.wireframe && mesh.visible !== false && applies(mesh, profile.id));
+    if (wireframes.length > 0) {
+      state.apply({ depthTest: false, depthWrite: false, blend: 'alpha', cull: 'none' });
+      const density = fog[3];
+      fog[3] = 0;
+      for (const mesh of wireframes) drawMesh(mesh, profile, active, [wireframeMesh]);
+      fog[3] = density;
+      state.apply({
+        depthTest: profile.video.depthBuffer,
+        depthWrite: profile.video.depthBuffer,
+        blend: 'none',
+        cull: 'back',
+      });
     }
   }
 
