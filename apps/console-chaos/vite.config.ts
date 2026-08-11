@@ -1,5 +1,6 @@
 import { defineConfig } from 'vite';
 import { fileURLToPath } from 'node:url';
+import { engineSourceEntry } from '../../vite.config.shared';
 import { capturePlugin } from './tools/vite-plugin-capture';
 
 export default defineConfig({
@@ -9,6 +10,7 @@ export default defineConfig({
   resolve: {
     alias: {
       '@': fileURLToPath(new URL('./src', import.meta.url)),
+      '@console-chaos/engine': engineSourceEntry,
     },
   },
   build: {

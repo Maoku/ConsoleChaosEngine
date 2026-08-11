@@ -29,6 +29,8 @@
     "check:reference": "tsx tools/check-reference-snapshot.ts",
     "build:engine": "npm run build -w @console-chaos/engine",
     "build:testkit": "npm run build -w @console-chaos/engine-testkit",
+    "pack:distribution": "node tools/pack-distribution.mjs",
+    "verify:distribution": "npm run pack:distribution && node tools/verify-distribution.mjs",
     "build:console": "npm run build -w @console-chaos/console-chaos",
     "build:racing": "npm run build -w @console-chaos/racing",
     "verify:console-baseline": "npm run verify -w @console-chaos/console-chaos",

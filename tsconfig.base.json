@@ -15,7 +15,11 @@
     "resolveJsonModule": true,
     "skipLibCheck": true,
     "esModuleInterop": true,
-    "forceConsistentCasingInFileNames": true
+    "forceConsistentCasingInFileNames": true,
+    "baseUrl": ".",
+    "paths": {
+      "@console-chaos/engine": ["packages/engine/src/index.ts"],
+      "@console-chaos/engine-testkit": ["packages/engine-testkit/src/index.ts"]
+    }
   }
 }
-

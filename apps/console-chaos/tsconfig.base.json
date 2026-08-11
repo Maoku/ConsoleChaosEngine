@@ -22,7 +22,8 @@
 
     "baseUrl": ".",
     "paths": {
-      "@/*": ["src/*"]
+      "@/*": ["src/*"],
+      "@console-chaos/engine": ["../../packages/engine/src/index.ts"]
     }
   }
 }

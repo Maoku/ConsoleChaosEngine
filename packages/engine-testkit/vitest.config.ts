@@ -1,15 +1,14 @@
-import { fileURLToPath } from "node:url";
 import { defineConfig } from "vitest/config";
 import { engineSourceEntry } from "../../vite.config.shared";
 
 export default defineConfig({
   resolve: {
     alias: {
-      "@racing": fileURLToPath(new URL("./src", import.meta.url)),
       "@console-chaos/engine": engineSourceEntry,
     },
   },
   test: {
+    include: ["tests/**/*.test.ts"],
     environment: "node",
   },
 });

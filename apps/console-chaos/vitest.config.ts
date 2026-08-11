@@ -1,10 +1,12 @@
 import { defineConfig } from 'vitest/config';
 import { fileURLToPath } from 'node:url';
+import { engineSourceEntry } from '../../vite.config.shared';
 
 export default defineConfig({
   resolve: {
     alias: {
       '@': fileURLToPath(new URL('./src', import.meta.url)),
+      '@console-chaos/engine': engineSourceEntry,
     },
   },
   test: {

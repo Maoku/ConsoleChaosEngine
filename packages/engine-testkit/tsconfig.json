@@ -4,6 +4,5 @@
     "lib": ["ES2022", "DOM"],
     "types": ["vitest/globals"]
   },
-  "include": ["src", "tests"]
+  "include": ["src", "tests", "vitest.config.ts"]
 }
-

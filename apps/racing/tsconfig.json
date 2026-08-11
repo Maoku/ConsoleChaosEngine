@@ -5,9 +5,9 @@
     "types": ["vite/client", "vitest/globals"],
     "baseUrl": ".",
     "paths": {
-      "@racing/*": ["src/*"]
+      "@racing/*": ["src/*"],
+      "@console-chaos/engine": ["../../packages/engine/src/index.ts"]
     }
   },
   "include": ["src", "tests", "vite.config.ts", "vitest.config.ts"]
 }
-
