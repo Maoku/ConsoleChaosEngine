@@ -76,9 +76,18 @@ hold、pressure semantics を適用する。focus loss 時は browser input sour
 
 ## render / assets
 
-- `RenderFrame`: camera、mesh、skinned mesh、sprite、light、background、material、overlay の平坦な command buffer。
+- `RenderFrame`: camera、mesh、skinned mesh、sprite、light、background、material、overlay、
+  `rasterSurfaces`、`affineSurfaces` の平坦な command buffer。surface は内部解像度の左上原点pixel rectを使い、
+  FCの走査線tableとSFCのUV affine transformをappから受け取る。Engineはroad/raceなどの意味を解釈しない。
+- `SpriteCommand.screenSpace`: 省略時は従来どおりworld plane。`true`では`position.x/y`と`size`を
+  generation target pixelとして描く。raster/affine surface上のHUDではないgame spriteに使用できる。
+- `LightCommand`: ambient/directional/pointをgeneration mask付きで指定する。directionalは`direction`を使う。
+  commandがない場合は従来の固定lightへfallbackする。
+- `MaterialCommand.environmentTexture/environmentStrength`: equirectangular 2D reflectionを指定する。
+  `profile.video.environmentMap`がfalseならrendererがstrengthを0にする。
 - `createGenerationWebGlRenderer()`: production renderer。4世代のFBO/postfx targetを起動時に確保し、
-  通常1世代、transition 中だけ旧/新2世代を描画・合成する。Console/Racingの語彙は持たない。
+  通常1世代、transition 中だけ旧/新2世代を描画・合成する。描画順は
+  background → screen surface → mesh → sprite → palette/CRT → transition compose。Console/Racingの語彙は持たない。
 - `createGenerationCanvasRenderer()`: testkitや軽量fallback向けのgeneric command renderer。
 - `AssetManager`: pending load と参照数を key ごとに共有する。text/binary/image/glTF/GPU resource を扱い、
   最後の `release()` で解放する。`restoreGpuResources()` は context 再構築時に active GPU handle を差し替える。
@@ -102,7 +111,9 @@ Racing の car/lap/race rule は各 app 内に留まる。
 ## testkit と検査
 
 `@console-chaos/engine-testkit` は manual loop、mutable input、recording renderer/audio を提供する。
+recording rendererはsurface数も記録し、recording audioはcompact toneに加えて完全な`PlayRequest`も保持する。
 production browser global を作らず module lifecycle と replay を検査できる。
 
 最終検査は root の `npm run verify`。boundary/migration fixture、resource/context-loss lifecycle、reference snapshot、
-Console bundle source map の legacy exclusion、Console/Racing双方のhost E2E、render/PCM golden、全buildを含む。
+Console bundle source map の legacy exclusion、Console/Racing双方のhost E2E、render/PCM golden、Racingのretro PNGと
+runtime car GLB fingerprint/budget検査、全buildを含む。

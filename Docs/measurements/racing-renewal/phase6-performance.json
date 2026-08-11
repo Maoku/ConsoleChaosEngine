@@ -1,0 +1,13 @@
+{
+  "frames": 180,
+  "averageFrameMs": 16.6737,
+  "p95FrameMs": 17.7,
+  "allocatedTargets": 4,
+  "renderedGenerations": 1,
+  "triangleCount": 27685,
+  "activeAssetsBeforeDispose": 13,
+  "generationListenersBeforeDispose": 1,
+  "activeAssetsAfterDispose": 0,
+  "listenersAfterDispose": 0,
+  "status": "pass"
+}
