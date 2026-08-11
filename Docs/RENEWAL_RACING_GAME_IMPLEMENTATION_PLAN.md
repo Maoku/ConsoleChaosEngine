@@ -1,10 +1,10 @@
 # Console Chaos Racing リニューアル改修計画書
 
 > 本書は [RENEWAL_RECING_GAME.md](RENEWAL_RECING_GAME.md) を、Console Chaos の完全移行後に更新された
-> `@console-chaos/engine` の実装へ合わせて再計画した改訂第2版である。
+> `@console-chaos/engine` の実装と、提供済みのGen3/Gen4車両モデルへ合わせて再計画した改訂第3版である。
 >
 > 改訂日: 2026-08-11  
-> 調査基準: `38d7be4`（`main`、worktree clean）  
+> 調査基準: `ebed515`（`main`、worktree clean）  
 > 対象: `packages/engine`、`packages/engine-testkit`、`apps/racing`
 
 ---
@@ -31,22 +31,30 @@
 3. 既存3D rendererを拡張し、directional/ambient lightとenvironment mapを実際に描画する。
 4. 1つの`RaceState`から4世代のpresentationと音を構築し、切替中も状態と音楽位相を維持する。
 
+第3・第4世代の車両は新規制作せず、次の提供モデルを正本として使用する。
+
+- Gen3: `apps/racing/data/gen3_car.glb`
+- Gen4: `apps/racing/data/gen4_car.glb`
+
+`apps/racing/data`は編集しないsource asset置き場とし、Engine互換化・texture軽量化を再現可能な変換処理で行ってから
+`apps/racing/public/assets`へruntime assetを生成する。
+
 ---
 
 ## 2. 仕様の解釈
 
 ### 2.1 世代別の完成像
 
-| 世代            | 表現                                   | 主なアセット                                | 利用するEngine機能                                  |
-| --------------- | -------------------------------------- | ------------------------------------------- | --------------------------------------------------- |
-| 第1世代 / `FC`  | 車体背後視点のラスタースクロール疑似3D | Image Gen製sprite、road strip、背景         | 新規raster surface、既存FC palette/sprite plane/CRT |
-| 第2世代 / `SFC` | アフィン変換地面による疑似3D           | Image Gen製sprite、seamless road tile、背景 | 新規affine surface、既存RGB555/sprite plane/CRT     |
-| 第3世代 / `PS1` | 低ポリゴン3Dレース                     | 低poly glTF/GLB、低解像度texture            | 既存model、quantize、affine texture、sort           |
-| 第4世代 / `PS2` | lightと環境反射を持つ3Dレース          | 高詳細glTF/GLB、environment texture         | 既存model/depth + 拡張light/environment map         |
+| 世代            | 表現                                   | 主なアセット                                 | 利用するEngine機能                                  |
+| --------------- | -------------------------------------- | -------------------------------------------- | --------------------------------------------------- |
+| 第1世代 / `FC`  | 車体背後視点のラスタースクロール疑似3D | Image Gen製sprite、road strip、背景          | 新規raster surface、既存FC palette/sprite plane/CRT |
+| 第2世代 / `SFC` | アフィン変換地面による疑似3D           | Image Gen製sprite、seamless road tile、背景  | 新規affine surface、既存RGB555/sprite plane/CRT     |
+| 第3世代 / `PS1` | 低ポリゴン3Dレース                     | `data/gen3_car.glb`の変換物、低解像度texture | 既存model、quantize、affine texture、sort           |
+| 第4世代 / `PS2` | lightと環境反射を持つ3Dレース          | `data/gen4_car.glb`の変換物、environment     | 既存model/depth + 拡張light/environment map         |
 
 原仕様のモデル節には「第1、第2世代は Image Gen」と「第1、第2世代は3Dメッシュ」が併記されている。
-本計画では後者を「第3、第4世代は3Dメッシュ」の誤記と仮定する。Phase 0で確定し、異なる場合は
-アセット方式だけを変更する。
+Gen3/Gen4用として提供された2つのGLBにより、後者を「第3、第4世代は3Dメッシュ」の誤記として確定する。
+Phase 0では原仕様へ訂正を反映し、以後この判断を再度open issueにしない。
 
 ### 2.2 全世代で共有する論理状態
 
@@ -64,6 +72,7 @@
 - 複数コース、車種選択、チューニング、ネットワーク対戦
 - 高度なタイヤ・サスペンション物理
 - PBR一式、normal map、shadow map、IBL prefilterなどの汎用material system
+- Gen3/Gen4車両形状の新規生成・置換。提供GLBの形状を正本として使う
 - runtime asset streaming。1コース分は起動時にpreloadし、終了時に一括解放する
 - Console Chaos本編の見た目・ゲーム内容・goldenの変更
 
@@ -118,9 +127,46 @@
 - `playTone()`だけのrace cue
 - WebGL production rendererでは表示されない`RenderFrame.overlays`依存HUD
 
-### 3.4 再計画時の検証結果
+### 3.4 提供車両モデルの調査結果
 
-2026-08-11、基準commit `38d7be4`で次を確認した。
+Engine本番と同じ`loadGltf()`、GLB JSON、accessor boundsを用いて確認した。
+
+| 項目                    |                                                               Gen3 |                                                               Gen4 |
+| ----------------------- | -----------------------------------------------------------------: | -----------------------------------------------------------------: |
+| source                  |                                    `apps/racing/data/gen3_car.glb` |                                    `apps/racing/data/gen4_car.glb` |
+| SHA-256                 | `5e48569c625a00cf549069be7eb90b9bd6e87b23164bb92ad06480ee84a76c2e` | `b00d08a2f81790a39bdd8fb6f5c2214cb0bf0b15a1c61edc033fbb00de846c94` |
+| file size               |                                                   17,839,564 bytes |                                                    6,049,508 bytes |
+| triangles / vertices    |                                                        978 / 1,769 |                                                    13,618 / 13,396 |
+| node / mesh / primitive |                                                          1 / 1 / 1 |                                                          1 / 1 / 1 |
+| skin / animation        |                                                              0 / 0 |                                                              0 / 0 |
+| material                |                                                                  1 |                                                                  1 |
+| bounds size             |                                              1.879 × 0.481 × 0.865 |                                              1.906 × 0.497 × 0.881 |
+| Engine loader           |                                                               pass |                                    fail: `node[0]`が`matrix`を使用 |
+
+Gen3の埋め込み画像:
+
+- normal PNG: 2048×2048、4,374,391 bytes
+- base color PNG: 2048×2048、5,207,565 bytes
+- metallic/roughness PNG: 4096×4096、8,193,403 bytes
+
+Gen4の埋め込み画像:
+
+- base color JPEG: 2048×2048、2,263,425 bytes
+- metallic/roughness JPEG: 2048×2048、1,578,508 bytes
+- normal JPEG: 2048×2048、1,399,133 bytes
+
+両モデルとも形状密度は世代別用途に適している。Gen3は低poly目標内、Gen4も暫定の数万triangle未満に収まる。
+一方、次の互換化が必須である。
+
+1. Gen4のidentity `node.matrix`をTRSへ正規化する。現行Engine loaderを緩和しない。
+2. static `MeshCommand.asset`はGLB内蔵material/textureを直接使用しないため、base colorを外部textureとして抽出する。
+3. 未使用のnormal・metallic/roughness画像をruntime GLBから除外し、load sizeを削減する。
+4. Gen3はbase colorを256px級、Gen4は1024px級へ縮小したruntime版を作る。source画像は変更しない。
+5. 両モデルは長手方向がX軸で、原点はほぼ中心にある。前方が`+X/-X`のどちらかをvisual preflightで確定する。
+
+### 3.5 再計画時の検証結果
+
+2026-08-11、Engine baselineはcommit `38d7be4`、提供モデルを含む調査基準はcommit `ebed515`で確認した。
 
 | 検査                    | 結果                              |
 | ----------------------- | --------------------------------- |
@@ -131,6 +177,8 @@
 | Racing production build | pass、JS 36.38 kB / gzip 14.19 kB |
 | root `npm run verify`   | pass、54 files / 438 tests        |
 | Console bundle gate     | pass、3 chunks / 170,300 bytes    |
+| Gen3 source preflight   | pass、978 triangles               |
+| Gen4 source preflight   | 要変換、identity `node.matrix`    |
 
 Engine・testkit・Racingの30 testとRacing buildを日常の最小baselineとし、各フェーズの完了時には、
 境界・移行・asset・production build検査とworkspace全体の438 testを含むroot `npm run verify`も通す。
@@ -150,8 +198,8 @@ Engine・testkit・Racingの30 testとRacing buildを日常の最小baselineと�
 
 - 第1世代は背後視点のraster roadであり、現行top-down polylineに見えない。
 - 第2世代は地平線以下のaffine surfaceとsprite車両で疑似3Dを表現する。
-- 第3世代は実glTF meshを使い、quantize、affine texture、depthなしsortが確認できる。
-- 第4世代はdepth、frame指定light、environment reflectionを同時に確認できる。
+- 第3世代は`gen3_car.glb`由来のmeshを使い、quantize、affine texture、depthなしsortが確認できる。
+- 第4世代は`gen4_car.glb`由来のmesh、depth、frame指定light、environment reflectionを同時に確認できる。
 - transition中は旧世代と新世代がそれぞれのcommandで描画され、論理位置が飛ばない。
 - FC/SFCのsurfaceとspriteが既存palette/RGB555/CRT passを通る。
 
@@ -369,13 +417,16 @@ Engine側:
 
 ### 6.4 第3世代
 
-- 低poly車両とコースGLBを既存manifestへ登録
-- small atlas、nearest filter、少materialを使用
+- `apps/racing/data/gen3_car.glb`から生成したruntime車両をmanifestへ登録
+- 978 triangleの提供geometryを維持し、埋め込みbase colorを256px級の外部textureへ変換
+- 未使用のnormal・metallic/roughness画像をruntime GLBから除外
+- small texture、nearest filter、単一materialを使用
 - materialは`polygonSort: true`、profileは既存quantize/affine texture/depthなしを適用
 - cameraはplayer背後追従、表示揺れはpresentationだけで加える
 
 受け入れ条件:
 
+- runtime車両のcanonical geometry fingerprintと978 triangleがsourceと一致
 - 通常経路で2D矩形fallbackを使わない
 - quantizeとaffine UVが走行中に視認できる
 - 同一replayのcommand順とframe captureが決定的
@@ -383,13 +434,16 @@ Engine側:
 
 ### 6.5 第4世代
 
-- 第3世代より詳細な車両・コースGLBとmesh normalを用意
+- `apps/racing/data/gen4_car.glb`のidentity matrixをTRSへ正規化したruntime車両をmanifestへ登録
+- 13,618 triangleの提供geometryとmesh normalを維持し、base colorを1024px級の外部textureへ変換
+- 未使用のnormal・metallic/roughness画像はsourceに保持し、runtime GLBからは除外
 - ambient、directional、必要ならpoint lightをframeへ積む
 - 車体materialだけにenvironment texture/strengthを設定
 - road、HUD、透明spriteには反射を一律適用しない
 
 受け入れ条件:
 
+- 変換後GLBがEngine loaderを通過し、canonical geometry fingerprintと13,618 triangleがsourceと一致
 - camera/車体headingを変えると反射位置が連続して変化
 - directional light変更でdiffuseが変化
 - PS1へ切り替えるとenvironmentとdynamic lightが無効
@@ -405,6 +459,11 @@ runtime JSON loaderは増やさず、Console Chaosと同じTypeScript catalog pa
 
 ```text
 apps/racing/src/presentation/catalog.ts
+apps/racing/data/
+  gen3_car.glb                 # 提供source。直接編集・配信しない
+  gen4_car.glb                 # 提供source。直接編集・配信しない
+apps/racing/tools/
+  prepare-car-models.ts        # sourceからruntime assetを再現生成
 apps/racing/public/assets/
   gen1/
     sprites/
@@ -440,13 +499,45 @@ apps/racing/public/assets/
 
 生成結果は確定PNG/WebPとして保存し、runtime生成に依存しない。
 
-### 7.3 第3・第4世代
+### 7.3 提供GLBの変換方針
 
-- glTF 2.0 / GLB、meter単位、forward axis、origin、UV規約を固定
-- 第3世代は数千triangle/台、256px級atlasを暫定上限
-- 第4世代は数万triangle未満/台、1024px級atlasを暫定上限
-- collisionの正本は既存track centerlineで、render meshをphysicsへ流用しない
-- representative assetを測定後に正式budgetを固定
+`apps/racing/data`の2ファイルをsource of truthとし、手作業で上書きしない。変換scriptは入力SHA-256、
+出力SHA-256、geometry fingerprint、triangle数、bounds、texture寸法をmanifestまたは検査記録へ出力する。
+geometry fingerprintはrendererが使用する`POSITION/NORMAL/TEXCOORD_0/indices`を正規化したhashとする。
+
+Gen3変換:
+
+1. 978 triangleのposition/normal/UV/indexを保持する。
+2. 埋め込み`Baked_BaseColor`を抽出し、256px級へ縮小する。
+3. normal 2048px、metallic/roughness 4096pxをruntime GLBから除外する。
+4. 単一外部base colorを`MaterialCommand`から指定するgeometry中心のGLBを生成する。
+
+Gen4変換:
+
+1. identity `node.matrix`を削除し、既定TRSまたは明示TRSへ置換する。
+2. 13,618 triangleのposition/normal/UV/indexを保持する。TANGENTは現行rendererが使わないため出力から除外可能とする。
+3. 埋め込み`base_color`を抽出し、1024px級へ縮小する。
+4. normal、metallic/roughnessはsourceに保存するが、今回のruntime materialからは除外する。
+5. vertex normal、base color、app指定environment strengthで第4世代の車体表現を構築する。
+
+共通規則:
+
+- boundsを約1.9×0.5×0.9のsource比率から変えない。
+- 長手X軸を維持し、visual preflightで確定したfront axisの補正は`MeshCommand.transform.rotationY`へ置く。
+- player/AIは同じgeometryを共有し、tint/material差で識別する。モデルを複製loadしない。
+- collisionの正本は既存track centerlineと車両論理寸法で、render meshをphysicsへ流用しない。
+- source assetの由来、生成サービス、利用条件、取得日を`apps/racing/data/README.md`へ記録する。
+
+### 7.4 Racing専用preflight
+
+現行`apps/console-chaos/tools/gltf-preflight.ts`はConsole assetsだけを検査するため、Racing用検査を追加する。
+
+- source 2件の存在とSHA-256
+- 変換済み2件がEngine `loadGltf()`を通ること
+- source/runtimeのtriangle数、canonical geometry fingerprint、bounds差
+- node matrix、必須extension、複数UV、morph、非TRIANGLESがないこと
+- base color寸法、色空間、alpha、runtime file size
+- manifestがsourceではなく`public/assets`の変換済みfileを参照すること
 
 ---
 
@@ -546,6 +637,19 @@ apps/racing/src/
   ui/
     hud.ts
     loading.ts
+apps/racing/data/
+  gen3_car.glb
+  gen4_car.glb
+  README.md
+apps/racing/tools/
+  prepare-car-models.ts
+  check-car-models.ts
+apps/racing/public/assets/
+  gen3/models/car.glb
+  gen3/textures/car_base_color.png
+  gen4/models/car.glb
+  gen4/textures/car_base_color.webp
+  gen4/environment/circuit.webp
 ```
 
 `webgl-renderer.ts`をさらに肥大化させないよう、新shader/passの作成と純粋な計算は専用directoryへ置く。
@@ -557,19 +661,20 @@ apps/racing/src/
 
 ### Phase 0 — 仕様確定と技術spike
 
-| ID    | 作業                                      | 完了条件                            |
-| ----- | ----------------------------------------- | ----------------------------------- |
-| P0-01 | 3D meshの対象世代を確定                   | 原仕様と本書の表が一致              |
-| P0-02 | baseline test/build/browser captureを保存 | commit、結果、browser/GPU情報を記録 |
-| P0-03 | 現行pipeline上でraster 1面を描くspike     | FC postfx/transitionを通る          |
-| P0-04 | affine UV CPU式とshader prototype         | sample点が一致                      |
-| P0-05 | equirect reflection prototype             | normal/camera別の期待UVと一致       |
-| P0-06 | overlap one-shot車両音を試聴・測定        | continuous API要否を記録            |
-| P0-07 | 4世代style frameとHUD方針を確定           | Image Gen/3D量産前の承認            |
+| ID    | 作業                                      | 完了条件                             |
+| ----- | ----------------------------------------- | ------------------------------------ |
+| P0-01 | 原仕様の3D mesh対象世代を訂正             | Gen3/Gen4使用で原仕様と本書が一致    |
+| P0-02 | baseline test/build/browser captureを保存 | commit、結果、browser/GPU情報を記録  |
+| P0-03 | 現行pipeline上でraster 1面を描くspike     | FC postfx/transitionを通る           |
+| P0-04 | affine UV CPU式とshader prototype         | sample点が一致                       |
+| P0-05 | equirect reflection prototype             | normal/camera別の期待UVと一致        |
+| P0-06 | overlap one-shot車両音を試聴・測定        | continuous API要否を記録             |
+| P0-07 | 提供GLBのsource preflightと由来を記録     | stats/hash/front axis/利用条件を固定 |
+| P0-08 | 4世代style frameとHUD方針を確定           | Image Gen/asset変換前の承認          |
 
 ### Phase 1 — Racingをproduction Engineへ移行
 
-依存: P0-02、P0-07
+依存: P0-02、P0-08
 
 | ID    | 作業                                            | 主な変更先                | 完了条件                                    |
 | ----- | ----------------------------------------------- | ------------------------- | ------------------------------------------- |
@@ -616,14 +721,16 @@ apps/racing/src/
 
 依存: Phase 1、E2-06、E2-07。3D asset制作はPhase 3と並行可能。
 
-| ID    | 作業                             | 完了条件                         |
-| ----- | -------------------------------- | -------------------------------- |
-| R4-01 | PS1 low-poly car/course asset    | preflight/budget合格             |
-| R4-02 | PS1 frame builder/material       | quantize/affine/sort golden合格  |
-| R4-03 | PS2 car/course/environment asset | preflight/budget/color space合格 |
-| R4-04 | PS2 frame builder/light/material | light/reflection golden合格      |
-| R4-05 | 4世代commandを同一frameへ統合    | 全12切替で構図・state正常        |
-| R4-06 | renderer statsとbudget検査       | triangle/frame budget合格        |
+| ID    | 作業                                   | 完了条件                            |
+| ----- | -------------------------------------- | ----------------------------------- |
+| R4-01 | reproducible car変換scriptと検査を作る | sourceを変更せず同一出力を再生成    |
+| R4-02 | Gen3 GLB/base colorをruntime化         | 978 triangle、geometry hash一致     |
+| R4-03 | PS1 frame builder/material             | quantize/affine/sort golden合格     |
+| R4-04 | Gen4 matrix/base colorをruntime化      | 13,618 triangle、Engine loader合格  |
+| R4-05 | PS2 course/environment asset           | preflight/budget/color space合格    |
+| R4-06 | PS2 frame builder/light/material       | light/reflection golden合格         |
+| R4-07 | 4世代commandを同一frameへ統合          | 全12切替で構図・state正常           |
+| R4-08 | renderer statsとasset budget検査       | triangle/frame/load size budget合格 |
 
 ### Phase 5 — BGM、車両音、cue
 
@@ -642,16 +749,17 @@ apps/racing/src/
 
 依存: Phase 3、4、5
 
-| ID    | 作業                                    | 完了条件                              |
-| ----- | --------------------------------------- | ------------------------------------- |
-| Q6-01 | 3周完走E2Eを4世代で実行                 | gameplay/result/restart合格           |
-| Q6-02 | 固定replay中の全世代切替                | state/audio phase不変                 |
-| Q6-03 | 4世代画像・音声golden                   | 承認済み差分のみ                      |
-| Q6-04 | keyboard/gamepad/audioなし/fallback確認 | QA matrix合格                         |
-| Q6-05 | restart/context restore/dispose stress  | resource leak 0                       |
-| Q6-06 | 性能計測                                | 下記budget合格                        |
-| Q6-07 | docs更新                                | ENGINE_API/RACING_PROOFへ実装結果反映 |
-| Q6-08 | root verifyとproduction build           | 全検査合格                            |
+| ID    | 作業                                      | 完了条件                              |
+| ----- | ----------------------------------------- | ------------------------------------- |
+| Q6-01 | 3周完走E2Eを4世代で実行                   | gameplay/result/restart合格           |
+| Q6-02 | 固定replay中の全世代切替                  | state/audio phase不変                 |
+| Q6-03 | 4世代画像・音声golden                     | 承認済み差分のみ                      |
+| Q6-04 | keyboard/gamepad/audioなし/fallback確認   | QA matrix合格                         |
+| Q6-05 | restart/context restore/dispose stress    | resource leak 0                       |
+| Q6-06 | 性能計測                                  | 下記budget合格                        |
+| Q6-07 | docs更新                                  | ENGINE_API/RACING_PROOFへ実装結果反映 |
+| Q6-08 | Racing model preflightをroot verifyへ追加 | source/runtime差分検出が機能          |
+| Q6-09 | root verifyとproduction build             | 全検査合格                            |
 
 ---
 
@@ -672,6 +780,9 @@ apps/racing/src/
 ### 11.2 Racing unit
 
 - 現行9 unit testを維持
+- source GLBのSHA-256、triangle数、boundsをfixture値と比較
+- 変換済みGen3/Gen4のEngine loader、TRS、canonical geometry fingerprintを検査
+- manifestが`apps/racing/data`を直接参照しないことを検査
 - `RaceVisualState`がRaceStateを変更しない
 - FC scanline tableの直線/左右curve/off-track
 - SFC matrixのheading/progress変化
@@ -683,6 +794,7 @@ apps/racing/src/
 ### 11.3 Browser/golden
 
 - 4世代 × start straight / left / right / AI near / resultの最低20画像
+- PS1 captureで`gen3_car.glb`由来、PS2 captureで`gen4_car.glb`由来のsilhouetteを確認
 - PS1 quantize/affine texture on、PS2 light/environment onの比較画像
 - 4世代各2小節のPCM measurement
 - cold load、404、audio unlock failure、WebGL context restore
@@ -707,6 +819,9 @@ golden更新は旧・新比較と理由をreviewし、自動更新だけで承�
 | allocation    | scanline typed array、texture、shaderのsteady-state毎frame確保なし |
 | shader        | 起動時compile。generation switch時のcompile 0                      |
 | asset         | restart 10回、restore 10回、dispose後active/GPU 0                  |
+| Gen3 car      | runtime GLB + base color合計1 MiB以下を初期目標                    |
+| Gen4 car      | runtime GLB + base color合計4 MiB以下を初期目標                    |
+| production    | `apps/racing/data`のsource GLBをdistへ含めない                     |
 | audio         | active voiceがprofile上限内、dispose後scheduled voice 0            |
 
 ---
@@ -752,6 +867,7 @@ Phase 6: integration / QA / docs
 | WebGL overlay passを追加                       | Racing HUDをapp所有DOMへ移す                           |
 | normal/roughnessを含むmaterial拡張             | equirect map + reflection strengthだけを追加           |
 | 世代別camera APIを追加                         | raster/affineはscreen-space、PS1/PS2は共通cameraで回避 |
+| Gen3/Gen4車両を新規制作                        | `apps/racing/data`の提供GLBを再現可能に変換して使用    |
 
 この削減により、Engine変更は既存pipelineの差分としてreviewでき、Console Chaos回帰の範囲も限定できる。
 
@@ -759,19 +875,24 @@ Phase 6: integration / QA / docs
 
 ## 15. リスクと対策
 
-| リスク                                     | 対策                                                   |
-| ------------------------------------------ | ------------------------------------------------------ |
-| surface passが既存palette/sprite合成を壊す | scene targetへ描き、postfx前後のgoldenを固定           |
-| transitionで旧世代commandが欠ける          | 1 frameへ4世代分を積み、generation mask contractをtest |
-| raster tableの転送がGC/GPU stallを起こす   | typed array/buffer再利用、p95計測                      |
-| `uvMode`など宣言だけのfieldへ誤依存        | 実際にrendererが読むfieldだけをacceptance testで固定   |
-| environment shaderがPS1/Consoleへ影響      | capability offでuniform 0、固定golden不変を検査        |
-| LightCommand接続でConsoleの陰影が変わる    | commandなしは現行固定lightへfallback                   |
-| WebGL移行でRacing HUDが消える              | Phase 1で先にDOM HUDへ移行                             |
-| one-shot車両音が途切れる                   | Phase 0で測定し、失敗時のみ汎用continuous API          |
-| Image Genの車種・角度が不統一              | style frame、角度表、代表sheet承認後に量産             |
-| glTF exportがloader subset外               | export presetとpreflightを最初の代表modelで固定        |
-| Racing変更がEngine boundaryを侵食          | boundary checkerへ新command fixtureを追加              |
+| リスク                                     | 対策                                                        |
+| ------------------------------------------ | ----------------------------------------------------------- |
+| surface passが既存palette/sprite合成を壊す | scene targetへ描き、postfx前後のgoldenを固定                |
+| transitionで旧世代commandが欠ける          | 1 frameへ4世代分を積み、generation mask contractをtest      |
+| raster tableの転送がGC/GPU stallを起こす   | typed array/buffer再利用、p95計測                           |
+| `uvMode`など宣言だけのfieldへ誤依存        | 実際にrendererが読むfieldだけをacceptance testで固定        |
+| environment shaderがPS1/Consoleへ影響      | capability offでuniform 0、固定golden不変を検査             |
+| LightCommand接続でConsoleの陰影が変わる    | commandなしは現行固定lightへfallback                        |
+| WebGL移行でRacing HUDが消える              | Phase 1で先にDOM HUDへ移行                                  |
+| one-shot車両音が途切れる                   | Phase 0で測定し、失敗時のみ汎用continuous API               |
+| Image Genの車種・角度が不統一              | style frame、角度表、代表sheet承認後に量産                  |
+| Gen4の`node.matrix`をloaderが拒否          | sourceは保持し、変換scriptでTRSへ正規化                     |
+| 埋め込みPBR画像でload sizeが肥大化         | base colorだけを縮小抽出し、runtime GLBから未使用画像を除外 |
+| static GLBの内蔵materialが描画されない     | 外部base colorとappの`MaterialCommand`を正本にする          |
+| 車体のfront axisを逆に解釈する             | sourceごとのvisual preflightとrotation fixtureを固定        |
+| Meshy由来assetの利用条件が記録されない     | `apps/racing/data/README.md`に由来・取得日・利用条件を記録  |
+| 変換で提供geometryが変質する               | canonical geometry fingerprint、triangle、boundsを比較      |
+| Racing変更がEngine boundaryを侵食          | boundary checkerへ新command fixtureを追加                   |
 
 ---
 
@@ -792,7 +913,10 @@ Phase 6: integration / QA / docs
 - [ ] 既存走行・AI・lap・rank・result・restartを維持する
 - [ ] 4世代の映像が仕様の表現方式で明確に区別できる
 - [ ] Image Gen assetのalpha/palette/seam/atlas検査が合格する
-- [ ] PS1/PS2 modelのpreflightとbudget検査が合格する
+- [ ] Gen3 runtime carが`data/gen3_car.glb`由来の978 triangleを維持する
+- [ ] Gen4 runtime carが`data/gen4_car.glb`由来の13,618 triangleを維持し、Engine loaderを通る
+- [ ] source/runtime modelのhash、geometry fingerprint、bounds、texture budget検査が合格する
+- [ ] production buildが`apps/racing/data`のsource GLBを含まない
 - [ ] BGM、vehicle sound、brake、race cueが4世代で動作する
 - [ ] 世代切替時にRaceStateとmusic phaseが維持される
 - [ ] DOM HUDが小解像度、keyboard、gamepad、resultで成立する
