@@ -4,7 +4,10 @@ import {
   createWorld,
   validateSceneReferences,
 } from '@console-chaos/engine';
-import { composeLegacyGenerationProfile } from '@/config/generation';
+import {
+  CONSOLE_CHAOS_GENERATION_THEMES,
+  composeLegacyGenerationProfile,
+} from '@/config/generation';
 import { adaptConsoleChaosLevel } from '@/content/level-adapter';
 import { PROFILES } from '@/generation/profiles';
 import { createConsoleChaosModule } from '@/app';
@@ -15,6 +18,18 @@ describe('Console Chaos engine adapter', () => {
   it('hardware profile + game theme reproduces every legacy field', () => {
     for (const generation of GENERATION_IDS) {
       expect(composeLegacyGenerationProfile(generation)).toEqual(PROFILES[generation]);
+    }
+  });
+
+  it('defines every Console theme independently from hardware profiles', () => {
+    expect(Object.keys(CONSOLE_CHAOS_GENERATION_THEMES).sort()).toEqual([...GENERATION_IDS].sort());
+    for (const generation of GENERATION_IDS) {
+      const theme = CONSOLE_CHAOS_GENERATION_THEMES[generation];
+      expect(theme.display.channel).toMatch(/^CH [1-4]$/);
+      expect(theme.availableActions).toContain('jump');
+      expect(theme).not.toHaveProperty('video');
+      expect(theme).not.toHaveProperty('audio');
+      expect(theme).not.toHaveProperty('input.directional');
     }
   });
 
