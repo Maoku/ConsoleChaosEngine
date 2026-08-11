@@ -92,9 +92,11 @@ export function createGameHost(options: GameHostOptions): GameHost {
 
   generation.onSwitch((event) => {
     audio.setGenerationVoiceLimit(generation.profile.audio.channels);
+    audio.setGenerationProfile(generation.profile);
     events.emit('generationSwitch', event);
   });
   audio.setGenerationVoiceLimit(generation.profile.audio.channels);
+  audio.setGenerationProfile(generation.profile);
 
   const loop = createFixedStepLoop({
     fixedUpdate(tick): void {

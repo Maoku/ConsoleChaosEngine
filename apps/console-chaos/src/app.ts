@@ -12,6 +12,9 @@ import { adaptConsoleChaosLevel } from '@/content/level-adapter';
 import type { LevelFile } from '@/level/schema';
 import { createSession } from '@/gameplay/session';
 import { buildConsoleChaosFrame } from '@/presentation/frame';
+import { createConsoleAudioPresenter } from '@/audio/presenter';
+import { createCueTracker, pollCues } from '@/gameplay/audio_cues';
+import { songOf } from '@/audio/songs';
 
 /**
  * Console Chaos の決定的セッションを engine lifecycle へ載せるアダプタ。
@@ -32,6 +35,12 @@ export function createConsoleChaosModule(level: LevelFile): GameModule {
         world: context.world,
         generation: context.generation,
       });
+      const audio = createConsoleAudioPresenter(context.audio, songOf(null).score);
+      const cues = createCueTracker();
+      audio.start(context.generation.profile);
+      const disconnectAudio = context.events.on('generationSwitch', (event) => {
+        audio.applyGeneration(event.toProfile);
+      });
       let snapshot = createNeutralConsoleChaosActions();
       return {
         prepareFixedUpdate({ dtMs }): void {
@@ -46,12 +55,14 @@ export function createConsoleChaosModule(level: LevelFile): GameModule {
         },
         fixedUpdate(): void {
           session.tick(snapshot);
+          for (const cue of pollCues(cues, session)) audio.playSfx(cue, context.generation.profile);
         },
         buildRenderFrame(frame: RenderFrame): void {
           buildConsoleChaosFrame(frame, session, level, context);
         },
         dispose(): void {
           actions.reset();
+          disconnectAudio();
           session.dispose();
         },
       };

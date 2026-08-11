@@ -85,10 +85,24 @@ export function createRecordingAudioService(bpm = 120): RecordingAudioService {
       return time;
     },
     clock,
+    currentSourceKey: null,
+    get barPosition() {
+      return clock.barAt(time);
+    },
     tones,
     unlock: async () => {},
     setGenerationVoiceLimit: () => {},
+    setGenerationProfile: () => {},
+    playScore: () => {},
+    useScore: () => {},
+    playOneShot: (request) => tones.push({
+      frequency: request.frequency,
+      duration: request.durationSeconds,
+      gain: request.velocity,
+    }),
     playTone: (frequency, duration, gain = 0.04) => tones.push({ frequency, duration, gain }),
+    setMuted: () => {},
+    setVolume: () => {},
     update: () => {},
     dispose: () => {},
     advance: (seconds) => (time += seconds),
