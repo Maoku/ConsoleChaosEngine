@@ -1,450 +1,419 @@
-# Console Chaos Racing リニューアル実装計画書
+# Console Chaos Racing リニューアル改修計画書
 
-> 本書は [RENEWAL_RECING_GAME.md](RENEWAL_RECING_GAME.md) を、現行の `apps/racing` と
-> `@console-chaos/engine` の実装状況に合わせて実装可能な粒度へ具体化した計画書である。
+> 本書は [RENEWAL_RECING_GAME.md](RENEWAL_RECING_GAME.md) を、Console Chaos の完全移行後に更新された
+> `@console-chaos/engine` の実装へ合わせて再計画した改訂第2版である。
 >
-> 初版: 2026-08-11  
-> 対象: `apps/racing`、`packages/engine`、`packages/engine-testkit`  
-> 本書の範囲: 実装順序、責務境界、成果物、受け入れ条件の定義。ゲーム本体の実装は含まない。
+> 改訂日: 2026-08-11  
+> 調査基準: `38d7be4`（`main`、worktree clean）  
+> 対象: `packages/engine`、`packages/engine-testkit`、`apps/racing`
 
 ---
 
-## 1. 目的
+## 1. 再計画の結論
 
-現行レーシングゲームの走行、ラップ、AI、世代切替の基礎を維持しながら、4つのコンソール世代が
-単なる色・解像度違いではなく、それぞれ異なる時代の描画技術と音響仕様を持つレースゲームとして
-明確に見分けられる状態へリニューアルする。
+前版の策定後、Console Chaos Engineには次の基盤が実装済みになった。
 
-同時に、次の3機能をレースゲーム専用処理ではなく Console Chaos Engine の再利用可能な機能として追加する。
+- 世代別FBO、palette/RGB555、CRT、旧・新2世代transitionを持つproduction WebGL renderer
+- texture、sprite atlas、static/skinned glTF、material、light、backgroundを扱う`RenderFrame v2`
+- PS1風vertex quantize、affine texture、triangle sort
+- PS2向けdepth bufferと動的point light
+- CPU/GPU assetの参照管理、重複load防止、WebGL context restore、dispose
+- 4世代音源、voice limit、位相を維持したBGM切替を持つgeneration audio service
+- GameHostのtwo-phase fixed tick、ActionMap、世代切替、production lifecycle
 
-1. ラスタースクロール
-2. 背景・地面のアフィン変換
-3. 環境マップ
+したがって、前版に含めていた「新しいcomposite renderer」「model command」「asset lifecycle」
+「世代別BGM基盤」の新規構築は不要である。
 
-ゲーム固有のコース形状、車種、楽曲、演出、世代別アートは `apps/racing` が所有する。エンジンは
-それらを描画・再生するための汎用コマンド、リソース管理、バックエンドだけを所有する。
+今回の改修は次の4本に絞る。
+
+1. Racingを既存production WebGL rendererとgeneration audio serviceへ移す。
+2. 現行generation pipelineへ、汎用raster surfaceとaffine surfaceのpassを追加する。
+3. 既存3D rendererを拡張し、directional/ambient lightとenvironment mapを実際に描画する。
+4. 1つの`RaceState`から4世代のpresentationと音を構築し、切替中も状態と音楽位相を維持する。
 
 ---
 
-## 2. 仕様の解釈と着手前の確認事項
+## 2. 仕様の解釈
 
-### 2.1 世代と表現方式
+### 2.1 世代別の完成像
 
-本計画では原仕様を次のように解釈する。
-
-| 世代            | 主要な表現                                   | 車両・コースのアセット                   | エンジン機能                                            |
-| --------------- | -------------------------------------------- | ---------------------------------------- | ------------------------------------------------------- |
-| 第1世代 / `FC`  | 車体背後視点のラスタースクロールによる疑似3D | Image Gen で生成した2Dスプライトと背景   | raster scroll、palette、sprite limit、nearest sampling  |
-| 第2世代 / `SFC` | 地面テクスチャのアフィン変換による疑似3D     | Image Gen で生成した2Dスプライトとタイル | affine plane、RGB555、nearest sampling                  |
-| 第3世代 / `PS1` | 低ポリゴン3Dレース                           | glTF/GLBの低ポリゴン車両・コース         | 3D mesh、vertex quantize、affine texture、triangle sort |
-| 第4世代 / `PS2` | ライティングと反射を持つ3Dレース             | glTF/GLBの高詳細車両・コース             | depth、dynamic light、environment map、linear sampling  |
+| 世代            | 表現                                   | 主なアセット                                | 利用するEngine機能                                  |
+| --------------- | -------------------------------------- | ------------------------------------------- | --------------------------------------------------- |
+| 第1世代 / `FC`  | 車体背後視点のラスタースクロール疑似3D | Image Gen製sprite、road strip、背景         | 新規raster surface、既存FC palette/sprite plane/CRT |
+| 第2世代 / `SFC` | アフィン変換地面による疑似3D           | Image Gen製sprite、seamless road tile、背景 | 新規affine surface、既存RGB555/sprite plane/CRT     |
+| 第3世代 / `PS1` | 低ポリゴン3Dレース                     | 低poly glTF/GLB、低解像度texture            | 既存model、quantize、affine texture、sort           |
+| 第4世代 / `PS2` | lightと環境反射を持つ3Dレース          | 高詳細glTF/GLB、environment texture         | 既存model/depth + 拡張light/environment map         |
 
 原仕様のモデル節には「第1、第2世代は Image Gen」と「第1、第2世代は3Dメッシュ」が併記されている。
-後者はグラフィックス節との整合性から「第3、第4世代は3Dメッシュ」の誤記と仮定する。アセット制作を
-開始する前にこの仮定を確定し、原仕様も同時に訂正する。仮定が誤りの場合は Phase 4 のアセット方式を
-変更するが、エンジンの描画機能と走行ロジックの計画は変更しない。
+本計画では後者を「第3、第4世代は3Dメッシュ」の誤記と仮定する。Phase 0で確定し、異なる場合は
+アセット方式だけを変更する。
 
-### 2.2 全世代で共通にするもの
+### 2.2 全世代で共有する論理状態
 
-- コースの論理中心線、幅、チェックポイント、スタート位置
-- 60 Hz固定の走行シミュレーション、衝突、路外減速、復帰
-- 3周、1人対1AI、カウントダウン、順位、リザルト、リスタート
-- 入力アクションの意味とリプレイの決定性
-- 1曲の構成、テンポ、小節位置
+- コース中心線、幅、チェックポイント、スタート位置
+- 60 Hz固定の車両運動、路外減速、境界拘束、復帰
+- 3秒カウントダウン、3周、1人対1AI、順位、リザルト、リスタート
+- ActionMapから得るsteer、accelerate、brake、reset、generation switch
+- 1曲のtempo、小節構造、transport位置
 
-世代を切り替えても論理座標とレース進行は変えず、表示・操作デバイス特性・音源だけを切り替える。
-これにより、切替によるショートカット、ラップ消失、AI位置ずれを発生させない。
+世代切替はpresentationと音源だけを変更する。車両位置、速度、heading、lap、AI、race tickを再生成しない。
 
-### 2.3 今回の非目標
+### 2.3 非目標
 
-- 複数コース、車両選択、チューニング、ガレージ
-- ネットワーク対戦、ゴースト配信、ランキング
-- タイヤ、サスペンション、重量移動を含む車体シミュレーション
-- コースエディタ、汎用マテリアルエディタ
-- モバイル専用操作UI、ネイティブアプリ化
-- Console Chaos 本編の見た目やゲーム内容の変更
+- 新しいrenderer/pipeline/AssetManager/AudioEngineの作り直し
+- 複数コース、車種選択、チューニング、ネットワーク対戦
+- 高度なタイヤ・サスペンション物理
+- PBR一式、normal map、shadow map、IBL prefilterなどの汎用material system
+- runtime asset streaming。1コース分は起動時にpreloadし、終了時に一括解放する
+- Console Chaos本編の見た目・ゲーム内容・goldenの変更
 
 ---
 
-## 3. 現状とリニューアル差分
+## 3. 更新後の実装baseline
 
-### 3.1 維持できる現行実装
+### 3.1 Engineで完成済みの機能
 
-現行 `apps/racing` には次が成立しており、リニューアル時の回帰基準とする。
+| 領域        | 現在の実装                                                      | Racingでの扱い                      |
+| ----------- | --------------------------------------------------------------- | ----------------------------------- |
+| lifecycle   | GameHost、`prepareFixedUpdate`→generation advance→`fixedUpdate` | そのまま使用                        |
+| generation  | 4 profiles、2世代transition、capability値                       | そのまま使用し2能力だけ追加         |
+| input       | keyboard/gamepad ActionMap、短時間edge保持                      | 現行Racing実装を維持                |
+| RenderFrame | mesh、skinned mesh、sprite、light、background、material         | 世代別commandへ再構成               |
+| WebGL       | 4世代target、postfx、transition、context restore                | production rendererとして採用       |
+| 3D          | glTF/GLB、texture、animation、quantize、affine UV、sort、depth  | 第3・第4世代で再利用                |
+| asset       | image/glTF/GPU handle、dedupe、ref-count、restore               | Racing用TypeScript manifestだけ追加 |
+| audio       | 4 voice source、Score、MusicClock、位相維持、one-shot           | BGMと効果音に使用                   |
+| testkit     | manual loop、recording renderer/audio                           | 新しいcontract/E2Eで拡張            |
 
-- `car.ts`: 60 Hzの決定的な加速、ブレーキ、ステア、後退、路外減速、境界拘束、復帰
-- `track.ts`: 閉じたコース中心線と最近点・接線・進捗の取得
-- `lap.ts`: 順序付きチェックポイント、正方向通過、ラップタイム
-- `ai.ts`: 決定的な経路追従AI
-- `race.ts`: 3秒カウントダウン、3周、順位、リザルト、リスタート
-- `actions.ts`: keyboard/gamepadと世代別入力制約を通るAction Map
-- `GameModule`: engine公開APIだけを用いた起動、更新、描画、破棄
+### 3.2 Engineで未完成または宣言のみの機能
 
-2026-08-11時点の基準は Racing unit 9件、E2E 1件が合格である。この10件は置換せず、追加テストと
-併せて全フェーズで実行する。
+| 項目                     | 現状                                                                           | 必要な改修                                              |
+| ------------------------ | ------------------------------------------------------------------------------ | ------------------------------------------------------- |
+| raster scroll            | transition shaderの走査線glitchのみ。ゲーム画面用surfaceはない                 | 汎用raster surface commandとWebGL pass                  |
+| affine plane             | profileの`affinePlane`とtextured quadはあるが、画面空間の疑似3Dsurfaceはない   | UV origin/stepを受けるaffine surface pass               |
+| `MaterialCommand.uvMode` | 型はあるがrendererはprofileの`affineTexture`だけを見る                         | 今回は3D用profile値を正本とし、surfaceとは分離          |
+| light                    | point lightを1つ使用。directional/ambientの型はあるがrendererは固定lightを使う | 宣言済みLightCommandをrendererへ接続                    |
+| normal/emissive texture  | 型はあるがproduction shaderでは未使用                                          | 今回は依存しない。必要になるまで非目標                  |
+| environment map          | command、asset意味、shaderがない                                               | equirectangular mapとreflection strengthを最小追加      |
+| overlay                  | Canvas rendererは描画するがWebGL rendererは描画しない                          | Racing HUDをapp所有DOMへ移す                            |
+| continuous audio         | generation audioはScore/one-shot中心                                           | まず短いoverlap one-shotで実証し、品質不足時のみAPI拡張 |
 
-### 3.2 現状の不足
+### 3.3 Racingの現状
 
-| 領域         | 現状                                             | 必要な差分                                                             |
-| ------------ | ------------------------------------------------ | ---------------------------------------------------------------------- |
-| 世代別映像   | 全世代が同じ平面ポリラインと矩形スプライト       | 世代ごとに独立した2D/疑似3D/3Dプレゼンテーションへ分割                 |
-| レンダラ     | `CanvasRenderingContext2D` で色付きprimitiveのみ | texture、scanline変形、affine plane、glTF mesh、light、environment map |
-| アセット参照 | Racingは画像・モデルを読み込まない               | manifest、preload、handle、generation variant、fallback                |
-| 第1世代      | 通常のトップダウン描画                           | 背後視点、走査線単位の道路変形、スプライト制約                         |
-| 第2世代      | 通常のトップダウン描画                           | アフィン変換された地面、地平線、スプライト車両                         |
-| 第3世代      | primitiveを透視投影風に描画                      | 低ポリゴンmesh、PS1風頂点量子化・affine UV・depth非依存sort            |
-| 第4世代      | 色・解像度・filter差のみ                         | depth、動的ライト、環境反射を持つmesh描画                              |
-| BGM          | `playTone()`によるイベント音のみ                 | 同一曲の4音源アレンジ、世代切替時の位相維持                            |
-| 車両音       | なし                                             | 速度/RPM連動の連続エンジン音、ブレーキ音                               |
-| 検証         | command数とゲームロジック中心                    | 世代別画像golden、音声golden、実ブラウザ、性能、resource lifecycle     |
+維持するもの:
+
+- `car.ts`: 決定的な加速、ブレーキ、ステア、後退、路外減速、復帰
+- `track.ts`: 閉じた中心線、最近点、接線、進捗
+- `lap.ts`: 順序付きcheckpoint、正方向通過、lap time
+- `ai.ts`: 決定的path following
+- `race.ts`: countdown、3周、順位、result、restart
+- `actions.ts`: keyboard/gamepad binding
+- `app.ts`: two-phase fixed tickとgeneration request
+
+置き換えるもの:
+
+- `createCanvasCommandRenderer()`を使用する`bootstrap.ts`
+- 全世代共通のpolylineコース・矩形spriteを作る`presentation/frame.ts`
+- 色とcamera zoomだけの`config/themes.ts`
+- `playTone()`だけのrace cue
+- WebGL production rendererでは表示されない`RenderFrame.overlays`依存HUD
+
+### 3.4 再計画時の検証結果
+
+2026-08-11、基準commit `38d7be4`で次を確認した。
+
+| 検査                    | 結果                              |
+| ----------------------- | --------------------------------- |
+| Engine unit             | 5 files / 19 tests pass           |
+| Engine testkit          | 1 file / 1 test pass              |
+| Racing unit             | 4 files / 9 tests pass            |
+| Racing E2E              | 1 file / 1 test pass              |
+| Racing production build | pass、JS 36.38 kB / gzip 14.19 kB |
+| root `npm run verify`   | pass、54 files / 438 tests        |
+| Console bundle gate     | pass、3 chunks / 170,300 bytes    |
+
+Engine・testkit・Racingの30 testとRacing buildを日常の最小baselineとし、各フェーズの完了時には、
+境界・移行・asset・production build検査とworkspace全体の438 testを含むroot `npm run verify`も通す。
 
 ---
 
 ## 4. 完了条件
 
-以下をすべて満たした時点でリニューアル完了とする。
+### 4.1 ゲーム
 
-### 4.1 プレイ成立
+- 4世代すべてでcountdownから3周完走、順位、result、restartまで操作できる。
+- 世代切替前後でposition、speed、heading、lap、checkpoint、AI、race tickが一致する。
+- keyboard/gamepadのsteer、accelerate、brake、reset、世代切替が動作する。
+- 現行の決定的replay結果が変化しない。
 
-- 4世代すべてで、カウントダウンから3周完走、順位表示、リザルト、リスタートまで操作できる。
-- 世代切替の前後で、車両位置、速度、向き、周回、チェックポイント、AI状態、経過時間が保存される。
-- keyboardとgamepadでステア、アクセル、ブレーキ、リセット、世代切替が動作する。
-- 既存の決定的リプレイに対する論理結果が変わらない。
+### 4.2 映像
 
-### 4.2 世代表現
+- 第1世代は背後視点のraster roadであり、現行top-down polylineに見えない。
+- 第2世代は地平線以下のaffine surfaceとsprite車両で疑似3Dを表現する。
+- 第3世代は実glTF meshを使い、quantize、affine texture、depthなしsortが確認できる。
+- 第4世代はdepth、frame指定light、environment reflectionを同時に確認できる。
+- transition中は旧世代と新世代がそれぞれのcommandで描画され、論理位置が飛ばない。
+- FC/SFCのsurfaceとspriteが既存palette/RGB555/CRT passを通る。
 
-- 第1世代は背後視点とラスタースクロールで奥行きを表現し、通常のトップダウン表示に見えない。
-- 第2世代はアフィン変換された地面でコースが地平線へ収束し、第1世代のscanline表現と区別できる。
-- 第3世代は低ポリゴン3Dモデルを描画し、頂点量子化、nearest texture、affine textureの特徴が確認できる。
-- 第4世代は3Dモデル、depth、動的ライト、環境マップ反射が同時に確認できる。
-- 世代固有効果の有効化は `GenerationId` の直接比較ではなく、engineのhardware capabilityと
-  appの`GenerationVariant`から決定する。
+### 4.3 音
 
-### 4.3 サウンド
+- 同じ曲が4つの世代別arrangement/sourceで鳴る。
+- 世代切替前後のbar position誤差が既存engine基準の1e-9以下である。
+- player車の音程・音量が速度に追従し、停止・中速・最高速を判別できる。
+- 一定速度以上のbrake入力でのみbrake音が鳴り、voice数が増え続けない。
+- countdown、start、lap、finish cueが世代別sourceを通る。
 
-- 1つの曲が、同じテンポ・小節構造を保った4つの世代別音源で再生される。
-- 曲の再生中に世代を切り替えても、切替前後の小節位置のずれが許容誤差1 audio quantum以内である。
-- エンジン音のpitch/gainが速度または正規化RPMに追従し、停止時と最高速時を聴き分けられる。
-- 一定速度以上でブレーキを入力したときだけブレーキ音が鳴り、連続入力でvoiceが無制限に増えない。
-- 世代別の発音数、音源方式、sample rate、reverb、定位制約をhardware profileから適用する。
+### 4.4 境界と回帰
 
-### 4.4 エンジン境界
-
-- raster scroll、affine plane、environment mapの型・描画処理・単体テストが `packages/engine` にある。
-- engine内に `car`、`race`、`track`、`lap`、`checkpoint`などRacing固有の語彙を持ち込まない。
-- `apps/racing` は `@console-chaos/engine` の公開入口だけをimportし、deep importを行わない。
-- 既存 `createCanvasCommandRenderer()` と Console Chaos の検証結果を壊さない。
-- assetとaudio resourceが、再起動・世代切替・`dispose()`後に残存しない。
-
-### 4.5 品質ゲート
-
-- rootの`npm run verify`が合格する。
-- Racingのunit、engine contract、E2E、browser visual testが合格する。
-- 4世代それぞれの基準スクリーンショットと音声測定結果を保存する。
-- 対象ブラウザでconsole error、未処理Promise rejection、WebGL errorが0件である。
-- 同一セッションで10回のリスタートと2往復の全世代切替を行っても、GPU/Audio resource数が単調増加しない。
+- Engineにcar、race、track、lapなどRacing固有語彙を追加しない。
+- Racingは`@console-chaos/engine`の公開入口だけを使う。
+- Engineの新しいsurface/environment機能はConsole Chaos command goldenを変更しない。
+- Console Chaosのstate/render/audio/lifecycle goldenとroot `npm run verify`が合格する。
+- restart 10回、全世代2往復、dispose後にAssetManager active/GPU resourceがbaselineへ戻る。
 
 ---
 
-## 5. アーキテクチャ方針
+## 5. 改修アーキテクチャ
 
-### 5.1 論理状態とプレゼンテーションの分離
+### 5.1 既存pipelineへ追加する
 
-`RaceState`を全世代共通の正本にし、描画側は読み取り専用の`RaceVisualState`へ投影する。
+新rendererは作らず、既存`createGenerationWebGlRenderer()`と`createGenerationPipeline()`を拡張する。
 
 ```text
-ActionMap
+RaceState
    │
    ▼
-RaceState ── fixed 60 Hz ──> car / AI / lap / rank
+RaceVisualState
    │
-   ├──> Gen1 frame builder ──> raster + sprite commands
-   ├──> Gen2 frame builder ──> affine plane + sprite commands
-   ├──> Gen3 frame builder ──> low-poly model commands
-   └──> Gen4 frame builder ──> lit model + environment commands
+   ├── FC commands  ── raster surface + sprite
+   ├── SFC commands ── affine surface + sprite
+   ├── PS1 commands ── glTF mesh/material
+   └── PS2 commands ── glTF mesh/material/light/environment
+                         │
+                         ▼
+background → surface → mesh → sprite → palette/CRT → transition compose
 ```
 
-世代別builderは物理状態を変更しない。カメラ、見た目上の横ずれ、道路の曲がり、アニメーションframeは
-`RaceVisualState`から計算する。これにより、表示方式を変えてもゲーム結果を共通にできる。
+surface passは世代別scene targetへ描く。したがって既存quantize、CRT、transitionを迂回しない。
 
-### 5.2 レンダラ構成
+### 5.2 RenderFrameの最小拡張
 
-現行Canvas rendererは互換・軽量テスト用として残す。新機能は、複数の内部render targetを持ち、最後に
-表示canvasへ合成する汎用`createGenerationCommandRenderer()`へ追加する。
-
-- 2D pass: textured sprite、背景、HUD
-- raster pass: scanlineごとのsource offset/scaleを適用
-- affine pass: 2D affine UV matrixを用いた地面描画
-- 3D pass: glTF mesh、camera、depth/sort、light、environment map
-- post pass: palette、RGB555、vertex quantize相当、signal/CRT、世代切替transition
-- overlay pass: text/rectを既存commandと同じ座標系で合成
-
-backendの選択はgeneration名ではなく、frameに積まれたcommandとhardware capabilityで決める。
-未対応環境では環境マップを無効化したunlit/diffuse materialへ段階的にfallbackし、ゲーム進行は継続する。
-
-### 5.3 engine公開API案
-
-以下は Phase 1 でcontract testを先に作って確定する。名称は実装時に既存命名へ揃えてよいが、責務は維持する。
+既存のmesh/model/sprite commandを置き換えず、2種類のscreen surfaceだけを追加する。
 
 ```ts
-interface RasterScrollCommand {
+interface RasterSurfaceCommand {
   id: string;
-  texture: TextureHandle;
+  generations?: readonly GenerationId[];
+  texture: string;
   screenRect: readonly [number, number, number, number];
-  scanlines: Float32Array; // 各行の sourceX / sourceWidth / shade 等
-  layer?: number;
+  scanlines: Float32Array;
+  // 1行あたり sourceCenterX / sourceWidth / sourceY / brightness
 }
 
-interface AffinePlaneCommand {
+interface AffineSurfaceCommand {
   id: string;
-  texture: TextureHandle;
+  generations?: readonly GenerationId[];
+  texture: string;
   screenRect: readonly [number, number, number, number];
   uvOrigin: Vec2;
   uvStepX: Vec2;
   uvStepY: Vec2;
-  wrap: "repeat" | "clamp";
-  layer?: number;
+  wrap?: "repeat" | "clamp";
 }
 
-interface ModelCommand {
-  id: string;
-  model: ModelHandle;
-  transform: TransformCommand;
-  material?: MaterialOverride;
-  animation?: AnimationSample;
-  layer?: number;
-}
-
-interface EnvironmentCommand {
-  texture: CubeTextureHandle | EquirectTextureHandle;
-  intensity: number;
-  rotationY?: number;
-}
-
-interface MaterialOverride {
-  baseColor?: Color;
-  baseColorTexture?: TextureHandle;
+interface MaterialCommand {
+  // 既存fieldに追加
+  environmentTexture?: string;
   environmentStrength?: number;
-  roughness?: number;
-  unlit?: boolean;
+}
+
+interface LightCommand {
+  // 既存fieldに追加。directionalのときだけ使用
+  direction?: Vec3;
 }
 ```
 
-`RasterScrollCommand`には道路という概念を含めず、アプリが作った走査線変形表だけを描く。
-`AffinePlaneCommand`にもコースや地面という概念を含めず、UVの開始点と増分だけを描く。
-環境マップはmesh materialの任意入力とし、Racing以外でも利用できる形にする。
+`RenderFrame.reset()`、recording renderer、command golden serializerも新配列を扱う。
+`Float32Array`はpresentationが保持して再利用し、steady stateで毎frame確保しない。
 
-### 5.4 hardware capabilityの拡張
+### 5.3 hardware capability
 
-`HardwareGenerationProfile.video`へ、少なくとも次の能力を追加する。
+`HardwareGenerationProfile.video`へ次を追加する。
 
-- `rasterScroll: boolean`
-- `environmentMap: boolean`
-- 必要なら`maxDynamicLights`と`reflectionPrecision`
+- `rasterScroll: boolean`: FCのみtrue
+- `environmentMap: boolean`: PS2のみtrue
 
-値は第1世代のみraster、第4世代のみenvironment mapを有効にする。既存の`affinePlane`、
-`affineTexture`、`depthBuffer`、`dynamicLight`と組み合わせ、アプリ側の世代ID分岐を避ける。
-profile追加時はConsole Chaosのprofile parity testも更新し、値の追加以外に既存値が変わっていないことを検査する。
+SFCは既存`affinePlane`を利用する。PS1の3D texture歪みは既存`affineTexture`を利用し、
+`affinePlane`と混同しない。
 
-### 5.5 asset lifecycle
+rendererはgeneration IDを直接比較せず、commandのgeneration maskとprofile capabilityの両方を確認する。
 
-- Racingのmanifestがlogical keyから世代別URL、種類、fallbackを定義する。
-- engine `AssetManager`がImageBitmap、texture、cube/equirect map、glTF/GLBの重複loadと参照数を管理する。
-- `GameModule.create()`で必須assetをpreloadし、完了前は走行を開始しない。
-- 世代切替中は旧世代と新世代のassetを同時保持し、transition完了後に不要分をreleaseする。
-- context loss時はCPU側sourceからGPU resourceを再生成する。
-- `dispose()`では全handle、AudioNode、buffer、texture、program、framebufferを解放する。
+### 5.4 raster surface
 
----
+Racing側が各scanlineの道路中心、幅、texture位置、brightnessを計算し、Engineは値の意味を解釈せず描画する。
 
-## 6. 世代別実装
+Engineの責務:
 
-### 6.1 第1世代: ラスタースクロール
+- table長、screen rect、有限値、source widthのvalidation
+- scanline lookup textureまたはdynamic bufferの再利用
+- clip、nearest sampling、profile filter適用
+- scene targetへの描画とcontext restore
 
-#### Racing側
+Engineへroad、curve、steering、speedの概念を入れない。
 
-- 車体後方に固定した疑似カメラ用に、コース中心線を車両前方距離へsampleする。
-- 各scanlineに対し、道路中心X、道路幅、カーブ量、明度、縁石phaseを決定する。
-- 遠方ほど狭く、手前ほど広い道路帯を生成し、ステアとコース曲率で中心を左右へずらす。
-- player車は画面下部の大きなスプライト、AI車は距離に応じたframe/scaleで表示する。
-- 背景、路肩、道路、縁石、車両の画像はImage Genによる共通art directionから生成する。
-- paletteとsprites-per-scanline制約を通し、表示超過時の優先順位を定義する。
+### 5.5 affine surface
 
-#### Engine側
+Racing側が車両位置・headingから`uvOrigin/uvStepX/uvStepY`を作る。Engineは画面の各pixelに対して
+線形UVを生成し、repeat/clampでtextureをsampleする。
 
-- scanline transform tableの検証、buffer再利用、clippingを実装する。
-- Canvas 2D fallbackは1行単位の`drawImage`、WebGL backendはlookup textureまたはvertex stripで描画する。
-- `fixed54` palette、nearest sampling、RF/scanline post effectを既存profileから適用する。
-- 入力tableが解像度と一致しない場合は例外ではなく明示的validation errorを返す。
+- horizonより上は既存`BackgroundCommand`
+- horizonより下は`AffineSurfaceCommand`
+- 車両・trackside objectは既存`SpriteCommand`
+- surfaceはSFC sprite planeの下に描き、最後にRGB555/CRTを適用
 
-#### 受け入れ条件
+### 5.6 3D、light、environment
 
-- 直線、左右カーブ、路外の3ケースでscanline中心と幅がgolden値に一致する。
-- player停止中も道路が発散せず、加速時に前進が視認できる。
-- 256×224の画像goldenで、地平線、道路端、player、AI、HUDが所定位置にある。
-- scanline配列とGPU bufferを毎frame新規確保しない。
+第3・第4世代は既存`MeshCommand.asset`と`RenderAssetManifest.models`を使う。新しいModelCommandは作らない。
 
-### 6.2 第2世代: アフィン変換背景
+light改修:
 
-#### Racing側
+- `ambient` commandから環境光色・強度を取得
+- `directional` commandから方向・色・強度を取得
+- 既存`point` commandは最も優先度の高い1灯を維持
+- commandがない場合は現在の固定light値へfallbackし、Console goldenを維持
 
-- 共通コース中心線から、world-to-texture座標とカメラ位置・向きを算出する。
-- 地平線より下をaffine plane、上を背景、車両とコース脇objectをspriteとして構築する。
-- 車両spriteは前後左右の向きと距離の段階を持ち、profileの`animationHz`でframe更新する。
-- 路面、芝、縁石、背景、車両画像をImage Genで生成し、seamless tileへ後処理する。
+environment改修:
 
-#### Engine側
+- 既存`RenderTextureAsset`でequirectangular 2D textureをpreload
+- world normal、world position、camera positionからreflection vectorを計算
+- equirectangular UVへ変換し、base colorへ`environmentStrength`で合成
+- `profile.video.environmentMap === false`ならstrengthを0にする
+- roughness mip、normal map、metallic workflowは今回追加しない
 
-- affine UV originとX/Y増分をshaderへ渡し、repeat/clamp、nearest samplingを実装する。
-- RGB555変換、内部256×224、composite signalのpost effectを既存処理と統合する。
-- CPU参照実装をtest用に持ち、shader出力のsample点と比較できるようにする。
+### 5.7 transitionとcamera
 
-#### 受け入れ条件
+1つの`RenderFrame`へ4世代分のcommandをgeneration mask付きで積む。既存pipelineが通常1世代、
+transition中2世代を選択する。
 
-- 既知のUV matrixに対する四隅と中央のsample位置がCPU/GPUで一致する。
-- 直線・カーブで路面が地平線へ収束し、車両の旋回に合わせて地面が回転する。
-- tile境界に1pxの継ぎ目がなく、縁石の周期が世代切替前後の論理進捗と一致する。
-- 第1世代のraster passを使用せずに成立する。
+raster/affineはscreen-spaceなのでworld cameraを使用しない。PS1/PS2は共通の背後追従cameraを使用する。
+このため、現段階では世代別camera APIを追加しない。visual reviewで切替中の構図が成立しない場合だけ、
+互換fallback付きcamera variantを別変更として検討する。
 
-### 6.3 第3世代: 低ポリゴン3D
+### 5.8 HUD
 
-#### Racing側
+production WebGL rendererは`RenderFrame.overlays`を描画しない。Console Chaosと同様にRacing HUDを
+app所有DOMへ移す。
 
-- course centerlineから道路、路肩、壁、start gateの低ポリゴンmeshを生成または読み込む。
-- player/AIは低ポリゴン車両GLBを使用し、wheel回転など最小限のanimationを持たせる。
-- materialは小さなtexture atlas、nearest sampling、unlitまたは固定light中心とする。
-- cameraは背後追従とし、表示上の揺れは論理headingを変更しないpresentation effectにする。
+- generation label、lap、rank、time、countdown、result、restart案内
+- 256×224相当の小画面でも欠けないCSS
+- `aria-live`はstart、lap、finishだけに限定
+- animationやpalette postfxはworld renderingと分離
 
-#### Engine側
-
-- glTF subset loaderの出力をGPU meshへuploadし、model instance commandから描画する。
-- `vertexQuantize`、`affineTexture`、triangle sortをhardware profileから適用する。
-- depth bufferが無効な場合のtransparent/opaque順序を決定的にする。
-- index/accessor/materialの未対応形式はpreflightで検出し、実行時に黙って欠落させない。
-
-#### 受け入れ条件
-
-- 車両、コース、背景objectが実meshとして表示され、2D矩形へのfallbackが通常経路で使われない。
-- camera移動時にvertex quantizationとaffine UVの特徴が視認できる。
-- 同じ入力replayで3回captureしたcommand順と最終frame hashが一致する。
-- glTF preflight、triangle budget、texture size検査が合格する。
-
-### 6.4 第4世代: ライティングと環境マップ
-
-#### Racing側
-
-- 第3世代より詳細な車両・コースGLB、法線、UV、必要に応じてtangentを用意する。
-- 空・コース周囲を表すcube mapまたはequirectangular environment textureを用意する。
-- 車体materialだけに適切なreflection strength/roughnessを設定し、路面やHUDへ一律適用しない。
-- directional lightを主光源とし、必要最小限の補助lightを配置する。
-
-#### Engine側
-
-- depth test/write、normal変換、diffuse/specular、動的light上限を実装する。
-- reflection vectorからcube/equirectangular mapをsampleし、base colorと合成する。
-- environment mapなし、法線なし、低精度GPUのfallback materialを定義する。
-- shader/program/textureのcache keyへmaterial capabilityを含める。
-
-#### 受け入れ条件
-
-- 車体の向きとcamera位置を変えると反射像が連続して変化する。
-- lightを移動すると拡散光が変化し、環境反射だけの平坦な表示にならない。
-- 第3世代へ切り替えたときenvironment mapとdynamic lightが確実に無効になる。
-- 640×448内部解像度でtarget frame budgetを継続して満たす。
+Engineのoverlay renderer追加は今回の非目標とする。
 
 ---
 
-## 7. サウンド実装
+## 6. 世代別のRacing実装
 
-### 7.1 BGM
+### 6.1 共通presentation state
 
-Racing側に1つのmaster scoreを置き、engineの`Score`、`MusicClock`、世代別voice sourceを使って
-4アレンジを生成する。曲の旋律、コード進行、小節数、tempoは共通とする。
+`RaceState`を読み取り専用の`RaceVisualState`へ投影する。
 
-| 世代    | アレンジ方針                            |
-| ------- | --------------------------------------- |
-| 第1世代 | PSG中心、少発音、短いnoise percussion   |
-| 第2世代 | BRR sample、8 voice内、軽いreverb       |
-| 第3世代 | ADPCM sample、左右定位、厚いdrum/bass   |
-| 第4世代 | streaming品質、48 kHz、広い定位とreverb |
+- player/AI position、heading、speed、normalized RPM
+- track sample、前方曲率、次checkpoint、course progress
+- camera-relative distanceと左右位置
+- race phase、lap、rank、time
+- animation time
 
-`RacingAudioDirector`はアプリに置き、曲そのものとアレンジ判断を所有する。engineへ置くのは
-transport、voice source、voice limit、sample scheduling、phase-preserving source交換だけとする。
+各世代builderは`RaceState`を変更してはならない。mutation testで固定する。
 
-### 7.2 エンジン音
+### 6.2 第1世代
 
-現行`AudioService.playTone()`は単発音向けであり、連続する車両音には使用しない。engineにゲーム非依存の
-parameterized/looping voiceを追加し、Racing側が次を毎fixed tickまたは制御rateで更新する。
+Racing側:
 
-- `rpm01`: `abs(speed) / maxSpeed`を基礎に加速状態を加味
-- `pitch`: 世代別patchの基音から補間
-- `gain`: 停止、走行、最高速のcurve
-- `pan`: positional対応世代のみcamera相対位置から設定
+- player前方の中心線を一定距離ごとにsample
+- 各scanlineのroad center/width/sourceY/brightnessへ変換
+- speedで路面phase、curveで左右offset、steerでcamera biasを更新
+- playerは画面下部の後方sprite、AIは距離段階別sprite
 
-世代切替時は旧voiceを短くfade outし、同じ`rpm01`で新voiceをfade inする。AI車両音はplayerより低いgainとし、
-hardware voice limitを超える場合は距離と重要度で抑制する。
+Engine側:
 
-### 7.3 ブレーキ音とレースcue
+- `RasterSurfaceCommand`のvalidationとdraw pass
+- FC scene/sprite分離、fixed54 palette、sprite limit、RF/CRTとの統合
 
-- `brake > threshold`かつ`abs(speed) > threshold`でskid/brake loopを開始する。
-- 条件を外れたらreleaseし、短時間のon/offにはhysteresisとcooldownを適用する。
-- countdown、start、lap、finishは既存イベントを維持し、世代別patchで再生する。
-- 同じtickに複数cueが来た場合のpriorityを`finish > lap > start > countdown`とする。
+受け入れ条件:
 
-### 7.4 音声の受け入れ条件
+- stop、straight、left curve、right curve、off-trackのscanline goldenが一致
+- 256×224 captureでhorizon、road edge、player、AIが所定位置
+- scanline bufferの毎frame確保がない
 
-- `OfflineAudioContext`で4世代それぞれ2小節をrenderし、無音、clip、voice limit超過がない。
-- 同一audio timeでの世代切替前後の`MusicClock.tickAt()`が許容誤差内で一致する。
-- 0%、50%、100% RPMの基本周波数とgainがunit testの範囲内にある。
-- brake条件とhysteresisを決定的な制御列で検査する。
-- `dispose()`後にactive sourceとscheduled callbackが0になる。
+### 6.3 第2世代
+
+Racing側:
+
+- course座標をroad tile UVへ投影
+- headingとprogressからaffine matrixを更新
+- player/AIは方向・距離別sprite atlasを使用
+- road、grass、curbを1枚のseamless tileへまとめる
+
+Engine側:
+
+- `AffineSurfaceCommand`のCPU参照式とWebGL shader
+- SFC scene/sprite分離、RGB555、composite/CRTとの統合
+
+受け入れ条件:
+
+- 既知matrixの四隅・中央UVがCPUとGPUで一致
+- tile seamがなく、旋回時に地面が正しい向きへ回る
+- FC raster passを使用せず成立
+
+### 6.4 第3世代
+
+- 低poly車両とコースGLBを既存manifestへ登録
+- small atlas、nearest filter、少materialを使用
+- materialは`polygonSort: true`、profileは既存quantize/affine texture/depthなしを適用
+- cameraはplayer背後追従、表示揺れはpresentationだけで加える
+
+受け入れ条件:
+
+- 通常経路で2D矩形fallbackを使わない
+- quantizeとaffine UVが走行中に視認できる
+- 同一replayのcommand順とframe captureが決定的
+- glTF preflightとtriangle/texture budgetに合格
+
+### 6.5 第4世代
+
+- 第3世代より詳細な車両・コースGLBとmesh normalを用意
+- ambient、directional、必要ならpoint lightをframeへ積む
+- 車体materialだけにenvironment texture/strengthを設定
+- road、HUD、透明spriteには反射を一律適用しない
+
+受け入れ条件:
+
+- camera/車体headingを変えると反射位置が連続して変化
+- directional light変更でdiffuseが変化
+- PS1へ切り替えるとenvironmentとdynamic lightが無効
+- 640×448内部解像度で性能budgetを満たす
 
 ---
 
-## 8. アセット制作計画
+## 7. アセット計画
 
-### 8.1 Image Genを用いる第1・第2世代
+### 7.1 Racing manifest
 
-アセット生成フェーズではImage Genスキルを用い、最初にart bible用の1枚を承認してから量産する。
-世代ごとに個別promptを作るが、同一車種、同一コース、同一色識別を維持する。
-
-必要な成果物:
-
-- player車: 後方、後方左、後方右。必要なら距離・損傷差分
-- AI車: 同じ角度セット、playerと判別できる配色
-- 第1世代: 遠景、路肩、道路、縁石、trackside object
-- 第2世代: seamless road/grass/curb tile、遠景、trackside sprite
-- UI: 世代別メーター、順位・ラップ枠。文字自体は可読性のためengine overlayを優先
-
-後処理で透明背景、pixel grid整列、palette制限、tile seam、sprite sheet metadataを検査する。
-生成画像をそのまま実行時に加工せず、確定したPNG/WebPとmetadataをリポジトリへ保存する。
-
-### 8.2 第3・第4世代の3Dアセット
-
-- glTF 2.0 / GLBを正本とし、engine loaderが対応するsubsetだけを使う。
-- 第3世代は低ポリゴン、少material、小texture atlas、nearest samplingを優先する。
-- 第4世代は法線、複数material、環境反射用parameterを許可する。
-- コースの論理collisionは既存centerlineから計算し、render meshをcollisionの正本にしない。
-- model origin、forward axis、単位、wheel位置、texture color spaceをexport規約に記録する。
-
-poly/texture上限は最初の代表assetを実機測定してから固定する。固定前の暫定目標は、第3世代の1台を
-数千triangle・256px級atlas、第4世代の1台を数万triangle未満・1024px級atlasとし、画質より
-安定したframe budgetを優先する。
-
-### 8.3 manifest案
+runtime JSON loaderは増やさず、Console Chaosと同じTypeScript catalog patternを使う。
 
 ```text
+apps/racing/src/presentation/catalog.ts
 apps/racing/public/assets/
-  manifest.json
-  shared/
-    audio/
   gen1/
     sprites/
     backgrounds/
+    road/
   gen2/
     sprites/
-    tiles/
     backgrounds/
+    tiles/
   gen3/
     models/
     textures/
@@ -454,8 +423,76 @@ apps/racing/public/assets/
     environment/
 ```
 
-manifest検査では、URL存在、hash、画像寸法、power-of-two要否、alpha、model preflight、generationごとの
-必須key、未参照assetを検出する。
+`createRacingRenderManifest()`がtextures、models、atlases、geometries、fallbackTexturesを返し、
+`createGenerationWebGlRenderer()`が4世代分を起動時にpreloadする。
+
+### 7.2 Image Genを使う第1・第2世代
+
+アセット制作時にImage Genスキルを使用する。最初に共通車種・配色・コース景観を示すstyle frameを承認し、
+その後にsprite/textureを生成する。
+
+必要物:
+
+- player/AIのrear、rear-left、rear-rightと距離段階
+- FC road strip、curb、roadside、遠景
+- SFC seamless road/grass/curb tile、遠景、trackside sprite
+- alpha、pixel grid、palette、tile seam、atlas metadata
+
+生成結果は確定PNG/WebPとして保存し、runtime生成に依存しない。
+
+### 7.3 第3・第4世代
+
+- glTF 2.0 / GLB、meter単位、forward axis、origin、UV規約を固定
+- 第3世代は数千triangle/台、256px級atlasを暫定上限
+- 第4世代は数万triangle未満/台、1024px級atlasを暫定上限
+- collisionの正本は既存track centerlineで、render meshをphysicsへ流用しない
+- representative assetを測定後に正式budgetを固定
+
+---
+
+## 8. サウンド計画
+
+### 8.1 既存generation audioの採用
+
+`bootstrap.ts`を`createGenerationAudioService()`へ切り替える。`RacingAudioPresenter`は
+Consoleのpresenter patternと同様に、profileに応じたarrangementを`playScore/useScore`へ渡す。
+
+| 世代 | arrangement                        |
+| ---- | ---------------------------------- |
+| FC   | PSG、少発音、noise percussion      |
+| SFC  | BRR sample、8 voice以内            |
+| PS1  | ADPCM、drum/bass、左右定位         |
+| PS2  | streaming、48 kHz、広い定位/reverb |
+
+旋律、tempo、小節数、loop長は共通にする。
+
+### 8.2 車両音
+
+Phase 0で既存`playOneShot()`によるoverlap方式を先に実証する。
+
+- 20 Hz程度で80〜120 msの短音を重ねる
+- `frequency`をnormalized speed/RPMから補間
+- `velocity`をthrottleとspeedから補間
+- playerを優先し、AIは距離減衰と低い更新率
+- brakeは速度・入力thresholdとhysteresisを持つnoise系one-shot
+
+次のどれかに該当する場合だけ、Engineへparameterized continuous voice APIを追加する。
+
+- steady speedで可聴な無音gapが残る
+- FCの5 voiceでBGMまたは必須cueを継続的に奪う
+- 1秒あたりのvoice生成・GCが性能budgetを超える
+
+API拡張が必要な場合も`rpm`や`engine sound`というRacing語彙は入れず、
+`startSustainedVoice/updateVoice/stopVoice`の汎用contractにする。
+
+### 8.3 音声受け入れ条件
+
+- OfflineAudioContextで4世代各2小節に無音窓・clipがない
+- 全12方向の世代切替でbar position誤差1e-9以下
+- 0/50/100% speedの主周波数とgainが定義範囲内
+- brake trigger/hysteresisが決定的
+- finish cueがlap/start/countdownより優先
+- dispose後にactive/scheduled voiceが0
 
 ---
 
@@ -463,291 +500,308 @@ manifest検査では、URL存在、hash、画像寸法、power-of-two要否、al
 
 ```text
 packages/engine/src/
-  generation/profiles.ts          # raster/environment capability
-  render/frame.ts                 # 新しい汎用command
-  render/renderer.ts              # 既存Canvas互換backend
-  render/generation-renderer.ts   # composite renderer
-  render/raster/                   # scanline validation/backend
-  render/affine/                   # UV matrix、CPU reference、shader
-  render/model/                    # glTF GPU resource、instance描画
-  render/environment/              # cube/equirect map、reflection
-  render/postfx/                   # palette/signal/profile適用
-  assets/                          # image/model/environment handle
-  audio/continuous-voice.ts       # 汎用parameterized voice
-  audio/                           # 既存clock/source/service拡張
+  generation/profiles.ts
+  render/
+    frame.ts
+    generation-pipeline.ts
+    webgl-renderer.ts
+    raster/
+      validate.ts
+      pass.ts
+      shader.ts
+    affine/
+      reference.ts
+      pass.ts
+      shader.ts
+    environment/
+      mapping.ts
+      shader.ts
+  tests/
+    surface-render.test.ts
+    environment-render.test.ts
 
 apps/racing/src/
-  app.ts                           # lifecycleとsubsystem構成
+  app.ts
+  bootstrap.ts
   config/
     actions.ts
     themes.ts
-    assets.ts
   content/
     track.ts
-    assets.ts
     audio/
       score.ts
       arrangements.ts
-      patches.ts
-  gameplay/                        # 現行ロジックを維持
+      cues.ts
   presentation/
+    catalog.ts
     visual-state.ts
-    frame.ts                       # capabilityによるdispatcher
+    frame.ts
     gen1-raster.ts
     gen2-affine.ts
     gen3-low-poly.ts
     gen4-environment.ts
   audio/
-    director.ts
+    presenter.ts
     vehicle-sound.ts
   ui/
     hud.ts
     loading.ts
 ```
 
-ファイル分割は責務を示すものであり、短い段階で無理に細分化しない。`frame.ts`へ4世代の実装を再集中させない
-ことと、engineからRacing固有moduleをimportしないことを必須とする。
+`webgl-renderer.ts`をさらに肥大化させないよう、新shader/passの作成と純粋な計算は専用directoryへ置く。
+既存rendererはcommand dispatch、asset binding、pass順の統合だけを担当する。
 
 ---
 
 ## 10. 実装フェーズ
 
-各フェーズは独立したreview単位とし、末尾の受け入れ条件を満たすまで次の依存フェーズへ進まない。
+### Phase 0 — 仕様確定と技術spike
 
-### Phase 0 — 仕様固定とbaseline
+| ID    | 作業                                      | 完了条件                            |
+| ----- | ----------------------------------------- | ----------------------------------- |
+| P0-01 | 3D meshの対象世代を確定                   | 原仕様と本書の表が一致              |
+| P0-02 | baseline test/build/browser captureを保存 | commit、結果、browser/GPU情報を記録 |
+| P0-03 | 現行pipeline上でraster 1面を描くspike     | FC postfx/transitionを通る          |
+| P0-04 | affine UV CPU式とshader prototype         | sample点が一致                      |
+| P0-05 | equirect reflection prototype             | normal/camera別の期待UVと一致       |
+| P0-06 | overlap one-shot車両音を試聴・測定        | continuous API要否を記録            |
+| P0-07 | 4世代style frameとHUD方針を確定           | Image Gen/3D量産前の承認            |
 
-| ID    | 作業                                                 | 成果物 / 受け入れ条件                 |
-| ----- | ---------------------------------------------------- | ------------------------------------- |
-| R0-01 | 「第1・第2世代は3Dメッシュ」の誤記仮定を確定         | 原仕様と本書の表が一致                |
-| R0-02 | 現行10テストとroot verifyをbaselineとして記録        | commit、結果、ブラウザ、GPU情報を記録 |
-| R0-03 | 同一入力replayで4世代の現行画像をcapture             | リニューアル前比較画像                |
-| R0-04 | art direction、camera、HUD wireframeを世代ごとに固定 | 4枚の承認用style frame                |
-| R0-05 | target browser、性能計測機、fallback方針を固定       | QA matrix                             |
+### Phase 1 — Racingをproduction Engineへ移行
 
-### Phase 1 — Engine render contractとasset contract
+依存: P0-02、P0-07
 
-依存: Phase 0
+| ID    | 作業                                            | 主な変更先                | 完了条件                                    |
+| ----- | ----------------------------------------------- | ------------------------- | ------------------------------------------- |
+| R1-01 | Racing render catalogとplaceholder asset        | `presentation/catalog.ts` | 全manifest asset preload成功                |
+| R1-02 | WebGL rendererへbootstrap変更                   | `bootstrap.ts`            | context restore/disposeを既存contractで通過 |
+| R1-03 | polyline/circle依存をbox/quad placeholderへ変換 | presentation              | 4世代がWebGLで起動                          |
+| R1-04 | HUDをDOMへ移す                                  | `ui/hud.ts`、HTML/CSS     | countdown〜resultが表示                     |
+| R1-05 | generation audio serviceへ変更                  | bootstrap/audio           | sourceが4世代で切り替わる                   |
+| R1-06 | production lifecycle E2E追加                    | tests/e2e                 | boot/switch/race/dispose合格                |
 
-| ID    | 作業                                                  | 主な変更先                      | 受け入れ条件                                      |
-| ----- | ----------------------------------------------------- | ------------------------------- | ------------------------------------------------- |
-| E1-01 | raster/affine/model/environment command型を追加       | `engine/render/frame.ts`        | create/reset/recording renderer contract test合格 |
-| E1-02 | profileへcapabilityを追加                             | `engine/generation/profiles.ts` | 全profileとConsole parity test合格                |
-| E1-03 | image/model/environment handleとmanifest loaderを追加 | `engine/assets`                 | dedupe/ref-count/failure/dispose test合格         |
-| E1-04 | composite rendererのpass順とfallbackを定義            | `engine/render`                 | 空frameと既存commandが現行同等に描画              |
-| E1-05 | 公開exportとboundary ruleを更新                       | `engine/index.ts`、tools        | app deep import 0件                               |
+このフェーズでは最終アートを要求しない。既存production serviceへRacingを接続し、後続機能の検証経路を先に固定する。
 
-### Phase 2 — ラスタースクロールとアフィン変換
+### Phase 2 — Engineの最小機能拡張
 
-依存: Phase 1
+依存: Phase 0 spike、Phase 1
 
-| ID    | 作業                                   | 主な変更先             | 受け入れ条件                           |
-| ----- | -------------------------------------- | ---------------------- | -------------------------------------- |
-| E2-01 | scanline table validationとbuffer pool | `engine/render/raster` | 範囲外、解像度差、reuseのunit test合格 |
-| E2-02 | Canvas参照実装とWebGL raster pass      | `engine/render/raster` | sample画像の差分が閾値内               |
-| E2-03 | affine CPU referenceとshader pass      | `engine/render/affine` | 既知UV座標とGPU captureが一致          |
-| E2-04 | palette/filter/signal post effect統合  | `engine/render/postfx` | FC/SFC画像golden合格                   |
-| E2-05 | context lossとresize対応               | renderer/platform      | 復帰後に同一frameを再描画              |
+| ID    | 作業                                         | 主な変更先           | 完了条件                        |
+| ----- | -------------------------------------------- | -------------------- | ------------------------------- |
+| E2-01 | raster/environment capability追加            | profiles             | profile/parity test合格         |
+| E2-02 | RenderFrame surface/material field追加       | frame/testkit        | reset/record/serialize test合格 |
+| E2-03 | raster validation、buffer reuse、shader pass | render/raster        | CPU値・GPU golden合格           |
+| E2-04 | affine reference、shader pass                | render/affine        | UV contract/golden合格          |
+| E2-05 | surfaceをgeneration pipelineへ統合           | pipeline/renderer    | palette/CRT/transitionを通過    |
+| E2-06 | ambient/directional LightCommandを接続       | renderer/shader      | command有無のlight test合格     |
+| E2-07 | environment mappingを追加                    | renderer/environment | reflection/fallback test合格    |
+| E2-08 | context restore/resource test拡張            | asset/GL tests       | 10 restore後もresource一定      |
+| E2-09 | Console回帰確認                              | root verify          | command/state/PCM golden不変    |
 
-### Phase 3 — 3Dモデル、ライティング、環境マップ
+### Phase 3 — 第1・第2世代
 
-依存: Phase 1。Phase 2と一部並行可能。
+依存: Phase 2。Image Gen制作はsurface contract確定後に開始する。
 
-| ID    | 作業                                 | 主な変更先            | 受け入れ条件                        |
-| ----- | ------------------------------------ | --------------------- | ----------------------------------- |
-| E3-01 | glTF GPU uploadとmodel instance      | `engine/render/model` | box/model golden、resource解放合格  |
-| E3-02 | PS1 profileのquantize/affine UV/sort | model shader/sort     | profile切替で効果がon/off           |
-| E3-03 | depth、normal、dynamic light         | model shader          | normal/lightの数値・画像test合格    |
-| E3-04 | cube/equirect environment loader     | assets/environment    | face向き、色空間、fallback test合格 |
-| E3-05 | reflection materialとshader cache    | render/environment    | camera/normal別の反射方向が正しい   |
-| E3-06 | WebGL capability fallback            | renderer              | 非対応機能を落として起動継続        |
+| ID    | 作業                                          | 完了条件                        |
+| ----- | --------------------------------------------- | ------------------------------- |
+| R3-01 | 共通`RaceVisualState`                         | RaceState非変更test合格         |
+| R3-02 | FC style frameからsprite/road/background生成  | alpha/palette/寸法検査合格      |
+| R3-03 | FC raster builder                             | 5状態scanline/image golden合格  |
+| R3-04 | SFC style frameからsprite/tile/background生成 | RGB555/seam/atlas検査合格       |
+| R3-05 | SFC affine builder                            | UV/image golden合格             |
+| R3-06 | AI距離・occlusion・sprite優先度               | player/AIを全状態で判別可能     |
+| R3-07 | FC↔SFC transition                             | state不変、旧新画面の両方を描画 |
 
-### Phase 4 — Racingアセットと世代別presentation
+### Phase 4 — 第3・第4世代
 
-依存: Phase 2、Phase 3のcommand contract。Image Gen制作と3D制作はcontract固定後に並行可能。
+依存: Phase 1、E2-06、E2-07。3D asset制作はPhase 3と並行可能。
 
-| ID    | 作業                                  | 主な変更先                  | 受け入れ条件                      |
-| ----- | ------------------------------------- | --------------------------- | --------------------------------- |
-| R4-01 | `RaceVisualState`とdispatcherを作る   | `presentation`              | builderが`RaceState`を変更しない  |
-| R4-02 | 第1世代画像をImage Genで制作・後処理  | `assets/gen1`               | palette/alpha/寸法検査合格        |
-| R4-03 | 第1世代raster builderを実装           | `gen1-raster.ts`            | 直線・左右curve golden合格        |
-| R4-04 | 第2世代画像をImage Genで制作・tile化  | `assets/gen2`               | seam/palette/寸法検査合格         |
-| R4-05 | 第2世代affine builderを実装           | `gen2-affine.ts`            | horizon/rotation golden合格       |
-| R4-06 | 第3世代低poly assetsとbuilder         | `assets/gen3`、presentation | preflight、budget、画像golden合格 |
-| R4-07 | 第4世代assets、environment、builder   | `assets/gen4`、presentation | light/reflection画像golden合格    |
-| R4-08 | manifest、preload、loading/failure UI | content/ui/bootstrap        | 低速・404・fallback E2E合格       |
+| ID    | 作業                             | 完了条件                         |
+| ----- | -------------------------------- | -------------------------------- |
+| R4-01 | PS1 low-poly car/course asset    | preflight/budget合格             |
+| R4-02 | PS1 frame builder/material       | quantize/affine/sort golden合格  |
+| R4-03 | PS2 car/course/environment asset | preflight/budget/color space合格 |
+| R4-04 | PS2 frame builder/light/material | light/reflection golden合格      |
+| R4-05 | 4世代commandを同一frameへ統合    | 全12切替で構図・state正常        |
+| R4-06 | renderer statsとbudget検査       | triangle/frame budget合格        |
 
-### Phase 5 — Racingサウンド
+### Phase 5 — BGM、車両音、cue
 
-依存: Phase 1。映像アセット制作と並行可能。
+依存: R1-05、P0-06。Phase 3/4と並行可能。
 
-| ID    | 作業                               | 主な変更先                 | 受け入れ条件                            |
-| ----- | ---------------------------------- | -------------------------- | --------------------------------------- |
-| E5-01 | 汎用continuous voice contract      | `engine/audio`             | update/fade/limit/dispose unit test合格 |
-| R5-02 | master scoreを作曲データとして実装 | `racing/content/audio`     | tempo/length/loop構造検査合格           |
-| R5-03 | 4世代のarrangement/patchを作る     | `arrangements.ts`          | OfflineAudio golden合格                 |
-| R5-04 | phase維持するaudio director        | `racing/audio/director.ts` | 全切替組合せでtick一致                  |
-| R5-05 | player/AIエンジン音                | `vehicle-sound.ts`         | RPM/pan/voice priority test合格         |
-| R5-06 | ブレーキ音とrace cue               | `vehicle-sound.ts`、app    | trigger/hysteresis/priority test合格    |
+| ID    | 作業                           | 完了条件                             |
+| ----- | ------------------------------ | ------------------------------------ |
+| R5-01 | master score                   | tempo/loop/track validation合格      |
+| R5-02 | 4世代arrangement               | OfflineAudio golden合格              |
+| R5-03 | audio presenter                | 全世代source/arrangement切替合格     |
+| R5-04 | player/AI vehicle sound        | speed/pan/voice priority test合格    |
+| R5-05 | brake soundとrace cue          | trigger/hysteresis/priority test合格 |
+| R5-06 | 必要時のみcontinuous voice API | P0-06の失敗条件解消                  |
 
-### Phase 6 — 統合、操作感、UI
+### Phase 6 — 統合、QA、文書化
 
-依存: Phase 4、Phase 5
+依存: Phase 3、4、5
 
-| ID    | 作業                                                   | 受け入れ条件                               |
-| ----- | ------------------------------------------------------ | ------------------------------------------ |
-| R6-01 | bootstrapを新renderer/asset/audioへ切替                | 初期load、unlock、resize、pagehideが正常   |
-| R6-02 | camera追従と視認性を4世代で調整                        | player/AI/次のcurveが判別可能              |
-| R6-03 | HUDとloading/resultを内部解像度別に調整                | 256×224でも文字欠けなし                    |
-| R6-04 | 世代切替transitionを統合                               | 状態・音楽位相維持、旧assetの安全なrelease |
-| R6-05 | gamepad、keyboard、audio off、WebGL fallbackを実機確認 | QA matrix全項目合格                        |
-
-### Phase 7 — 回帰、性能、文書化
-
-依存: Phase 6
-
-| ID    | 作業                                   | 受け入れ条件                   |
-| ----- | -------------------------------------- | ------------------------------ |
-| Q7-01 | root verifyと全Racing test             | 全件合格                       |
-| Q7-02 | 4世代browser visual test               | 承認済みgoldenとの差分が閾値内 |
-| Q7-03 | 4世代audio golden/measurement          | 無音・clip・位相ずれなし       |
-| Q7-04 | CPU/GPU/heap/audio resource計測        | 下記budget合格、増加傾向なし   |
-| Q7-05 | 境界・asset・shader preflight          | 違反0件                        |
-| Q7-06 | `ENGINE_API.md`と`RACING_PROOF.md`更新 | 新APIと再利用証跡を反映        |
+| ID    | 作業                                    | 完了条件                              |
+| ----- | --------------------------------------- | ------------------------------------- |
+| Q6-01 | 3周完走E2Eを4世代で実行                 | gameplay/result/restart合格           |
+| Q6-02 | 固定replay中の全世代切替                | state/audio phase不変                 |
+| Q6-03 | 4世代画像・音声golden                   | 承認済み差分のみ                      |
+| Q6-04 | keyboard/gamepad/audioなし/fallback確認 | QA matrix合格                         |
+| Q6-05 | restart/context restore/dispose stress  | resource leak 0                       |
+| Q6-06 | 性能計測                                | 下記budget合格                        |
+| Q6-07 | docs更新                                | ENGINE_API/RACING_PROOFへ実装結果反映 |
+| Q6-08 | root verifyとproduction build           | 全検査合格                            |
 
 ---
 
 ## 11. テスト計画
 
-### 11.1 Unit / contract
+### 11.1 Engine contract
 
-| 対象        | 検査内容                                                                           |
-| ----------- | ---------------------------------------------------------------------------------- |
-| gameplay    | 現行10テスト、固定入力replay、世代切替前後のstate同一性                            |
-| raster      | scanline table、clip、左右curve、buffer reuse、無効入力                            |
-| affine      | UV origin/step、wrap/clamp、CPU参照sample                                          |
-| model       | transform、instance、sort、quantize、missing attribute fallback                    |
-| environment | reflection vector、cube face/equirect UV、intensity、fallback                      |
-| assets      | dedupe、preload、失敗、cancel、reference count、context restore、dispose           |
-| audio       | transport phase、arrangement、RPM curve、brake hysteresis、voice priority、dispose |
-| generation  | capability、command dispatch、全12方向の世代切替組合せ                             |
+- raster tableの長さ、有限値、clip、buffer reuse、generation mask
+- affine UVのorigin/step、repeat/clamp、CPU/GPU一致
+- surfaceの描画順とFC/SFC sprite plane合成
+- transition中に旧・新surfaceを各1回描画
+- environment reflection vectorとequirectangular UV
+- environment capability off、textureなし、strength 0のfallback
+- ambient/directional/point lightの選択と固定light fallback
+- context loss/restore 10回と最終release
+- RenderFrame reset、testkit recording、serialization
 
-### 11.2 Golden
+### 11.2 Racing unit
 
-- 4世代 × `start straight / left curve / right curve / AI near / result` の最低20画像
-- rasterとaffineはGPU captureに加えて小サイズCPU参照画像を保持
-- 第3世代はquantize/affine UVのon/off比較、第4世代はlight/environmentのon/off比較を保持
-- audioは4世代各2小節、engine RPM 3点、brake開始/終了をmeasurementとして保存
-- golden更新は理由と比較画像をreviewし、自動一括更新だけで承認しない
+- 現行9 unit testを維持
+- `RaceVisualState`がRaceStateを変更しない
+- FC scanline tableの直線/左右curve/off-track
+- SFC matrixのheading/progress変化
+- 4世代builderの必須command/asset key
+- HUD stateとrace phase
+- vehicle sound frequency/gain、brake hysteresis
+- 世代切替前後のstate snapshot一致
 
-### 11.3 Browser E2E
+### 11.3 Browser/golden
 
-1. cold loadし、必須assetの完了前にrace tickが進まないことを確認する。
-2. countdown後に固定入力replayを開始する。
-3. 走行中に第1→第2→第3→第4→第1世代へ切り替える。
-4. 各切替直前・直後の論理state、music tick、active resource数を記録する。
-5. 3周完走、result、restartまで進める。
-6. resize、visibility復帰、audio mute/unmute、page disposeを確認する。
+- 4世代 × start straight / left / right / AI near / resultの最低20画像
+- PS1 quantize/affine texture on、PS2 light/environment onの比較画像
+- 4世代各2小節のPCM measurement
+- cold load、404、audio unlock failure、WebGL context restore
+- countdown→race→3 laps→result→restart
+- FC→SFC→PS1→PS2→FCの連続切替
 
-### 11.4 性能budget
-
-計測機はPhase 0で固定し、次を初期budgetとする。達成困難な場合は測定結果と視覚差を添えて変更する。
-
-| 指標               | 初期budget                                                   |
-| ------------------ | ------------------------------------------------------------ |
-| simulation         | 60 Hz固定、1 tick p95 2 ms未満                               |
-| 第1・第2世代render | p95 16.7 ms未満                                              |
-| 第3世代render      | p95 33.3 ms未満                                              |
-| 第4世代render      | p95 16.7 ms未満（640×448内部解像度）                         |
-| frame allocation   | steady stateで大きなtyped array/textureの毎frame確保なし     |
-| load               | progressが表示され、失敗時にasset keyと回復操作を提示        |
-| lifecycle          | restart 10回と全世代2往復後にactive resourceがbaselineへ戻る |
+golden更新は旧・新比較と理由をreviewし、自動更新だけで承認しない。
 
 ---
 
-## 12. 依存関係と実装順
+## 12. 性能・resource budget
+
+計測機はPhase 0で固定する。
+
+| 指標          | 初期budget                                                         |
+| ------------- | ------------------------------------------------------------------ |
+| simulation    | 60 Hz、1 tick p95 2 ms未満                                         |
+| FC/SFC render | p95 16.7 ms未満                                                    |
+| PS1 render    | p95 33.3 ms未満                                                    |
+| PS2 render    | p95 16.7 ms未満、640×448内部解像度                                 |
+| transition    | 2世代描画中p95 33.3 ms未満                                         |
+| allocation    | scanline typed array、texture、shaderのsteady-state毎frame確保なし |
+| shader        | 起動時compile。generation switch時のcompile 0                      |
+| asset         | restart 10回、restore 10回、dispose後active/GPU 0                  |
+| audio         | active voiceがprofile上限内、dispose後scheduled voice 0            |
+
+---
+
+## 13. 依存関係
 
 ```text
-Phase 0: 仕様・baseline
+Phase 0: spec / spike
         │
         ▼
-Phase 1: command / asset contract
+Phase 1: Racing production Engine integration
         │
-        ├──────────────┐
-        ▼              ▼
-Phase 2: raster/affine  Phase 3: 3D/environment
-        │              │
-        └──────┬───────┘
-               ▼
-Phase 4: assets / presentation
+        ▼
+Phase 2: minimal Engine extensions
+        │
+        ├─────────────┐
+        ▼             ▼
+Phase 3: FC/SFC       Phase 4: PS1/PS2
+        │             │
+        └──────┬──────┘
                │
-Phase 5: audio ─┤  （Phase 1後から並行可能）
+Phase 5: audio ┤  （Phase 1後から並行可能）
                ▼
-Phase 6: integration / UI
-               │
-               ▼
-Phase 7: QA / documentation
+Phase 6: integration / QA / docs
 ```
 
-最初の重要ゲートはPhase 1である。render commandとasset handleを確定する前に画像・モデルを量産すると、
-寸法、UV、texture形式、material情報の作り直しが発生する。Image Genのstyle検討は先行できるが、sprite sheet化と
-3D exportはcontract確定後に行う。
+最初の実装ゲートはPhase 1である。Racingをproduction WebGL/audioへ移す前に最終assetを量産しない。
+次のゲートはPhase 2のsurface/material contractであり、Image Genのsheet化と3D material exportは
+このcontract確定後に行う。
 
 ---
 
-## 13. リスクと対策
+## 14. 前版から削除・変更した作業
 
-| リスク                                   | 影響                       | 対策                                                   |
-| ---------------------------------------- | -------------------------- | ------------------------------------------------------ |
-| 原仕様のモデル世代が曖昧                 | 大量のasset作り直し        | Phase 0で最優先確定、代表1asset承認後に量産            |
-| 1つのcanvasで2D/3D contextを混在できない | renderer構成の手戻り       | 内部render targetと最終compositeをPhase 1で先に実証    |
-| raster/affine APIがRacing専用化する      | engine再利用性低下         | scanline tableとUV matrixだけをengine contractにする   |
-| glTF loader対応外のexport                | model欠落・runtime failure | export preset、preflight、fixtureをasset制作前に固定   |
-| 環境マップが低性能GPUで重い              | 第4世代のframe落ち         | 解像度・sample方式・light数の段階的fallback            |
-| BGM切替で位相がずれる                    | 世代切替の体験悪化         | audio timeを正本にし、OfflineAudio testを先行          |
-| engine音がvoice limitを占有する          | BGM/SFX欠落                | priority、voice pool、AI距離減衰、世代別上限test       |
-| 生成画像の角度・車種が不統一             | sprite切替がちらつく       | style frame、固定配色、角度表、sheet化前の目視QA       |
-| 世代別builderが物理へ分岐を持つ          | 切替で挙動が変わる         | `RaceState`読取専用化とmutation test                   |
-| 新rendererがConsole Chaosを壊す          | workspace全体の回帰        | 既存rendererを残し、root verifyとparityを各Phaseで実行 |
+| 前版の計画                                     | 再計画                                                 |
+| ---------------------------------------------- | ------------------------------------------------------ |
+| 新しいcomposite/generation rendererを作る      | 既存`createGenerationWebGlRenderer`へpassを追加        |
+| ModelCommandを新設                             | 既存`MeshCommand.asset`とglTF loaderを使用             |
+| AssetManager/manifest loaderを新設             | 既存AssetManagerとTypeScript RenderAssetManifestを使用 |
+| 旧・新世代assetを都度load/release              | 1コース分を起動時preload、renderer dispose時に解放     |
+| 3D upload、quantize、affine UV、sortを新規実装 | 完成済み機能をそのまま使用                             |
+| BGM clockと4音源を新規実装                     | 完成済みgeneration audio serviceへRacingのScoreを渡す  |
+| WebGL overlay passを追加                       | Racing HUDをapp所有DOMへ移す                           |
+| normal/roughnessを含むmaterial拡張             | equirect map + reflection strengthだけを追加           |
+| 世代別camera APIを追加                         | raster/affineはscreen-space、PS1/PS2は共通cameraで回避 |
 
----
-
-## 14. レビュー単位とコミット方針
-
-- engine API、各描画機能、Racing presentation、audio、asset追加を別review単位にする。
-- 生成binaryだけの変更とruntime code変更を可能な限り分離する。
-- golden更新には、変更理由、旧/新比較、許容差を含める。
-- 1つの変更で全4世代を同時に書き換えず、共通contractの後に世代ごとの縦切りを完成させる。
-- 各review時に`npm run verify`、対象browser capture、resource countを記録する。
-
-推奨する縦切り順は「第1世代 → 第2世代 → 第3世代 → 第4世代」である。ただしengine実装は
-Phase 2とPhase 3を並行できる。各世代はasset、frame builder、画像golden、実ブラウザ確認までを1単位とし、
-未完成の4世代を長期間同時に抱えない。
+この削減により、Engine変更は既存pipelineの差分としてreviewでき、Console Chaos回帰の範囲も限定できる。
 
 ---
 
-## 15. 最終チェックリスト
+## 15. リスクと対策
+
+| リスク                                     | 対策                                                   |
+| ------------------------------------------ | ------------------------------------------------------ |
+| surface passが既存palette/sprite合成を壊す | scene targetへ描き、postfx前後のgoldenを固定           |
+| transitionで旧世代commandが欠ける          | 1 frameへ4世代分を積み、generation mask contractをtest |
+| raster tableの転送がGC/GPU stallを起こす   | typed array/buffer再利用、p95計測                      |
+| `uvMode`など宣言だけのfieldへ誤依存        | 実際にrendererが読むfieldだけをacceptance testで固定   |
+| environment shaderがPS1/Consoleへ影響      | capability offでuniform 0、固定golden不変を検査        |
+| LightCommand接続でConsoleの陰影が変わる    | commandなしは現行固定lightへfallback                   |
+| WebGL移行でRacing HUDが消える              | Phase 1で先にDOM HUDへ移行                             |
+| one-shot車両音が途切れる                   | Phase 0で測定し、失敗時のみ汎用continuous API          |
+| Image Genの車種・角度が不統一              | style frame、角度表、代表sheet承認後に量産             |
+| glTF exportがloader subset外               | export presetとpreflightを最初の代表modelで固定        |
+| Racing変更がEngine boundaryを侵食          | boundary checkerへ新command fixtureを追加              |
+
+---
+
+## 16. 最終チェックリスト
 
 ### Engine
 
-- [ ] raster scrollが公開APIと少なくとも2つのbackend testを持つ
-- [ ] affine planeが公開API、CPU参照、shader testを持つ
-- [ ] model instanceとenvironment mapが公開API、fallback、lifecycle testを持つ
-- [ ] hardware profileの既存値が意図せず変化していない
-- [ ] engineにRacing固有語彙・asset path・世代別アートがない
+- [ ] raster surfaceとaffine surfaceが公開API、GPU pass、contract testを持つ
+- [ ] surfaceが既存FC/SFC postfxとtransitionを通る
+- [ ] ambient/directional LightCommandが実際にrendererへ反映される
+- [ ] environment mapがPS2だけで有効になり、fallbackがある
+- [ ] context restore、dispose、resource countが既存contractを維持する
+- [ ] Consoleのstate/render/audio goldenが不変
 
 ### Racing
 
-- [ ] 既存走行・AI・ラップ・順位・result・restartが維持されている
-- [ ] 4世代の表現が受け入れ条件を満たす
-- [ ] Image Gen由来assetのstyle、透明度、palette、seam検査が合格する
-- [ ] 第3・第4世代のmodel preflightとbudget検査が合格する
-- [ ] BGM、engine音、brake音、race cueが4世代で動作する
-- [ ] 世代切替時に論理stateとmusic phaseが維持される
+- [ ] production WebGL rendererとgeneration audio serviceを使用する
+- [ ] 既存走行・AI・lap・rank・result・restartを維持する
+- [ ] 4世代の映像が仕様の表現方式で明確に区別できる
+- [ ] Image Gen assetのalpha/palette/seam/atlas検査が合格する
+- [ ] PS1/PS2 modelのpreflightとbudget検査が合格する
+- [ ] BGM、vehicle sound、brake、race cueが4世代で動作する
+- [ ] 世代切替時にRaceStateとmusic phaseが維持される
+- [ ] DOM HUDが小解像度、keyboard、gamepad、resultで成立する
 
 ### QA / Docs
 
-- [ ] 現行10テストを含む全自動検査が合格する
-- [ ] 4世代の画像・音声goldenがreview済みである
-- [ ] keyboard/gamepad、audioなし、fallback環境を確認する
-- [ ] 性能・resource lifecycle budgetを満たす
-- [ ] `ENGINE_API.md`と`RACING_PROOF.md`が実装結果に更新されている
+- [ ] 現行baselineを含む全unit/E2Eが合格する
+- [ ] 4世代の画像・音声goldenがreview済み
+- [ ] context restore、restart 10回、全世代2往復でleakがない
+- [ ] 性能budgetを満たす
+- [ ] root `npm run verify`と全production buildが合格する
+- [ ] `ENGINE_API.md`と`RACING_PROOF.md`が実装結果へ更新されている
