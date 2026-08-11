@@ -63,3 +63,14 @@ for (const record of manifest.records) {
   if (loadedTriangles !== record.geometry.triangles) throw new Error(`${record.generation}: Engine loader triangle mismatch`);
   console.log(`✓ ${record.generation}: ${loadedTriangles} triangles, fingerprint ${runtimeStats.fingerprint.slice(0, 12)}, Engine loader pass`);
 }
+
+const environmentPath = resolve(ROOT, 'apps/racing/public/assets/gen4/environment/circuit.png');
+const environmentBytes = readFileSync(environmentPath);
+const environmentDimensions = pngDimensions(environmentPath);
+if (environmentDimensions[0] !== 1024 || environmentDimensions[1] !== 512) {
+  throw new Error(`PS2 environment must be a 1024x512 equirectangular texture, got ${environmentDimensions.join('x')}`);
+}
+if (environmentBytes.byteLength > 1_000_000) throw new Error('PS2 environment exceeds the 1 MB runtime budget');
+const hasColorProfile = environmentBytes.includes(Buffer.from('iCCP')) || environmentBytes.includes(Buffer.from('sRGB'));
+if (!hasColorProfile) throw new Error('PS2 environment PNG does not declare an RGB color profile');
+console.log(`✓ PS2 environment: ${environmentDimensions.join('x')}, ${environmentBytes.byteLength} bytes, RGB profile present`);

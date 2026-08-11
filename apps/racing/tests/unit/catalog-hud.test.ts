@@ -7,7 +7,10 @@ import { formatRaceTime, hudModelFromRace } from '@racing/ui/hud';
 describe('Racing production presentation bootstrap', () => {
   it('preloads a public runtime manifest for every generation', () => {
     const manifest = createRacingRenderManifest();
-    expect(manifest.models).toEqual([]);
+    expect(manifest.models).toEqual([
+      { url: 'assets/gen3/models/car.glb', polygonSort: true },
+      { url: 'assets/gen4/models/car.glb' },
+    ]);
     expect(manifest.geometries).toEqual([{ kind: 'box' }]);
     expect(manifest.atlases).toEqual([
       { url: 'assets/gen1/sprites/cars.png', columns: 3, rows: 2 },
@@ -19,6 +22,9 @@ describe('Racing production presentation bootstrap', () => {
       'assets/gen1/road/road.png',
       'assets/gen2/backgrounds/coast.png',
       'assets/gen2/tiles/circuit.png',
+      'assets/gen3/textures/car_base_color.png',
+      'assets/gen4/textures/car_base_color.png',
+      'assets/gen4/environment/circuit.png',
     ]));
     for (const generation of GENERATION_IDS) {
       expect(manifest.fallbackTextures[generation]).toBe(RACING_FALLBACK_TEXTURE);

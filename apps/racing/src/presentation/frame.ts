@@ -1,27 +1,13 @@
 import type { GenerationId, RenderFrame, Vec2 } from '@console-chaos/engine';
 import { racingTheme } from '../config/themes';
-import type { RacerState, RaceState } from '../gameplay/race';
+import type { RaceState } from '../gameplay/race';
 import { createGen1RasterPresenter, type Gen1RasterPresenter } from './gen1-raster';
 import { buildGen2AffineFrame } from './gen2-affine';
+import { buildGen3LowPolyFrame } from './gen3-low-poly';
+import { buildGen4EnvironmentFrame } from './gen4-environment';
 import { createRaceVisualState } from './visual-state';
 
 const THREE_D_GENERATIONS = ['PS1', 'PS2'] as const;
-
-function carCommand(frame: RenderFrame, racer: RacerState, color: string, generation: GenerationId): void {
-  frame.meshes.push({
-    id: `${generation}-${racer.id}`,
-    generations: [generation],
-    geometry: { kind: 'box' },
-    transform: {
-      position: [racer.car.position[0], 0.48, racer.car.position[1]],
-      rotationY: -racer.car.heading,
-      scale: [2.35, 0.75, 1.35],
-    },
-    color,
-    material: `racing-solid-${generation}`,
-    layer: 10,
-  });
-}
 
 function roadSegment(
   frame: RenderFrame,
@@ -65,7 +51,7 @@ function roadSegment(
   }
 }
 
-function buildThreeDimensionalPlaceholder(frame: RenderFrame, state: RaceState, generation: GenerationId): void {
+function buildThreeDimensionalCourse(frame: RenderFrame, state: RaceState, generation: GenerationId): void {
   const theme = racingTheme(generation);
   frame.backgrounds.push({ color: theme.ground, secondaryColor: theme.sky, generations: [generation] });
   frame.materials.push({
@@ -98,8 +84,6 @@ function buildThreeDimensionalPlaceholder(frame: RenderFrame, state: RaceState, 
       layer: 2,
     });
   });
-  carCommand(frame, state.player, theme.player, generation);
-  for (const opponent of state.opponents) carCommand(frame, opponent, theme.opponent, generation);
 }
 
 export interface RacingPresentation {
@@ -117,15 +101,17 @@ export function createRacingPresentation(): RacingPresentation {
       frame.timeSeconds = state.tick / 60;
       frame.camera = {
         projection: 'perspective',
-        position: [player.position[0] - forward[0] * 10, 7.5, player.position[1] - forward[1] * 10],
-        target: [player.position[0] + forward[0] * 7, 0, player.position[1] + forward[1] * 7],
+        position: [player.position[0] - forward[0] * 9, 4.2, player.position[1] - forward[1] * 9],
+        target: [player.position[0] + forward[0] * 7, 0.55, player.position[1] + forward[1] * 7],
         zoom: 14,
         fovDegrees: 57,
       };
       const visual = createRaceVisualState(state);
       gen1.build(frame, visual);
       buildGen2AffineFrame(frame, visual);
-      for (const generation of THREE_D_GENERATIONS) buildThreeDimensionalPlaceholder(frame, state, generation);
+      for (const generation of THREE_D_GENERATIONS) buildThreeDimensionalCourse(frame, state, generation);
+      buildGen3LowPolyFrame(frame, state);
+      buildGen4EnvironmentFrame(frame, state);
     },
   };
 }
