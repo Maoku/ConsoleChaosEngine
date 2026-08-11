@@ -7,7 +7,7 @@ import { createWorld, type World } from '../core/world';
 import { createGenerationController, type GenerationController, type GenerationSwitchEvent } from '../generation/controller';
 import type { GenerationId } from '../generation/profiles';
 import { createNullInputSource, type DeviceInputSource } from '../input/device';
-import type { DeviceSnapshot } from '../input/actions';
+import { createDeviceSnapshot, type DeviceSnapshot } from '../input/actions';
 import { createRenderFrame, type RenderFrame } from '../render/frame';
 import type { FrameRenderer } from '../render/renderer';
 
@@ -35,6 +35,7 @@ export interface FixedUpdateFrame {
 }
 
 export interface GameInstance {
+  prepareFixedUpdate?(frame: FixedUpdateFrame): void;
   fixedUpdate(frame: FixedUpdateFrame): void;
   buildRenderFrame(frame: RenderFrame, alpha: number): void;
   dispose(): void;
@@ -73,7 +74,7 @@ export function createGameHost(options: GameHostOptions): GameHost {
   const assets = options.assets ?? createAssetManager();
   const audio = options.audio ?? createNullAudioService();
   const frame = createRenderFrame();
-  const inputState: { snapshot: DeviceSnapshot } = { snapshot: inputSource.poll() };
+  const inputState: { snapshot: DeviceSnapshot } = { snapshot: createDeviceSnapshot() };
   let instance: GameInstance | null = null;
   let moduleId = 'uninitialized';
   let running = false;
@@ -97,10 +98,12 @@ export function createGameHost(options: GameHostOptions): GameHost {
 
   const loop = createFixedStepLoop({
     fixedUpdate(tick): void {
-      generation.advance(FIXED_DT_MS);
       inputState.snapshot = inputSource.poll();
+      const updateFrame = { tick, dtSeconds: FIXED_DT_SECONDS, dtMs: FIXED_DT_MS };
+      instance?.prepareFixedUpdate?.(updateFrame);
+      generation.advance(FIXED_DT_MS);
       audio.update();
-      instance?.fixedUpdate({ tick, dtSeconds: FIXED_DT_SECONDS, dtMs: FIXED_DT_MS });
+      instance?.fixedUpdate(updateFrame);
     },
     render(alpha): void {
       if (!instance) return;
@@ -154,4 +157,3 @@ export function createGameHost(options: GameHostOptions): GameHost {
     },
   };
 }
-

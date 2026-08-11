@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   FORCED_SWITCH_DURATION_MS,
+  FORCED_WARNING_MS,
   NORMAL_SWITCH_DURATION_MS,
   createGenerationController,
 } from '../src/generation/controller';
@@ -21,6 +22,42 @@ describe('generation controller', () => {
     expect(controller.invulnerable).toBe(false);
     controller.force('FC');
     expect(controller.transition.durationMs).toBe(FORCED_SWITCH_DURATION_MS);
+  });
+
+  it('emits profile-complete before/start/after events in order', () => {
+    const controller = createGenerationController('FC');
+    const order: string[] = [];
+    controller.onBeforeSwitch((event) => {
+      order.push(`before:${controller.generation}`);
+      expect(event.fromProfile).toBe(HARDWARE_GENERATION_PROFILES.FC);
+      expect(event.toProfile).toBe(HARDWARE_GENERATION_PROFILES.SFC);
+    });
+    controller.onSwitch(() => order.push(`start:${controller.generation}`));
+    controller.onAfterSwitch(() => order.push(`after:${controller.generation}`));
+    controller.request('SFC');
+    controller.advance(NORMAL_SWITCH_DURATION_MS);
+    expect(order).toEqual(['before:FC', 'start:SFC', 'after:SFC']);
+  });
+
+  it('preserves a queued forced request and supports warning cancellation/release', () => {
+    const controller = createGenerationController('FC');
+    const warnings: string[] = [];
+    controller.onForcedWarning(({ to, leadMs }) => warnings.push(`${to}:${leadMs}`));
+    controller.scheduleForced('PS2');
+    expect(controller.warningRemainingMs).toBe(FORCED_WARNING_MS);
+    expect(warnings).toEqual([`PS2:${FORCED_WARNING_MS}`]);
+    controller.cancelForcedWarning();
+    expect(controller.warningTo).toBeNull();
+
+    controller.request('SFC');
+    controller.force('PS1');
+    expect(controller.request('PS2')).toBe(false);
+    expect(controller.pending).toBe('PS1');
+    controller.advance(NORMAL_SWITCH_DURATION_MS);
+    expect(controller.generation).toBe('PS1');
+    expect(controller.forced).toBe(true);
+    controller.releaseForced();
+    expect(controller.forced).toBe(false);
   });
 });
 
@@ -43,4 +80,3 @@ describe('generic action map', () => {
     expect(ps2.fire.pressed).toBe(false);
   });
 });
-

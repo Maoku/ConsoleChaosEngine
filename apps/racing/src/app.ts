@@ -1,9 +1,10 @@
 import {
   GENERATION_IDS,
+  type ActionSnapshot,
   type ButtonActionValue,
   type GameModule,
 } from '@console-chaos/engine';
-import { createRacingActionMap } from './config/actions';
+import { createRacingActionMap, type RacingActionDefinition } from './config/actions';
 import { buildRacingFrame } from './presentation/frame';
 import { createRaceState, restartRace, updateRace } from './gameplay/race';
 
@@ -14,15 +15,18 @@ export const RACING_GAME_MODULE: GameModule = {
   async create(context) {
     const actions = createRacingActionMap();
     const state = createRaceState();
+    let input: ActionSnapshot<RacingActionDefinition> | null = null;
 
     return {
-      fixedUpdate({ dtMs }): void {
-        const input = actions.sample(context.input.snapshot, context.generation.profile, dtMs);
+      prepareFixedUpdate({ dtMs }): void {
+        input = actions.sample(context.input.snapshot, context.generation.profile, dtMs);
         if (pressed(input.switchPrevious)) context.generation.cycle(-1);
         if (pressed(input.switchNext)) context.generation.cycle(1);
         const direct = [input.switch1, input.switch2, input.switch3, input.switch4].findIndex(pressed);
         if (direct >= 0) context.generation.request(GENERATION_IDS[direct] ?? context.generation.generation);
-
+      },
+      fixedUpdate(): void {
+        if (!input) return;
         const events = updateRace(state, {
           steer: input.steer,
           accelerate: input.accelerate.value,
@@ -45,4 +49,3 @@ export const RACING_GAME_MODULE: GameModule = {
     };
   },
 };
-
