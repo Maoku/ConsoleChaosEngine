@@ -150,10 +150,10 @@ export function createGameHost(options: GameHostOptions): GameHost {
       instance?.dispose();
       instance = null;
       inputSource.dispose();
+      options.renderer.dispose();
       assets.dispose();
       audio.dispose();
       context.world.clear();
-      options.renderer.dispose();
       events.emit('disposed', { moduleId });
       events.clear();
     },

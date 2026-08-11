@@ -92,6 +92,7 @@ export interface BackgroundCommand {
   offset?: Vec2;
   placement?: { bottom: number; height: number };
   brightness?: number;
+  fogDensity?: number;
   generations?: readonly GenerationId[];
 }
 

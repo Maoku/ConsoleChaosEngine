@@ -182,6 +182,7 @@ export function createConsoleChaosPresentation(level: LevelFile): ConsoleChaosPr
           color: `rgb(${backdrop.sky[1].join(' ')})`,
           secondaryColor: `rgb(${backdrop.sky[0].join(' ')})`,
           brightness: backdropBrightness,
+          fogDensity: theme.art.fogDensity,
           generations: [generation],
         });
         for (const layer of [backdrop.far, backdrop.near]) {

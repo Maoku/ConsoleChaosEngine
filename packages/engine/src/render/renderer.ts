@@ -95,7 +95,10 @@ export function createCanvasCommandRenderer(canvas: HTMLCanvasElement): FrameRen
       const palette = profile.video.paletteMode === 'fixed54' ? fixedPaletteColor : (color: string) => color;
       // Textured/parallax layers are optional decorations. The untextured layer
       // remains the clear-color authority even when a backend cannot sample them.
-      const background = frame.backgrounds.find((candidate) => !candidate.texture) ?? frame.backgrounds.at(0);
+      const visibleInGeneration = (candidate: { generations?: readonly string[] }): boolean =>
+        candidate.generations === undefined || candidate.generations.includes(profile.id);
+      const generationBackgrounds = frame.backgrounds.filter(visibleInGeneration);
+      const background = generationBackgrounds.find((candidate) => !candidate.texture) ?? generationBackgrounds.at(0);
       if (background?.secondaryColor) {
         const gradient = context.createLinearGradient(0, 0, 0, internal.height);
         gradient.addColorStop(0, palette(background.secondaryColor));
@@ -107,7 +110,8 @@ export function createCanvasCommandRenderer(canvas: HTMLCanvasElement): FrameRen
       context.fillRect(0, 0, internal.width, internal.height);
       context.lineJoin = profile.video.affineTexture ? 'bevel' : 'round';
 
-      for (const mesh of [...frame.meshes].sort((left, right) => (left.layer ?? 0) - (right.layer ?? 0))) {
+      for (const mesh of frame.meshes.filter(visibleInGeneration).sort((left, right) => (left.layer ?? 0) - (right.layer ?? 0))) {
+        if (mesh.visible === false) continue;
         pathGeometry(mesh.geometry, mesh, frame);
         context.fillStyle = palette(mesh.color);
         if (mesh.geometry.kind !== 'polyline') context.fill();
@@ -117,7 +121,8 @@ export function createCanvasCommandRenderer(canvas: HTMLCanvasElement): FrameRen
         }
       }
 
-      for (const sprite of [...frame.sprites].sort((left, right) => (left.layer ?? 0) - (right.layer ?? 0))) {
+      for (const sprite of frame.sprites.filter(visibleInGeneration).sort((left, right) => (left.layer ?? 0) - (right.layer ?? 0))) {
+        if (sprite.visible === false) continue;
         const center = project(sprite.position, frame);
         const scale = Math.min(internal.width, internal.height) / frame.camera.zoom;
         context.save();

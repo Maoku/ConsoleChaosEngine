@@ -15,8 +15,9 @@ export interface GLContext {
   readonly canvas: HTMLCanvasElement;
   readonly caps: GLCaps;
   /** コンテキストロストからの復帰時に呼ばれる。全リソースの再作成が必要 */
-  onRestored(handler: () => void): void;
+  onRestored(handler: () => void): () => void;
   readonly lost: boolean;
+  dispose(): void;
 }
 
 export interface GLContextOptions {
@@ -48,28 +49,36 @@ export function createGLContext(
     float: gl.getExtension('EXT_color_buffer_float') !== null,
   };
 
-  const restoredHandlers: Array<() => void> = [];
+  const restoredHandlers = new Set<() => void>();
   let lost = false;
 
-  canvas.addEventListener('webglcontextlost', (e) => {
+  const contextLost = (e: Event): void => {
     // 既定動作を止めないと復帰イベントが飛んでこない
     e.preventDefault();
     lost = true;
-  });
-  canvas.addEventListener('webglcontextrestored', () => {
+  };
+  const contextRestored = (): void => {
     lost = false;
     for (const handler of restoredHandlers) handler();
-  });
+  };
+  canvas.addEventListener('webglcontextlost', contextLost);
+  canvas.addEventListener('webglcontextrestored', contextRestored);
 
   return {
     gl,
     canvas,
     caps,
     onRestored(handler) {
-      restoredHandlers.push(handler);
+      restoredHandlers.add(handler);
+      return () => restoredHandlers.delete(handler);
     },
     get lost() {
       return lost;
+    },
+    dispose(): void {
+      restoredHandlers.clear();
+      canvas.removeEventListener('webglcontextlost', contextLost);
+      canvas.removeEventListener('webglcontextrestored', contextRestored);
     },
   };
 }

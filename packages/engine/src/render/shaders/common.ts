@@ -1,0 +1,3 @@
+const source = "// フルスクリーンパスが共通で持つ宣言（postfx/chain.ts が各パスの先頭に連結する）。\n// #version 行は chain.ts 側が付ける。ここには書かない。\n\nprecision highp float;\nprecision highp int;\n\nin vec2 vUv;\nout vec4 fragColor;\n\nuniform sampler2D uSource;   // 直前のパスの出力\nuniform vec2 uSourceSize;    // 入力の画素数\nuniform vec2 uOutputSize;    // 出力の画素数\nuniform float uTimeSeconds;  // ノイズなど時間依存の演出用\n\n// 入力を素直に取得する\nvec4 sampleSource(vec2 uv) {\n  return texture(uSource, uv);\n}\n\n// テクセル中心へスナップする。ドット単位の見えを崩さないため、\n// 拡大時のサンプリングは常にこれを通す。\nvec2 snapToTexel(vec2 uv, vec2 size) {\n  return (floor(uv * size) + 0.5) / size;\n}\n\n// 輝度（NTSC 系の重み）。カラークラッシュの代表色選定と CRT のにじみで使う。\nfloat luma(vec3 c) {\n  return dot(c, vec3(0.299, 0.587, 0.114));\n}\n";
+export default source;
+

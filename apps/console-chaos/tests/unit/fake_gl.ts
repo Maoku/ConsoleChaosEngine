@@ -215,8 +215,9 @@ export function createFakeGL(): FakeGL {
     gl: gl as unknown as WebGL2RenderingContext,
     canvas: { width: 640, height: 480 } as HTMLCanvasElement,
     caps: { maxTextureSize: 4096, maxColorAttachments: 8, float: false },
-    onRestored: () => {},
+    onRestored: () => () => {},
     lost: false,
+    dispose: () => {},
   };
 
   return {
