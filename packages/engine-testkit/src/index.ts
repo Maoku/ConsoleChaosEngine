@@ -9,6 +9,7 @@ import {
   type HardwareGenerationProfile,
   type LoopHost,
   type RenderFrame,
+  type Score,
 } from '@console-chaos/engine';
 
 export interface ManualLoopHost extends LoopHost {
@@ -72,12 +73,17 @@ export function createMutableInputSource(): MutableInputSource {
 
 export interface RecordingAudioService extends AudioService {
   readonly tones: Array<{ frequency: number; duration: number; gain: number }>;
+  readonly profiles: HardwareGenerationProfile[];
+  readonly scores: Score[];
   advance(seconds: number): void;
 }
 
 export function createRecordingAudioService(bpm = 120): RecordingAudioService {
   let time = 0;
+  let sourceKey: string | null = null;
   const tones: RecordingAudioService['tones'] = [];
+  const profiles: HardwareGenerationProfile[] = [];
+  const scores: Score[] = [];
   const clock = createTransportClock(bpm);
   clock.start(0);
   return {
@@ -85,16 +91,23 @@ export function createRecordingAudioService(bpm = 120): RecordingAudioService {
       return time;
     },
     clock,
-    currentSourceKey: null,
+    get currentSourceKey() {
+      return sourceKey;
+    },
     get barPosition() {
       return clock.barAt(time);
     },
     tones,
+    profiles,
+    scores,
     unlock: async () => {},
     setGenerationVoiceLimit: () => {},
-    setGenerationProfile: () => {},
-    playScore: () => {},
-    useScore: () => {},
+    setGenerationProfile: (profile) => {
+      profiles.push(profile);
+      sourceKey = profile.audio.synth;
+    },
+    playScore: (score) => scores.push(score),
+    useScore: (score) => scores.push(score),
     playOneShot: (request) => tones.push({
       frequency: request.frequency,
       duration: request.durationSeconds,
