@@ -11,7 +11,7 @@ import {
 import { adaptConsoleChaosLevel } from '@/content/level-adapter';
 import type { LevelFile } from '@/level/schema';
 import { createSession } from '@/gameplay/session';
-import { buildConsoleChaosFrame } from '@/presentation/frame';
+import { createConsoleChaosPresentation } from '@/presentation/frame';
 import { createConsoleAudioPresenter } from '@/audio/presenter';
 import { createCueTracker, pollCues } from '@/gameplay/audio_cues';
 import { songOf } from '@/audio/songs';
@@ -41,6 +41,7 @@ export function createConsoleChaosModule(level: LevelFile, hooks: ConsoleChaosMo
         generation: context.generation,
       });
       const audio = createConsoleAudioPresenter(context.audio, songOf(null).score);
+      const presentation = createConsoleChaosPresentation(level);
       const cues = createCueTracker();
       audio.start(context.generation.profile);
       const disconnectAudio = context.events.on('generationSwitch', (event) => {
@@ -61,11 +62,12 @@ export function createConsoleChaosModule(level: LevelFile, hooks: ConsoleChaosMo
         },
         fixedUpdate(): void {
           session.tick(snapshot);
+          presentation.fixedUpdate(session);
           for (const cue of pollCues(cues, session)) audio.playSfx(cue, context.generation.profile);
           hooks.onFixedUpdate?.(session);
         },
         buildRenderFrame(frame: RenderFrame): void {
-          buildConsoleChaosFrame(frame, session, level, context);
+          presentation.build(frame, session, context);
           hooks.onRender?.(session);
         },
         dispose(): void {

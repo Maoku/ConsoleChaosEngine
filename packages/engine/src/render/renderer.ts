@@ -62,7 +62,12 @@ export function createCanvasCommandRenderer(canvas: HTMLCanvasElement): FrameRen
     const points = geometry.kind === 'polygon' || geometry.kind === 'polyline'
       ? geometry.points
       : geometry.kind === 'box'
-        ? [[-0.5, -0.5], [0.5, -0.5], [0.5, 0.5], [-0.5, 0.5]] satisfies Vec2[]
+        ? (() => {
+            const half = geometry.halfExtents ?? [0.5, 0.5, 0.5];
+            return [[-half[0], -half[2]], [half[0], -half[2]], [half[0], half[2]], [-half[0], half[2]]] satisfies Vec2[];
+          })()
+        : geometry.kind === 'quad'
+          ? [[-geometry.halfSize[0], -geometry.halfSize[1]], [geometry.halfSize[0], -geometry.halfSize[1]], [geometry.halfSize[0], geometry.halfSize[1]], [-geometry.halfSize[0], geometry.halfSize[1]]] satisfies Vec2[]
         : [];
     if (geometry.kind === 'circle') {
       const center = project(position, frame);

@@ -1,3 +1,5 @@
+import type { GenerationId } from '../generation/profiles';
+
 export type Vec2 = readonly [number, number];
 export type Vec3 = readonly [number, number, number];
 export type Color = string;
@@ -18,7 +20,8 @@ export interface CameraCommand {
 }
 
 export type GeometryCommand =
-  | { kind: 'box' }
+  | { kind: 'box'; halfExtents?: Vec3; uvScale?: number }
+  | { kind: 'quad'; halfSize: Vec2; uvRepeat?: Vec2 }
   | { kind: 'circle'; radius: number }
   | { kind: 'polygon'; points: readonly Vec2[] }
   | { kind: 'polyline'; points: readonly Vec2[]; width: number; closed?: boolean };
@@ -35,6 +38,8 @@ export interface MeshCommand {
   visible?: boolean;
   castShadow?: boolean;
   receiveShadow?: boolean;
+  groundY?: number;
+  generations?: readonly GenerationId[];
 }
 
 export interface SkinnedMeshCommand {
@@ -44,10 +49,12 @@ export interface SkinnedMeshCommand {
   animationTime: number;
   transform: TransformCommand;
   tint?: Color;
+  tintFactor?: readonly [number, number, number, number];
   frontAxis?: '-Z' | '+Z';
   material?: string;
   layer?: number;
   visible?: boolean;
+  generations?: readonly GenerationId[];
 }
 
 export interface SpriteCommand {
@@ -63,6 +70,7 @@ export interface SpriteCommand {
   flipX?: boolean;
   alphaCutoff?: number;
   visible?: boolean;
+  generations?: readonly GenerationId[];
 }
 
 export interface LightCommand {
@@ -72,6 +80,7 @@ export interface LightCommand {
   intensity: number;
   radius: number;
   kind?: 'point' | 'directional' | 'ambient';
+  generations?: readonly GenerationId[];
 }
 
 export interface BackgroundCommand {
@@ -80,14 +89,18 @@ export interface BackgroundCommand {
   texture?: string;
   repeat?: Vec2;
   parallax?: Vec2;
+  offset?: Vec2;
   placement?: { bottom: number; height: number };
   brightness?: number;
+  generations?: readonly GenerationId[];
 }
 
 export interface MaterialCommand {
   id: string;
   color?: Color;
+  colorFactor?: readonly [number, number, number, number];
   baseColorTexture?: string;
+  topColorTexture?: string;
   normalTexture?: string;
   emissiveTexture?: string;
   filter?: 'nearest' | 'linear';
@@ -95,6 +108,14 @@ export interface MaterialCommand {
   uvMode?: 'perspective' | 'affine';
   castShadow?: boolean;
   receiveShadow?: boolean;
+  uvScale?: number;
+  alphaCutoff?: number;
+  ambient?: number;
+  diffuse?: number;
+  polygonSort?: boolean;
+  floatAmplitude?: number;
+  uvScrollY?: number;
+  generations?: readonly GenerationId[];
 }
 
 export interface OverlayCommand {
@@ -108,6 +129,7 @@ export interface OverlayCommand {
 }
 
 export interface RenderFrame {
+  timeSeconds: number;
   camera: CameraCommand;
   readonly meshes: MeshCommand[];
   readonly skinnedMeshes: SkinnedMeshCommand[];
@@ -128,6 +150,7 @@ const DEFAULT_CAMERA: CameraCommand = {
 
 export function createRenderFrame(): RenderFrame {
   const frame: RenderFrame = {
+    timeSeconds: 0,
     camera: { ...DEFAULT_CAMERA },
     meshes: [],
     skinnedMeshes: [],
@@ -137,6 +160,7 @@ export function createRenderFrame(): RenderFrame {
     overlays: [],
     materials: [],
     reset(): void {
+      frame.timeSeconds = 0;
       frame.camera = { ...DEFAULT_CAMERA };
       frame.meshes.length = 0;
       frame.skinnedMeshes.length = 0;
