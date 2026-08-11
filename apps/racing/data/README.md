@@ -16,3 +16,12 @@ Conversion rules:
 - Remove unused normal and metallic/roughness images from runtime GLBs.
 - Extract and resize the base color as an external runtime texture.
 - Normalize the Gen4 identity `node.matrix` to implicit identity TRS.
+
+Rebuild and verify the runtime copies from the workspace root:
+
+```sh
+npm run prepare:cars -w @console-chaos/racing
+npm run check:cars -w @console-chaos/racing
+```
+
+`public/assets/car-conversion.json` is the deterministic conversion record. It stores source/runtime SHA-256 values, renderer-canonical geometry fingerprints, triangle/vertex counts, bounds, texture dimensions, and file sizes. Two consecutive conversion runs on 2026-08-11 produced byte-identical GLBs, textures, and records.

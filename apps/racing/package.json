@@ -9,7 +9,9 @@
     "preview": "vite preview",
     "lint": "tsc --noEmit -p tsconfig.json",
     "test": "vitest run tests/unit",
-    "test:e2e": "vitest run tests/e2e"
+    "test:e2e": "vitest run tests/e2e",
+    "prepare:cars": "tsx tools/prepare-car-models.ts",
+    "check:cars": "tsx tools/check-car-models.ts"
   },
   "dependencies": {
     "@console-chaos/engine": "0.1.0"
@@ -18,4 +20,3 @@
     "@console-chaos/engine-testkit": "0.1.0"
   }
 }
-
