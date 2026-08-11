@@ -7,7 +7,7 @@
 - migration checker: legacy finding 0、違反fixture検出 pass。
 - boundary checker: package越境fixture検出を含め pass。
 - Console production bundle: GameHost source必須、legacy `main/switcher/transition/input/pipeline/renderer/audio` source 0。
-- bundle計測: 3 JavaScript chunks、170,297 bytes（source mapを除く）。productionに `__consoleChaos` globalなし。
+- bundle計測: 3 JavaScript chunks、170,300 bytes（source mapを除く）。productionに `__consoleChaos` globalなし。
 - engine WebGL wrapper: 実効634 / 1,500行。engine ECS: 実効161 / 400行。
 
 ## lifecycle / context restore

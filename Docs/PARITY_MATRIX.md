@@ -25,7 +25,7 @@ legacy 基準は `../Opus5ConsoleChaos` の commit
 | lifecycle | legacy page teardown | boot/dispose 10回、context event、GPU restore 10回、active resource 0 | contract pass |
 | browser URL/HUD | `scene/level/playtest` query | mini/ps1/fc/switch/character/player、1〜4、B/M/C、HUD、error/warning 0 | browser pass |
 | production E2E | legacy page | Console本編でpuzzle、1→2→3→4、audio unlock、reset、dispose。Racingも同一root gate | 2/2 pass |
-| production bundle | legacy runtimeを含む | GameHost source必須、旧7 source禁止、dev global禁止 | pass (3 chunks / 170,297 bytes) |
+| production bundle | legacy runtimeを含む | GameHost source必須、旧7 source禁止、dev global禁止 | pass (3 chunks / 170,300 bytes) |
 | Racing regression | legacy対象外 | public engineのみでunit + lifecycle E2E + build | pass |
 | immutable reference | 531 files / `6281193` | HEAD一致、clean、snapshot一致 | pass |
 

@@ -61,7 +61,7 @@ Consoleのprojection/puzzle/theme/contentとRacingのcar/lap/race ruleはそれ�
 - Console本編moduleでboot、F-1成立、1→2→3→4完了、audio unlock、restart、二重disposeを実行。
 - Racingも同じroot `test:e2e` でpublic engine APIだけを使用して合格。
 - browserで `mini/ps1/fc/switch/character/player`、B/M/C/R、HUDを確認。error/warning 0。
-- bundle gate: 3 chunks / 170,297 bytes。GameHost source必須、legacy source 0、production `__consoleChaos` 0。
+- bundle gate: 3 chunks / 170,300 bytes。GameHost source必須、legacy source 0、production `__consoleChaos` 0。
 
 ## 6. performance / resource
 
