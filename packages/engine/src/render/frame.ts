@@ -13,6 +13,8 @@ export interface CameraCommand {
   position: Vec3;
   target: Vec3;
   zoom: number;
+  orthoHeight?: number;
+  fovDegrees?: number;
 }
 
 export type GeometryCommand =
@@ -28,6 +30,24 @@ export interface MeshCommand {
   color: Color;
   stroke?: Color;
   layer?: number;
+  asset?: string;
+  material?: string;
+  visible?: boolean;
+  castShadow?: boolean;
+  receiveShadow?: boolean;
+}
+
+export interface SkinnedMeshCommand {
+  id: string;
+  model: string;
+  clip: string;
+  animationTime: number;
+  transform: TransformCommand;
+  tint?: Color;
+  frontAxis?: '-Z' | '+Z';
+  material?: string;
+  layer?: number;
+  visible?: boolean;
 }
 
 export interface SpriteCommand {
@@ -37,6 +57,12 @@ export interface SpriteCommand {
   color: Color;
   rotation?: number;
   layer?: number;
+  texture?: string;
+  atlas?: string;
+  cell?: number;
+  flipX?: boolean;
+  alphaCutoff?: number;
+  visible?: boolean;
 }
 
 export interface LightCommand {
@@ -45,11 +71,30 @@ export interface LightCommand {
   color: Color;
   intensity: number;
   radius: number;
+  kind?: 'point' | 'directional' | 'ambient';
 }
 
 export interface BackgroundCommand {
   color: Color;
   secondaryColor?: Color;
+  texture?: string;
+  repeat?: Vec2;
+  parallax?: Vec2;
+  placement?: { bottom: number; height: number };
+  brightness?: number;
+}
+
+export interface MaterialCommand {
+  id: string;
+  color?: Color;
+  baseColorTexture?: string;
+  normalTexture?: string;
+  emissiveTexture?: string;
+  filter?: 'nearest' | 'linear';
+  blendMode?: 'opaque' | 'alpha' | 'additive';
+  uvMode?: 'perspective' | 'affine';
+  castShadow?: boolean;
+  receiveShadow?: boolean;
 }
 
 export interface OverlayCommand {
@@ -65,10 +110,12 @@ export interface OverlayCommand {
 export interface RenderFrame {
   camera: CameraCommand;
   readonly meshes: MeshCommand[];
+  readonly skinnedMeshes: SkinnedMeshCommand[];
   readonly sprites: SpriteCommand[];
   readonly lights: LightCommand[];
   readonly backgrounds: BackgroundCommand[];
   readonly overlays: OverlayCommand[];
+  readonly materials: MaterialCommand[];
   reset(): void;
 }
 
@@ -83,19 +130,22 @@ export function createRenderFrame(): RenderFrame {
   const frame: RenderFrame = {
     camera: { ...DEFAULT_CAMERA },
     meshes: [],
+    skinnedMeshes: [],
     sprites: [],
     lights: [],
     backgrounds: [],
     overlays: [],
+    materials: [],
     reset(): void {
       frame.camera = { ...DEFAULT_CAMERA };
       frame.meshes.length = 0;
+      frame.skinnedMeshes.length = 0;
       frame.sprites.length = 0;
       frame.lights.length = 0;
       frame.backgrounds.length = 0;
       frame.overlays.length = 0;
+      frame.materials.length = 0;
     },
   };
   return frame;
 }
-

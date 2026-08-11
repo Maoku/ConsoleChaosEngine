@@ -19,6 +19,27 @@ describe('asset manager', () => {
     expect(assets.activeCount).toBe(0);
     expect(dispose).toHaveBeenCalledOnce();
   });
+
+  it('loads text/binary once and restores managed GPU resources', async () => {
+    const fetcher = vi.fn(async (url: string) => new Response(url === '/text' ? 'hello' : new Uint8Array([1, 2, 3])));
+    const manager = createAssetManager(fetcher as typeof fetch);
+    const text = await manager.loadText('/text');
+    const binary = await manager.loadBinary('/binary');
+    expect(text.value).toBe('hello');
+    expect([...new Uint8Array(binary.value)]).toEqual([1, 2, 3]);
+
+    let generation = 0;
+    const released: number[] = [];
+    const gpu = await manager.acquireGpu('pipeline', () => ++generation, (value) => released.push(value));
+    expect(gpu.value).toBe(1);
+    await manager.restoreGpuResources();
+    expect(gpu.value).toBe(2);
+    expect(released).toEqual([1]);
+    gpu.release();
+    text.release();
+    binary.release();
+    manager.dispose();
+  });
 });
 
 describe('physics helpers', () => {
