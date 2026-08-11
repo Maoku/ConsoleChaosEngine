@@ -7,22 +7,23 @@
  */
 import { describe, it, expect } from 'vitest';
 import { readFileSync } from 'node:fs';
-import { createSession, type Session } from '@/gameplay/session';
+import type { Session } from '@/gameplay/session';
 import { buildDrawables, createScene, interiorSectorIds } from '@/gameplay/scene';
 import { parseLevel } from '@/level/loader';
 import { materialFor } from '@/render/material';
 import { createRawInput } from '@/input/mapper';
 import { GENERATION_IDS, PROFILES, type GenerationId } from '@/generation/profiles';
+import { createTestSession, tickSession } from './session-testkit';
 
 const area1 = parseLevel(JSON.parse(readFileSync('public/assets/levels/area1.json', 'utf8')), 'area1.json');
 
 /** 世代を確定させ、数ティック回してから可視の表を返す */
 function visibilityIn(generation: GenerationId): Map<string, boolean> {
-  const session: Session = createSession({ level: area1, generation });
+  const session: Session = createTestSession({ level: area1, generation });
   const scene = createScene(session);
   const neutral = createRawInput();
   for (let i = 0; i < 4; i++) {
-    session.tick(neutral);
+    tickSession(session, neutral);
     scene.update(1 / 60);
   }
   const table = new Map<string, boolean>();
@@ -65,7 +66,7 @@ describe('装飾（SG-05、上位計画 §3 の決定 2）', () => {
   it('装飾は物理に現れない（session.bodies() に居ない）', () => {
     // **これが装飾の定義そのもの。** 物理に居ない＝投影にもパズルにも現れないので、
     // `requiredGenerations` と `solvableIn` は機械的に変わりようがない
-    const session = createSession({ level: area1, generation: 'PS2' });
+    const session = createTestSession({ level: area1, generation: 'PS2' });
     const bodies = session.bodies();
     for (const entity of area1.entities) {
       expect(bodies.has(entity.id), entity.id).toBe(entity.collider !== undefined);
@@ -76,10 +77,10 @@ describe('装飾（SG-05、上位計画 §3 の決定 2）', () => {
   it('装飾はレベルが置いた場所に、どの世代でも見えたまま出る', () => {
     const decor = area1.entities.filter((entity) => entity.collider === undefined);
     for (const generation of GENERATION_IDS) {
-      const session = createSession({ level: area1, generation });
+      const session = createTestSession({ level: area1, generation });
       const scene = createScene(session);
       const neutral = createRawInput();
-      session.tick(neutral);
+      tickSession(session, neutral);
       scene.update(1 / 60);
       for (const entity of decor) {
         const index = scene.frame.drawables.findIndex((d) => d.key === entity.id);
@@ -129,11 +130,11 @@ describe('消えるものは 3 つだけ（計画 §3-4）', () => {
 describe('カメラの構図（T2-08）', () => {
   /** 数ティック回した後の session / scene を返す。move は毎ティック同じ入力を与える */
   function run(generation: GenerationId, ticks = 8, move: [number, number] = [0, 0]) {
-    const session: Session = createSession({ level: area1, generation });
+    const session: Session = createTestSession({ level: area1, generation });
     const scene = createScene(session);
     const input = { ...createRawInput(), move: [...move] as [number, number] };
     for (let i = 0; i < ticks; i++) {
-      session.tick(input);
+      tickSession(session, input);
       scene.update(1 / 60);
     }
     return { session, camera: scene.frame.camera, scene, input };
@@ -251,11 +252,11 @@ describe('材質の割り当て', () => {
 describe('空の見えない部屋（BR-03）', () => {
   /** 指定の位置から始めて、指定の秒数ぶん回した後の背景の明るさ */
   function brightnessAt(generation: GenerationId, spawn: [number, number, number], seconds: number): number {
-    const session: Session = createSession({ level: area1, generation, spawn });
+    const session: Session = createTestSession({ level: area1, generation, spawn });
     const scene = createScene(session);
     const neutral = createRawInput();
     for (let i = 0; i < Math.round(seconds * 60); i++) {
-      session.tick(neutral);
+      tickSession(session, neutral);
       scene.update(1 / 60);
     }
     return scene.frame.backdrop.brightness;

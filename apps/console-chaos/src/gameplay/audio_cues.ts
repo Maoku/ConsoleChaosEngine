@@ -53,13 +53,13 @@ export function pollCues(tracker: CueTracker, session: Session): SfxId[] {
   tracker.grounded = player.grounded;
   tracker.risingY = rising;
 
-  if (session.switcher.generation !== tracker.generation) {
+  if (session.generation.generation !== tracker.generation) {
     // 最初のティックでは鳴らさない（起動音にしない）
     if (tracker.generation !== '') cues.push('switch');
-    tracker.generation = session.switcher.generation;
+    tracker.generation = session.generation.generation;
   }
 
-  const warning = session.switcher.warningRemainingMs !== null;
+  const warning = session.generation.warningRemainingMs !== null;
   if (warning && !tracker.warning) cues.push('warning');
   tracker.warning = warning;
 

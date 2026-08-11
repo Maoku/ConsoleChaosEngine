@@ -19,9 +19,9 @@ import {
   usedHintCount,
   type HintState,
 } from '@/gameplay/hints';
-import { createSession } from '@/gameplay/session';
 import { TICK_MS } from '@/core/time';
 import { loadLevelFile } from './replay/harness';
+import { createTestSession, tickSession } from './session-testkit';
 
 const TARGETS = [
   { puzzleId: 'F-1', generations: ['FC'] as const },
@@ -160,23 +160,23 @@ describe('gameplay/session とヒントの接続', () => {
   const level = loadLevelFile('area1');
 
   it('パズルの近くに立つと、そのパズルが対象になる', () => {
-    const session = createSession({ level, generation: 'PS1' });
-    session.tick(null);
+    const session = createTestSession({ level, generation: 'PS1' });
+    tickSession(session, null);
     // 出発地点はどのパズルからも遠い
     expect(session.activePuzzleId).toBeNull();
 
     // F-1 の要素の位置へ直接置く
     const vine = level.entities.find((entity) => entity.id === 'f1_vine_a')!;
     session.player.position = [...vine.transform.position] as [number, number, number];
-    session.tick(null);
+    tickSession(session, null);
     expect(session.activePuzzleId).toBe('F-1');
   });
 
   it('セッション経由でヒントを要求できる', () => {
-    const session = createSession({ level, generation: 'PS1' });
+    const session = createTestSession({ level, generation: 'PS1' });
     const vine = level.entities.find((entity) => entity.id === 'f1_vine_a')!;
     session.player.position = [...vine.transform.position] as [number, number, number];
-    session.tick(null);
+    tickSession(session, null);
 
     const message = session.requestHint();
     expect(message?.puzzleId).toBe('F-1');
@@ -185,10 +185,10 @@ describe('gameplay/session とヒントの接続', () => {
   });
 
   it('オフにしたセッションではヒントが出ない', () => {
-    const session = createSession({ level, generation: 'PS1', hints: { enabled: false } });
+    const session = createTestSession({ level, generation: 'PS1', hints: { enabled: false } });
     const vine = level.entities.find((entity) => entity.id === 'f1_vine_a')!;
     session.player.position = [...vine.transform.position] as [number, number, number];
-    for (let i = 0; i < 60 * 60 * 5; i++) session.tick(null); // 5 分
+    for (let i = 0; i < 60 * 60 * 5; i++) tickSession(session, null); // 5 分
     expect(session.hints.message).toBeNull();
     expect(session.requestHint()).toBeNull();
   });

@@ -35,7 +35,7 @@ export function colliderReportLines(session: Session, boxes: readonly ColliderBo
   const [x, y, z] = session.player.position;
   const touching = touchingBoxes(session, boxes);
   const hidden = nearbyHidden(session, boxes);
-  const channel = DISPLAY_NAMES[session.switcher.generation].channel;
+  const channel = DISPLAY_NAMES[session.generation.generation].channel;
 
   return [
     '当たり判定 ON（C で切替）',

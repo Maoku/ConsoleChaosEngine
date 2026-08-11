@@ -8,7 +8,7 @@
  */
 import { describe, it, expect } from 'vitest';
 import { readFileSync } from 'node:fs';
-import { createSession, type Session } from '@/gameplay/session';
+import type { Session } from '@/gameplay/session';
 import { createScene, type Scene } from '@/gameplay/scene';
 import { parseLevel } from '@/level/loader';
 import { createRawInput } from '@/input/mapper';
@@ -23,16 +23,17 @@ import {
 } from '@/debug/collider_view';
 import { colliderReportLines } from '@/debug/collider_hud';
 import { createFakeGL } from './fake_gl';
+import { createTestSession, tickSession } from './session-testkit';
 
 const area1 = parseLevel(JSON.parse(readFileSync('public/assets/levels/area1.json', 'utf8')), 'area1.json');
 
 function run(generation: GenerationId): { session: Session; scene: Scene; boxes: ColliderBox[] } {
-  const session = createSession({ level: area1, generation });
+  const session = createTestSession({ level: area1, generation });
   const scene = createScene(session);
   const neutral = createRawInput();
   // 出発地点は少し宙に浮いているので、着地するまで回す（接触の一覧を見るため）
   for (let i = 0; i < 16; i++) {
-    session.tick(neutral);
+    tickSession(session, neutral);
     scene.update(1 / 60);
   }
   return { session, scene, boxes: collectColliderBoxes(session, scene.frame) };

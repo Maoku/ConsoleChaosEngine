@@ -15,9 +15,9 @@ import {
   type ChannelView,
 } from '@/ui/channel_indicator';
 import { hintText, hudModelFromSession, progressText } from '@/ui/hud';
-import { createSession } from '@/gameplay/session';
 import { requestHint } from '@/gameplay/hints';
 import { loadLevelFile } from './replay/harness';
+import { createTestSession, tickSession } from './session-testkit';
 
 function view(overrides: Partial<ChannelView> = {}): ChannelView {
   return {
@@ -70,8 +70,8 @@ describe('ui/hud', () => {
   const level = loadLevelFile('area1');
 
   it('セッションの状態から表示内容が決まる', () => {
-    const session = createSession({ level, generation: 'FC' });
-    session.tick(null);
+    const session = createTestSession({ level, generation: 'FC' });
+    tickSession(session, null);
     const model = hudModelFromSession(session);
     expect(model.channel.generation).toBe('FC');
     expect(model.puzzleCount).toBe(level.puzzles.length);
@@ -80,10 +80,10 @@ describe('ui/hud', () => {
   });
 
   it('ヒントは段階つきで出る。出ていなければ空文字', () => {
-    const session = createSession({ level, generation: 'FC' });
+    const session = createTestSession({ level, generation: 'FC' });
     const vine = level.entities.find((entity) => entity.id === 'f1_vine_a')!;
     session.player.position = [...vine.transform.position] as [number, number, number];
-    session.tick(null);
+    tickSession(session, null);
     expect(hintText(hudModelFromSession(session).hint)).toBe('');
 
     requestHint(session.hints, 'F-1');
@@ -93,8 +93,8 @@ describe('ui/hud', () => {
   });
 
   it('復帰の暗転は HUD が読む（checkpoint.fadeAmount）', () => {
-    const session = createSession({ level, generation: 'FC', fallLimitY: 100 });
-    session.tick(null); // 出発直後に「落ちた」ことになり、暗転が始まる
+    const session = createTestSession({ level, generation: 'FC', fallLimitY: 100 });
+    tickSession(session, null); // 出発直後に「落ちた」ことになり、暗転が始まる
     expect(hudModelFromSession(session).fade).toBeGreaterThan(0);
   });
 

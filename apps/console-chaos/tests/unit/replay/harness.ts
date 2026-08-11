@@ -13,11 +13,11 @@ import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 import type { GenerationId } from '@/generation/profiles';
 import { createRawInput, type RawInput } from '@/input/mapper';
-import { createSession } from '@/gameplay/session';
 import type { Vec3 } from '@/gameplay/projection';
 import { parseLevel } from '@/level/loader';
 import { PIXELS_PER_WORLD_UNIT, type LevelFile } from '@/level/schema';
 import { applyScanlineLimit, type SpriteDrawItem } from '@/render/sprite_limit';
+import { createTestSession, tickSession } from '../session-testkit';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '../../..');
 
@@ -93,7 +93,7 @@ function screenYOf(worldY: number, playerY: number, internalHeight: number): num
 
 /** 1 本のリプレイを再生する。同じ入力からは必ず同じ結果になる（不変条件 I4） */
 export function runReplay(record: ReplayRecord): ReplayResult {
-  const session = createSession({
+  const session = createTestSession({
     level: loadLevelFile(record.level),
     generation: record.generation,
     spawn: [...record.spawn] as Vec3,
@@ -112,7 +112,7 @@ export function runReplay(record: ReplayRecord): ReplayResult {
       // 切替はセグメントの先頭の 1 ティックだけ押す（押しっぱなしにしない）
       raw.switchTo = i === 0 ? (segment.switchTo ?? null) : null;
 
-      session.tick(raw);
+      tickSession(session, raw);
 
       if (solvedAtTick === null && session.solved.has(record.puzzle)) {
         solvedAtTick = session.tickIndex - 1;
@@ -138,7 +138,7 @@ export function runReplay(record: ReplayRecord): ReplayResult {
     ticks: session.tickIndex,
     position: [...session.player.position] as Vec3,
     velocity: [...session.player.velocity] as Vec3,
-    generation: session.switcher.generation,
+    generation: session.generation.generation,
     checkpoint: {
       active: [...session.checkpoints.active] as Vec3,
       reached: [...session.checkpoints.reached],

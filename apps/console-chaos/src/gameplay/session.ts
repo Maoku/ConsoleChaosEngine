@@ -20,8 +20,9 @@ import { createSchedule, type SystemSchedule } from '@/core/ecs/system';
 import { createWorld, type Entity, type World } from '@/core/ecs/world';
 import { hash32 } from '@/core/rng';
 import { TICK_MS } from '@/core/time';
-import { PROFILES, type GenerationId, type GenerationProfile } from '@/generation/profiles';
-import { createSwitcher, type Switcher } from '@/generation/switcher';
+import type { GenerationController } from '@console-chaos/engine';
+import { composeLegacyGenerationProfile } from '@/config/generation';
+import type { GenerationProfile } from '@/generation/profiles';
 import { applyConstraints } from '@/input/constraints';
 import { createMapper, createRawInput, type InputSnapshot, type Mapper, type RawInput } from '@/input/mapper';
 import type { LevelEntity, LevelFile } from '@/level/schema';
@@ -70,7 +71,7 @@ export interface SessionOptions {
   level: LevelFile;
   /** GameHost 利用時は context 所有の World を注入する。ヘッドレス replay は省略できる。 */
   world?: World;
-  generation?: GenerationId;
+  generation: GenerationController;
   /** 出発位置の上書き（リプレイ・デバッグ用）。省略時はレベルの spawn */
   spawn?: Vec3;
   /** これより下へ落ちたら復帰する。省略時はレベルの一番下から 4m 下 */
@@ -97,7 +98,7 @@ export interface Session {
   readonly world: World;
   readonly player: PlayerBodyData;
   readonly playerState: PlayerStateData;
-  readonly switcher: Switcher;
+  readonly generation: GenerationController;
   readonly checkpoints: CheckpointState;
   readonly projection: ProjectionState;
   readonly entities: ReadonlyMap<string, Entity>;
@@ -117,10 +118,14 @@ export interface Session {
   readonly profile: GenerationProfile;
   readonly tickIndex: number;
   /** §4.4 の段階 1〜8。生入力は複数ソースをまとめたもの */
-  tick(raw: RawInput | null): void;
+  /** prepare phase: sample input and submit generation requests without advancing gameplay. */
+  prepare(raw: RawInput | null): void;
+  /** fixed phase: consume the generation state already advanced by GameHost. */
+  tick(): void;
   /** 段階 9 の結果を次ティックへ書き戻す（描画側が呼ぶ） */
   commitCulled(culled: readonly Entity[]): void;
   reset(): void;
+  dispose(): void;
 }
 
 function lowestPoint(level: LevelFile): number {
@@ -159,6 +164,7 @@ function distanceSquared(a: Vec3, b: Vec3): number {
 
 export function createSession(options: SessionOptions): Session {
   const { level } = options;
+  const generation = options.generation;
   const world: World = options.world ?? createWorld();
   const entities = new Map<string, Entity>();
   const bodyById = new Map<string, StaticBodyData>();
@@ -178,7 +184,7 @@ export function createSession(options: SessionOptions): Session {
   }
 
   const spawn: Vec3 = [...(options.spawn ?? level.spawn.position)] as Vec3;
-  const startGeneration: GenerationId = options.generation ?? 'PS1';
+  const startGeneration = generation.generation;
   const fallLimitY = options.fallLimitY ?? lowestPoint(level) - 4;
 
   const playerEntity = world.create();
@@ -186,7 +192,7 @@ export function createSession(options: SessionOptions): Session {
   player.position = [...spawn] as Vec3;
   const playerState: PlayerStateData = world.add(playerEntity, PlayerState);
 
-  const projection: ProjectionState = createProjectionState(PROFILES[startGeneration].video.projection);
+  const projection: ProjectionState = createProjectionState(generation.profile.video.projection);
   projection.safePosition = [...spawn] as Vec3;
 
   const checkpoints: CheckpointState = createCheckpointState(spawn);
@@ -195,36 +201,33 @@ export function createSession(options: SessionOptions): Session {
 
   /** Z 吸着の状態（§5.5.3）。切替時に決まり、トランジションの尺で消化する */
   const slide: { z: ((progress: number) => number) | null; y: number | null } = { z: null, y: null };
-  let frame = { snapshot: mapper.snapshot, profile: PROFILES[startGeneration] };
+  let frame = { snapshot: mapper.snapshot, profile: composeLegacyGenerationProfile(startGeneration) };
 
-  const switcher: Switcher = createSwitcher({
-    initial: startGeneration,
-    onBeforeSwitch(event) {
-      slide.z = null;
-      slide.y = null;
-      if (event.fromProjection === event.toProjection) return;
+  const disconnectGeneration = generation.onBeforeSwitch((event) => {
+    slide.z = null;
+    slide.y = null;
+    if (event.fromProfile.video.projection === event.toProfile.video.projection) return;
 
-      if (event.toProjection === 'ortho2d') {
-        // 3D → 2D：Z を無視した結果のめり込みを解消する
-        const solids = [...bodyById.values()]
-          .filter((body) => body.solid)
-          .map((body) => aabbFromCenter(body.position, body.halfExtents));
-        const result = resolveSwitchTo2D(
-          aabbFromCenter(player.position, player.halfExtents),
-          solids,
-          projection.safePosition,
-        );
-        player.position = result.position;
-        if (result.usedSafePosition) player.velocity = [0, 0, 0];
-      } else {
-        // 2D → 3D：接地していれば Z を接地面へ吸着させる
-        const resolution = resolveSwitchTo3D(player.position, projection.anchor, player.grounded, event.durationMs);
-        if (resolution.targetZ !== null) {
-          slide.z = (progress) => resolution.zAt(progress);
-          slide.y = player.position[1];
-        }
+    if (event.toProfile.video.projection === 'ortho2d') {
+      // 3D → 2D：Z を無視した結果のめり込みを解消する
+      const solids = [...bodyById.values()]
+        .filter((body) => body.solid)
+        .map((body) => aabbFromCenter(body.position, body.halfExtents));
+      const result = resolveSwitchTo2D(
+        aabbFromCenter(player.position, player.halfExtents),
+        solids,
+        projection.safePosition,
+      );
+      player.position = result.position;
+      if (result.usedSafePosition) player.velocity = [0, 0, 0];
+    } else {
+      // 2D → 3D：接地していれば Z を接地面へ吸着させる
+      const resolution = resolveSwitchTo3D(player.position, projection.anchor, player.grounded, event.durationMs);
+      if (resolution.targetZ !== null) {
+        slide.z = (progress) => resolution.zAt(progress);
+        slide.y = player.position[1];
       }
-    },
+    }
   });
 
   const schedule: SystemSchedule = createSchedule();
@@ -260,7 +263,7 @@ export function createSession(options: SessionOptions): Session {
     memories.set(puzzle.id, memory);
     contexts.set(puzzle.id, {
       world,
-      profile: PROFILES[startGeneration],
+      profile: composeLegacyGenerationProfile(startGeneration),
       entities,
       player,
       memory,
@@ -296,19 +299,27 @@ export function createSession(options: SessionOptions): Session {
     return best;
   }
 
-  function tick(raw: RawInput | null): void {
+  let prepared = false;
+
+  function prepare(raw: RawInput | null): void {
     // 復帰の演出中は入力を無視する（§6.6-4：やり直しの摩擦を小さくする）
     const playable = isPlayable(checkpoints);
     const snapshot = mapper.sample(playable ? raw : neutral, TICK_MS);
 
-    // 段階 2：世代切替とトランジション
+    // 段階 2 の要求だけを prepare で行う。時間を進めるのは GameHost。
     if (playable) {
-      if (snapshot.switchTo !== null) switcher.request(snapshot.switchTo);
-      else if (snapshot.switchCycle !== 0) switcher.cycle(snapshot.switchCycle);
+      if (snapshot.switchTo !== null) generation.request(snapshot.switchTo);
+      else if (snapshot.switchCycle !== 0) generation.cycle(snapshot.switchCycle);
     }
-    switcher.advance();
+    prepared = true;
+  }
 
-    const profile = switcher.profile;
+  function tick(): void {
+    if (!prepared) mapper.sample(neutral, TICK_MS);
+    prepared = false;
+
+    const profile = composeLegacyGenerationProfile(generation.generation);
+    const snapshot = mapper.snapshot;
     projection.mode = profile.video.projection;
 
     // 段階 3：世代による入力制約
@@ -320,13 +331,13 @@ export function createSession(options: SessionOptions): Session {
 
     // Z 吸着は物理の結果を上書きする（吸着の途中で落ちないように）
     if (slide.z) {
-      player.position[2] = slide.z(switcher.blend);
+      player.position[2] = slide.z(generation.transition.blend);
       if (slide.y !== null) {
         player.position[1] = slide.y;
         player.velocity[1] = 0;
         player.grounded = true;
       }
-      if (!switcher.transition.active) {
+      if (!generation.transition.active) {
         slide.z = null;
         slide.y = null;
       }
@@ -363,7 +374,7 @@ export function createSession(options: SessionOptions): Session {
     world,
     player,
     playerState,
-    switcher,
+    generation,
     checkpoints,
     projection,
     entities,
@@ -384,11 +395,12 @@ export function createSession(options: SessionOptions): Session {
       return mapper.snapshot;
     },
     get profile() {
-      return switcher.profile;
+      return composeLegacyGenerationProfile(generation.generation);
     },
     get tickIndex() {
       return tickIndex;
     },
+    prepare,
     tick,
     commitCulled(next): void {
       culled = new Set(next);
@@ -408,6 +420,9 @@ export function createSession(options: SessionOptions): Session {
       clearGroundAnchor(projection);
       resetHints(hints);
       activePuzzleId = null;
+    },
+    dispose(): void {
+      disconnectGeneration();
     },
   };
 }

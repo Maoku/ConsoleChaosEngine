@@ -36,11 +36,11 @@ export interface HudModel {
 
 /** セッションの状態を HUD の入力へ落とす。UI はセッションを直接触らない */
 export function hudModelFromSession(session: Session): HudModel {
-  const switcher = session.switcher;
+  const switcher = session.generation;
   return {
     channel: {
       generation: switcher.generation,
-      from: switcher.renderFrom,
+      from: switcher.transition.active ? switcher.transition.from : null,
       pending: switcher.pending,
       forced: switcher.forced,
       warningRemainingMs: switcher.warningRemainingMs,

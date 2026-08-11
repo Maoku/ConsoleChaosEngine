@@ -9,13 +9,14 @@
  * 投影ルール・物理・パズルは `gameplay/` の本実装をそのまま使う。
  */
 import type { GLContext } from '@/render/gl/index';
+import { createGenerationController } from '@console-chaos/engine';
 import { createPipeline, type Pipeline } from '@/render/pipeline';
 import { createRenderer3d, type Renderer3d } from '@/render/renderer3d';
 import type { CrtPreset, CrtQuality } from '@/render/postfx/presets';
 import type { GenerationId } from '@/generation/profiles';
 import { aabbFromCenter, overlaps } from '@/gameplay/projection';
 import { TRANSITION_DURATION_MS } from '@/generation/transition';
-import { TICK_SECONDS } from '@/core/time';
+import { TICK_MS, TICK_SECONDS } from '@/core/time';
 import { combineRawInputs, createRawInput, type RawInput } from '@/input/mapper';
 import { createKeyboardSource, type KeyboardSource } from '@/input/source_keyboard';
 import { createGamepadSource, type GamepadSource } from '@/input/source_gamepad';
@@ -88,7 +89,8 @@ export async function createMiniLevel(
   options: MiniLevelOptions = {},
 ): Promise<MiniLevel> {
   // シミュレーションはゲーム本体の組み立て（gameplay/session.ts）に任せる
-  const session: Session = createSession({ level, generation: 'PS1' });
+  const generation = createGenerationController('PS1');
+  const session: Session = createSession({ level, generation });
   const playerBody = session.player;
   const scene: Scene = createScene(session);
   const renderer: Renderer3d = await createRenderer3d(ctx, {
@@ -103,7 +105,7 @@ export async function createMiniLevel(
   const goals = collidersOf(level).filter((entity) => entity.type === 'goal');
 
   const levelState: MiniLevelState = {
-    generation: session.switcher.generation,
+    generation: generation.generation,
     crtQuality: 'full',
     body: playerBody,
     player: session.playerState,
@@ -126,8 +128,10 @@ export async function createMiniLevel(
 
   function tick(): void {
     // 3 つのソースを 1 つの生入力にまとめて渡す。以降の進行順序は session が持つ
-    session.tick(combineRawInputs([keyboard.read(), gamepad.read(), input]));
-    levelState.generation = session.switcher.generation;
+    session.prepare(combineRawInputs([keyboard.read(), gamepad.read(), input]));
+    generation.advance(TICK_MS);
+    session.tick();
+    levelState.generation = generation.generation;
 
     // 走査線制限（§4.4 の段階 9）。画面 Y は描画側の計算なのでここで作る
     const video = session.profile.video;
@@ -158,8 +162,8 @@ export async function createMiniLevel(
 
   /** 切替要求。トランジション中でも受け付ける（switcher がキューに積む） */
   function switchTo(generation: GenerationId): void {
-    session.switcher.request(generation);
-    levelState.generation = session.switcher.generation;
+    session.generation.request(generation);
+    levelState.generation = session.generation.generation;
   }
 
   return {
@@ -181,9 +185,9 @@ export async function createMiniLevel(
       colliderBoxes = levelState.showColliders ? collectColliderBoxes(session, scene.frame) : [];
       pipeline.render(
         {
-          generation: session.switcher.generation,
-          from: session.switcher.renderFrom,
-          blend: session.switcher.blend,
+          generation: generation.generation,
+          from: generation.transition.active ? generation.transition.from : null,
+          blend: generation.transition.blend,
           screenWidth,
           screenHeight,
           timeSeconds: scene.frame.timeSeconds,
@@ -205,6 +209,7 @@ export async function createMiniLevel(
       pipeline.dispose();
       colliderView.dispose();
       renderer.dispose();
+      session.dispose();
     },
   };
 }

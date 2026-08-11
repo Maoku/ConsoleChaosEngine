@@ -118,7 +118,7 @@ export function createPlaytestLog(session: Session, levelId: string): PlaytestLo
   let usedKeyboard = false;
   let usedGamepad = false;
   let switchCount = 0;
-  let lastGeneration = session.switcher.generation;
+  let lastGeneration = session.generation.generation;
   let tester = '';
   let cleared = false;
   const solvedAt = new Map<string, number>();
@@ -162,9 +162,9 @@ export function createPlaytestLog(session: Session, levelId: string): PlaytestLo
   return {
     update(): void {
       if (gamepadActive()) usedGamepad = true;
-      if (session.switcher.generation !== lastGeneration) {
+      if (session.generation.generation !== lastGeneration) {
         switchCount++;
-        lastGeneration = session.switcher.generation;
+        lastGeneration = session.generation.generation;
       }
       const now = (performance.now() - startMs) / 1000;
       for (const puzzleId of session.solved) {
@@ -206,7 +206,7 @@ export function createPlaytestLog(session: Session, levelId: string): PlaytestLo
       explained.clear();
       switchCount = 0;
       cleared = false;
-      lastGeneration = session.switcher.generation;
+      lastGeneration = session.generation.generation;
     },
     dispose(): void {
       window.removeEventListener('keydown', onKey);

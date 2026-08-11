@@ -47,15 +47,16 @@ export function createConsoleChaosModule(level: LevelFile): GameModule {
       const session = createSession({
         level,
         world: context.world,
-        generation: context.generation.generation,
+        generation: context.generation,
       });
       return {
-        fixedUpdate({ dtMs }): void {
+        prepareFixedUpdate({ dtMs }): void {
           const snapshot = actions.sample(context.input.snapshot, context.generation.profile, dtMs);
           const raw = inputFor(snapshot);
-          if (raw.switchCycle !== 0) context.generation.cycle(raw.switchCycle);
-          if (raw.switchTo) context.generation.request(raw.switchTo);
-          session.tick(raw);
+          session.prepare(raw);
+        },
+        fixedUpdate(): void {
+          session.tick();
         },
         buildRenderFrame(frame: RenderFrame): void {
           const profile = session.profile;
@@ -75,7 +76,7 @@ export function createConsoleChaosModule(level: LevelFile): GameModule {
         },
         dispose(): void {
           actions.reset();
-          session.world.clear();
+          session.dispose();
         },
       };
     },

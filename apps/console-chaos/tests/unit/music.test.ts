@@ -27,9 +27,9 @@ import { MAX_SFX_LAYERS, SFX, sfxLayers, sfxRequests, sweepSteps, type SfxId } f
 import { adpcmEncodeDecode } from '@/audio/adpcm_ps1';
 import { brrQuantize, BRR_LEVELS } from '@/audio/sampler_sfc';
 import { createCueTracker, panOf, pollCues } from '@/gameplay/audio_cues';
-import { createSession } from '@/gameplay/session';
 import { createFakeAudio } from './fake_audio';
 import { loadLevelFile } from './replay/harness';
+import { createTestSession, tickSession } from './session-testkit';
 
 describe.each(SONGS.map((song) => [song.title, song.score] as const))(
   'audio/music「%s」（1 曲 × 4 編曲）',
@@ -458,9 +458,9 @@ describe('gameplay/audio_cues（いつ鳴らすか）', () => {
   const level = loadLevelFile('area1');
 
   it('ジャンプと着地は接地の変化から出る', () => {
-    const session = createSession({ level, generation: 'PS1' });
+    const session = createTestSession({ level, generation: 'PS1' });
     const tracker = createCueTracker();
-    session.tick(null);
+    tickSession(session, null);
     session.player.grounded = true;
     pollCues(tracker, session); // 接地している状態を取り込む
 
@@ -474,39 +474,39 @@ describe('gameplay/audio_cues（いつ鳴らすか）', () => {
   });
 
   it('起動直後の 1 ティックでは切替音を鳴らさない', () => {
-    const session = createSession({ level, generation: 'PS1' });
+    const session = createTestSession({ level, generation: 'PS1' });
     const tracker = createCueTracker();
-    session.tick(null);
+    tickSession(session, null);
     expect(pollCues(tracker, session)).not.toContain('switch');
 
-    session.switcher.request('FC');
+    session.generation.request('FC');
     expect(pollCues(tracker, session)).toContain('switch');
   });
 
   it('パズルが解けたこと・ヒントが出たことが音になる', () => {
-    const session = createSession({ level, generation: 'FC' });
+    const session = createTestSession({ level, generation: 'FC' });
     const tracker = createCueTracker();
-    session.tick(null);
+    tickSession(session, null);
     pollCues(tracker, session);
 
     // F-1 の位置へ置いて解かせる（第1世代で色が潰れる）
     const pedestal = level.entities.find((entity) => entity.id === 'f1_pedestal')!;
     session.player.position = [...pedestal.transform.position] as [number, number, number];
-    session.tick(null);
+    tickSession(session, null);
     expect(pollCues(tracker, session)).toContain('solve');
 
     // 第1世代では解けないパズル（P1-1）の前に立ち、ヒントを引き出す
     const wall = level.entities.find((entity) => entity.id === 'p1_1_wall')!;
     session.player.position = [...wall.transform.position] as [number, number, number];
-    session.tick(null);
+    tickSession(session, null);
     pollCues(tracker, session);
     expect(session.requestHint()?.puzzleId).toBe('P1-1');
     expect(pollCues(tracker, session)).toContain('hint');
   });
 
   it('定位はプレイヤーからの左右差で決まる', () => {
-    const session = createSession({ level, generation: 'PS2' });
-    session.tick(null);
+    const session = createTestSession({ level, generation: 'PS2' });
+    tickSession(session, null);
     const x = session.player.position[0];
     expect(panOf(session, x + 100)).toBe(1);
     expect(panOf(session, x - 100)).toBe(-1);

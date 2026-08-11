@@ -11,8 +11,8 @@ import {
 import { adaptConsoleChaosLevel } from '@/content/level-adapter';
 import { PROFILES } from '@/generation/profiles';
 import { createConsoleChaosModule } from '@/app';
-import { createSession } from '@/gameplay/session';
 import { loadLevelFile } from './replay/harness';
+import { createTestSession } from './session-testkit';
 
 describe('Console Chaos engine adapter', () => {
   it('hardware profile + game theme reproduces every legacy field', () => {
@@ -51,7 +51,7 @@ describe('Console Chaos engine adapter', () => {
 
   it('can run a session on the GameHost-owned World', () => {
     const world = createWorld();
-    const session = createSession({ level: loadLevelFile('mini'), world });
+    const session = createTestSession({ level: loadLevelFile('mini'), world });
     expect(session.world).toBe(world);
     expect(world.entityCount).toBeGreaterThan(0);
   });
