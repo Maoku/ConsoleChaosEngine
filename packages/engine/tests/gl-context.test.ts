@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import { createGLContext } from '../src/render/gl/context';
+import { orientImageBitmap } from '../src/render/gl/texture';
 
 function createFakeCanvas(): HTMLCanvasElement {
   const maxTextureSize = 0x0d33;
@@ -51,5 +52,16 @@ describe('GLContext lifecycle', () => {
     context.dispose();
     canvas.dispatchEvent(new Event('webglcontextlost', { cancelable: true }));
     expect(context.lost).toBe(false);
+  });
+
+  it('bakes vertical orientation into ImageBitmap before WebGL upload', async () => {
+    const source = { close: vi.fn() } as unknown as ImageBitmap;
+    const oriented = { close: vi.fn() } as unknown as ImageBitmap;
+    const factory = vi.fn(async () => oriented) as unknown as typeof createImageBitmap;
+
+    await expect(orientImageBitmap(source, true, factory)).resolves.toBe(oriented);
+    expect(factory).toHaveBeenCalledWith(source, { imageOrientation: 'flipY' });
+    await expect(orientImageBitmap(source, false, factory)).resolves.toBe(source);
+    expect(factory).toHaveBeenCalledOnce();
   });
 });

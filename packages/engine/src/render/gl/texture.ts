@@ -33,6 +33,15 @@ export interface TextureOptions {
   data?: TexImageSource | ArrayBufferView | null;
 }
 
+/** ImageBitmap は UNPACK_FLIP_Y_WEBGL の対象外なので、必要な向きを事前に焼き込む。 */
+export async function orientImageBitmap(
+  image: ImageBitmap,
+  flipY: boolean,
+  factory: typeof createImageBitmap = globalThis.createImageBitmap,
+): Promise<ImageBitmap> {
+  return flipY ? factory(image, { imageOrientation: 'flipY' }) : image;
+}
+
 interface FormatSpec {
   internal: number;
   format: number;

@@ -29,6 +29,7 @@ import {
   createStateCache,
   createTexture,
   createVertexArray,
+  orientImageBitmap,
   unsealShaderCompilation,
   type GLBuffer,
   type GLContext,
@@ -239,14 +240,19 @@ async function createGpuBackend(
   for (const [url, image] of cpu.images) {
     const atlas = options.manifest.atlases.some((asset) => asset.url === url);
     const settings = textureSettings.get(url);
+    const flipY = atlas ? false : (settings?.flipY ?? true);
+    // UNPACK_FLIP_Y_WEBGL は ImageBitmap には適用されないため、upload 前に向きを確定する。
+    // legacy renderer は HTMLImageElement を flipY upload していたので、ここを省くと
+    // 背景とworld materialだけが上下反転し、atlas spriteとの向きが食い違う。
+    const uploadImage = await orientImageBitmap(image, flipY);
     const texture = createTexture(ctx, {
       width: image.width,
       height: image.height,
       filter: 'nearest',
       wrap: atlas ? 'clamp' : (settings?.wrap ?? 'repeat'),
-      flipY: atlas ? false : (settings?.flipY ?? true),
-      data: image,
+      data: uploadImage,
     });
+    if (uploadImage !== image) uploadImage.close();
     textures.set(url, texture);
     disposables.push(texture);
   }

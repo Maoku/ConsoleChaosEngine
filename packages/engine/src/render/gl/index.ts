@@ -11,7 +11,7 @@ export type { Program, UniformValue } from './shader';
 export { createBuffer, createVertexArray } from './buffer';
 export type { GLBuffer, VertexArray, AttributeSpec, BufferUsage } from './buffer';
 
-export { createTexture } from './texture';
+export { createTexture, orientImageBitmap } from './texture';
 export type { Texture, TextureOptions, TextureFilter, TextureWrap, TextureFormat } from './texture';
 
 export { createFramebuffer, bindScreen } from './framebuffer';
