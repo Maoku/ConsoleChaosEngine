@@ -1,0 +1,19 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "dev",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["run", "dev"],
+      "port": 5173,
+      "autoPort": true
+    },
+    {
+      "name": "playtest",
+      "runtimeExecutable": "npx",
+      "runtimeArgs": ["vite", "preview", "--host", "--port", "4173"],
+      "port": 4173,
+      "autoPort": true
+    }
+  ]
+}

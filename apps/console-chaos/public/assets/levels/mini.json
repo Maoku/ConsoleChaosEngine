@@ -1,0 +1,61 @@
+{
+  "version": 1,
+  "id": "mini",
+  "sectors": [
+    {
+      "id": "start",
+      "center": [-2, 0.5, -1],
+      "halfExtents": [5, 4, 5],
+      "links": ["far"]
+    },
+    {
+      "id": "far",
+      "center": [4, 0.5, -4],
+      "halfExtents": [3, 4, 2],
+      "links": ["start"]
+    }
+  ],
+  "entities": [
+    {
+      "id": "start_platform",
+      "type": "platform",
+      "sector": "start",
+      "transform": { "position": [-3.5, -0.25, 0] },
+      "collider": { "type": "aabb", "halfExtents": [2.5, 0.25, 1] }
+    },
+    {
+      "id": "bridge",
+      "type": "bridge",
+      "sector": "start",
+      "transform": { "position": [0, -0.25, -4] },
+      "collider": { "type": "aabb", "halfExtents": [1, 0.25, 1] }
+    },
+    {
+      "id": "far_platform",
+      "type": "platform",
+      "sector": "far",
+      "transform": { "position": [3.5, -0.25, -5] },
+      "collider": { "type": "aabb", "halfExtents": [2.5, 0.25, 1] }
+    },
+    {
+      "id": "front_wall",
+      "type": "wall",
+      "sector": "start",
+      "transform": { "position": [2.5, 1.25, 4] },
+      "collider": { "type": "aabb", "halfExtents": [0.5, 1.75, 1] }
+    },
+    {
+      "id": "goal",
+      "type": "goal",
+      "sector": "far",
+      "transform": { "position": [5.25, 0.5, -4.5] },
+      "collider": { "type": "aabb", "halfExtents": [0.5, 0.5, 1], "solid": false }
+    }
+  ],
+  "puzzles": [],
+  "checkpoints": [
+    { "id": "cp_start", "position": [-5, 1, 0], "sector": "start" },
+    { "id": "cp_far", "position": [3.5, 0.75, -5], "sector": "far" }
+  ],
+  "spawn": { "position": [-5, 1, 0], "facing": 1, "sector": "start" }
+}

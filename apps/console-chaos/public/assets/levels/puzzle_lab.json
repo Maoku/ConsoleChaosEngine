@@ -1,0 +1,1618 @@
+{
+  "version": 1,
+  "id": "puzzle_lab",
+  "sectors": [
+    {
+      "id": "f1",
+      "center": [
+        6,
+        1,
+        0
+      ],
+      "halfExtents": [
+        8,
+        8,
+        6
+      ],
+      "links": [
+        "f2"
+      ]
+    },
+    {
+      "id": "f2",
+      "center": [
+        22,
+        1,
+        0
+      ],
+      "halfExtents": [
+        8,
+        8,
+        6
+      ],
+      "links": [
+        "f1",
+        "s1"
+      ]
+    },
+    {
+      "id": "s1",
+      "center": [
+        38,
+        1,
+        0
+      ],
+      "halfExtents": [
+        8,
+        8,
+        6
+      ],
+      "links": [
+        "f2",
+        "p1_1"
+      ]
+    },
+    {
+      "id": "p1_1",
+      "center": [
+        54,
+        1,
+        0
+      ],
+      "halfExtents": [
+        8,
+        8,
+        6
+      ],
+      "links": [
+        "s1",
+        "p1_2"
+      ]
+    },
+    {
+      "id": "p1_2",
+      "center": [
+        70,
+        1,
+        0
+      ],
+      "halfExtents": [
+        8,
+        8,
+        6
+      ],
+      "links": [
+        "p1_1",
+        "p2_1"
+      ]
+    },
+    {
+      "id": "p2_1",
+      "center": [
+        86,
+        1,
+        0
+      ],
+      "halfExtents": [
+        8,
+        8,
+        6
+      ],
+      "links": [
+        "p1_2"
+      ]
+    }
+  ],
+  "entities": [
+    {
+      "id": "f1_floor_a",
+      "type": "platform",
+      "sector": "f1",
+      "transform": {
+        "position": [
+          0.5,
+          -0.25,
+          0
+        ]
+      },
+      "collider": {
+        "type": "aabb",
+        "halfExtents": [
+          2.5,
+          0.25,
+          3
+        ]
+      }
+    },
+    {
+      "id": "f1_vine_a",
+      "type": "vine",
+      "sector": "f1",
+      "transform": {
+        "position": [
+          6.5,
+          -0.25,
+          1.25
+        ]
+      },
+      "collider": {
+        "type": "aabb",
+        "halfExtents": [
+          4,
+          0.25,
+          0.25
+        ]
+      }
+    },
+    {
+      "id": "f1_vine_b",
+      "type": "vine",
+      "sector": "f1",
+      "transform": {
+        "position": [
+          6.5,
+          -0.25,
+          -1.25
+        ]
+      },
+      "collider": {
+        "type": "aabb",
+        "halfExtents": [
+          4,
+          0.25,
+          0.25
+        ]
+      }
+    },
+    {
+      "id": "f1_braid",
+      "type": "braid",
+      "sector": "f1",
+      "transform": {
+        "position": [
+          6.5,
+          -0.25,
+          0
+        ]
+      },
+      "collider": {
+        "type": "aabb",
+        "halfExtents": [
+          4,
+          0.25,
+          0.75
+        ]
+      }
+    },
+    {
+      "id": "f1_floor_b",
+      "type": "platform",
+      "sector": "f1",
+      "transform": {
+        "position": [
+          12,
+          -0.25,
+          0
+        ]
+      },
+      "collider": {
+        "type": "aabb",
+        "halfExtents": [
+          2,
+          0.25,
+          3
+        ]
+      }
+    },
+    {
+      "id": "f1_pedestal",
+      "type": "pedestal",
+      "sector": "f1",
+      "transform": {
+        "position": [
+          12.5,
+          0.5,
+          0
+        ]
+      },
+      "collider": {
+        "type": "aabb",
+        "halfExtents": [
+          0.5,
+          0.5,
+          0.5
+        ],
+        "solid": false
+      }
+    },
+    {
+      "id": "f2_floor",
+      "type": "platform",
+      "sector": "f2",
+      "transform": {
+        "position": [
+          16,
+          -0.25,
+          0
+        ]
+      },
+      "collider": {
+        "type": "aabb",
+        "halfExtents": [
+          2,
+          0.25,
+          3
+        ]
+      }
+    },
+    {
+      "id": "f2_swarm_1",
+      "type": "swarm",
+      "sector": "f2",
+      "transform": {
+        "position": [
+          18.5,
+          1.25,
+          2.5
+        ]
+      },
+      "collider": {
+        "type": "aabb",
+        "halfExtents": [
+          0.5,
+          0.5,
+          0.25
+        ],
+        "solid": false
+      }
+    },
+    {
+      "id": "f2_tile_1",
+      "type": "tile",
+      "sector": "f2",
+      "transform": {
+        "position": [
+          19,
+          -0.25,
+          0
+        ]
+      },
+      "collider": {
+        "type": "aabb",
+        "halfExtents": [
+          0.25,
+          0.25,
+          2
+        ]
+      }
+    },
+    {
+      "id": "f2_lamp_1",
+      "type": "lamp",
+      "sector": "f2",
+      "transform": {
+        "position": [
+          19,
+          1.5,
+          -3
+        ]
+      },
+      "collider": {
+        "type": "aabb",
+        "halfExtents": [
+          0.25,
+          0.25,
+          0.25
+        ],
+        "solid": false
+      }
+    },
+    {
+      "id": "f2_swarm_2",
+      "type": "swarm",
+      "sector": "f2",
+      "transform": {
+        "position": [
+          19.5,
+          1.25,
+          2.5
+        ]
+      },
+      "collider": {
+        "type": "aabb",
+        "halfExtents": [
+          0.5,
+          0.5,
+          0.25
+        ],
+        "solid": false
+      }
+    },
+    {
+      "id": "f2_tile_2",
+      "type": "tile",
+      "sector": "f2",
+      "transform": {
+        "position": [
+          20,
+          -0.25,
+          0
+        ]
+      },
+      "collider": {
+        "type": "aabb",
+        "halfExtents": [
+          0.25,
+          0.25,
+          2
+        ]
+      }
+    },
+    {
+      "id": "f2_lamp_2",
+      "type": "lamp",
+      "sector": "f2",
+      "transform": {
+        "position": [
+          20,
+          1.5,
+          -3
+        ]
+      },
+      "collider": {
+        "type": "aabb",
+        "halfExtents": [
+          0.25,
+          0.25,
+          0.25
+        ],
+        "solid": false
+      }
+    },
+    {
+      "id": "f2_swarm_3",
+      "type": "swarm",
+      "sector": "f2",
+      "transform": {
+        "position": [
+          20.5,
+          1.25,
+          2.5
+        ]
+      },
+      "collider": {
+        "type": "aabb",
+        "halfExtents": [
+          0.5,
+          0.5,
+          0.25
+        ],
+        "solid": false
+      }
+    },
+    {
+      "id": "f2_tile_3",
+      "type": "tile",
+      "sector": "f2",
+      "transform": {
+        "position": [
+          21,
+          -0.25,
+          0
+        ]
+      },
+      "collider": {
+        "type": "aabb",
+        "halfExtents": [
+          0.25,
+          0.25,
+          2
+        ]
+      }
+    },
+    {
+      "id": "f2_lamp_3",
+      "type": "lamp",
+      "sector": "f2",
+      "transform": {
+        "position": [
+          21,
+          1.5,
+          -3
+        ]
+      },
+      "collider": {
+        "type": "aabb",
+        "halfExtents": [
+          0.25,
+          0.25,
+          0.25
+        ],
+        "solid": false
+      }
+    },
+    {
+      "id": "f2_swarm_4",
+      "type": "swarm",
+      "sector": "f2",
+      "transform": {
+        "position": [
+          21.5,
+          1.25,
+          2.5
+        ]
+      },
+      "collider": {
+        "type": "aabb",
+        "halfExtents": [
+          0.5,
+          0.5,
+          0.25
+        ],
+        "solid": false
+      }
+    },
+    {
+      "id": "f2_tile_4",
+      "type": "tile",
+      "sector": "f2",
+      "transform": {
+        "position": [
+          22,
+          -0.25,
+          0
+        ]
+      },
+      "collider": {
+        "type": "aabb",
+        "halfExtents": [
+          0.25,
+          0.25,
+          2
+        ]
+      }
+    },
+    {
+      "id": "f2_lamp_4",
+      "type": "lamp",
+      "sector": "f2",
+      "transform": {
+        "position": [
+          22,
+          1.5,
+          -3
+        ]
+      },
+      "collider": {
+        "type": "aabb",
+        "halfExtents": [
+          0.25,
+          0.25,
+          0.25
+        ],
+        "solid": false
+      }
+    },
+    {
+      "id": "f2_swarm_5",
+      "type": "swarm",
+      "sector": "f2",
+      "transform": {
+        "position": [
+          22.5,
+          1.25,
+          2.5
+        ]
+      },
+      "collider": {
+        "type": "aabb",
+        "halfExtents": [
+          0.5,
+          0.5,
+          0.25
+        ],
+        "solid": false
+      }
+    },
+    {
+      "id": "f2_tile_5",
+      "type": "tile",
+      "sector": "f2",
+      "transform": {
+        "position": [
+          23,
+          -0.25,
+          0
+        ]
+      },
+      "collider": {
+        "type": "aabb",
+        "halfExtents": [
+          0.25,
+          0.25,
+          2
+        ]
+      }
+    },
+    {
+      "id": "f2_swarm_6",
+      "type": "swarm",
+      "sector": "f2",
+      "transform": {
+        "position": [
+          23.5,
+          1.25,
+          2.5
+        ]
+      },
+      "collider": {
+        "type": "aabb",
+        "halfExtents": [
+          0.5,
+          0.5,
+          0.25
+        ],
+        "solid": false
+      }
+    },
+    {
+      "id": "f2_tile_6",
+      "type": "tile",
+      "sector": "f2",
+      "transform": {
+        "position": [
+          24,
+          -0.25,
+          0
+        ]
+      },
+      "collider": {
+        "type": "aabb",
+        "halfExtents": [
+          0.25,
+          0.25,
+          2
+        ]
+      }
+    },
+    {
+      "id": "f2_swarm_7",
+      "type": "swarm",
+      "sector": "f2",
+      "transform": {
+        "position": [
+          24.5,
+          1.25,
+          2.5
+        ]
+      },
+      "collider": {
+        "type": "aabb",
+        "halfExtents": [
+          0.5,
+          0.5,
+          0.25
+        ],
+        "solid": false
+      }
+    },
+    {
+      "id": "f2_tile_7",
+      "type": "tile",
+      "sector": "f2",
+      "transform": {
+        "position": [
+          25,
+          -0.25,
+          0
+        ]
+      },
+      "collider": {
+        "type": "aabb",
+        "halfExtents": [
+          0.25,
+          0.25,
+          2
+        ]
+      }
+    },
+    {
+      "id": "f2_swarm_8",
+      "type": "swarm",
+      "sector": "f2",
+      "transform": {
+        "position": [
+          25.5,
+          1.25,
+          2.5
+        ]
+      },
+      "collider": {
+        "type": "aabb",
+        "halfExtents": [
+          0.5,
+          0.5,
+          0.25
+        ],
+        "solid": false
+      }
+    },
+    {
+      "id": "f2_tile_8",
+      "type": "tile",
+      "sector": "f2",
+      "transform": {
+        "position": [
+          26,
+          -0.25,
+          0
+        ]
+      },
+      "collider": {
+        "type": "aabb",
+        "halfExtents": [
+          0.25,
+          0.25,
+          2
+        ]
+      }
+    },
+    {
+      "id": "f2_swarm_9",
+      "type": "swarm",
+      "sector": "f2",
+      "transform": {
+        "position": [
+          26.5,
+          1.25,
+          2.5
+        ]
+      },
+      "collider": {
+        "type": "aabb",
+        "halfExtents": [
+          0.5,
+          0.5,
+          0.25
+        ],
+        "solid": false
+      }
+    },
+    {
+      "id": "f2_tile_9",
+      "type": "tile",
+      "sector": "f2",
+      "transform": {
+        "position": [
+          27,
+          -0.25,
+          0
+        ]
+      },
+      "collider": {
+        "type": "aabb",
+        "halfExtents": [
+          0.25,
+          0.25,
+          2
+        ]
+      }
+    },
+    {
+      "id": "f2_swarm_10",
+      "type": "swarm",
+      "sector": "f2",
+      "transform": {
+        "position": [
+          27.5,
+          1.25,
+          2.5
+        ]
+      },
+      "collider": {
+        "type": "aabb",
+        "halfExtents": [
+          0.5,
+          0.5,
+          0.25
+        ],
+        "solid": false
+      }
+    },
+    {
+      "id": "f2_tile_10",
+      "type": "tile",
+      "sector": "f2",
+      "transform": {
+        "position": [
+          28,
+          -0.25,
+          0
+        ]
+      },
+      "collider": {
+        "type": "aabb",
+        "halfExtents": [
+          0.25,
+          0.25,
+          2
+        ]
+      }
+    },
+    {
+      "id": "f2_swarm_11",
+      "type": "swarm",
+      "sector": "f2",
+      "transform": {
+        "position": [
+          28.5,
+          1.25,
+          2.5
+        ]
+      },
+      "collider": {
+        "type": "aabb",
+        "halfExtents": [
+          0.5,
+          0.5,
+          0.25
+        ],
+        "solid": false
+      }
+    },
+    {
+      "id": "f2_swarm_12",
+      "type": "swarm",
+      "sector": "f2",
+      "transform": {
+        "position": [
+          29.5,
+          1.25,
+          2.5
+        ]
+      },
+      "collider": {
+        "type": "aabb",
+        "halfExtents": [
+          0.5,
+          0.5,
+          0.25
+        ],
+        "solid": false
+      }
+    },
+    {
+      "id": "f2_floor_b",
+      "type": "platform",
+      "sector": "f2",
+      "transform": {
+        "position": [
+          29.5,
+          -0.25,
+          0
+        ]
+      },
+      "collider": {
+        "type": "aabb",
+        "halfExtents": [
+          1,
+          0.25,
+          3
+        ]
+      }
+    },
+    {
+      "id": "f2_pedestal",
+      "type": "pedestal",
+      "sector": "f2",
+      "transform": {
+        "position": [
+          30,
+          0.5,
+          0
+        ]
+      },
+      "collider": {
+        "type": "aabb",
+        "halfExtents": [
+          0.5,
+          0.5,
+          0.5
+        ],
+        "solid": false
+      }
+    },
+    {
+      "id": "s1_floor_a",
+      "type": "platform",
+      "sector": "s1",
+      "transform": {
+        "position": [
+          33,
+          -0.25,
+          0
+        ]
+      },
+      "collider": {
+        "type": "aabb",
+        "halfExtents": [
+          2.5,
+          0.25,
+          3
+        ]
+      }
+    },
+    {
+      "id": "s1_platform",
+      "type": "translucent",
+      "sector": "s1",
+      "transform": {
+        "position": [
+          36.25,
+          -0.25,
+          0
+        ]
+      },
+      "collider": {
+        "type": "aabb",
+        "halfExtents": [
+          0.75,
+          0.25,
+          1
+        ]
+      }
+    },
+    {
+      "id": "s1_pivot",
+      "type": "affine_floor",
+      "sector": "s1",
+      "transform": {
+        "position": [
+          39.5,
+          -0.25,
+          0
+        ]
+      },
+      "collider": {
+        "type": "aabb",
+        "halfExtents": [
+          0.25,
+          0.25,
+          0.25
+        ],
+        "solid": false
+      }
+    },
+    {
+      "id": "s1_island",
+      "type": "island",
+      "sector": "s1",
+      "transform": {
+        "position": [
+          42.5,
+          -0.25,
+          0
+        ]
+      },
+      "collider": {
+        "type": "aabb",
+        "halfExtents": [
+          1.5,
+          0.25,
+          1.5
+        ]
+      }
+    },
+    {
+      "id": "s1_pedestal",
+      "type": "pedestal",
+      "sector": "s1",
+      "transform": {
+        "position": [
+          42.5,
+          0.5,
+          0
+        ]
+      },
+      "collider": {
+        "type": "aabb",
+        "halfExtents": [
+          0.5,
+          0.5,
+          0.5
+        ],
+        "solid": false
+      }
+    },
+    {
+      "id": "s1_floor_b",
+      "type": "platform",
+      "sector": "s1",
+      "transform": {
+        "position": [
+          45.5,
+          -0.25,
+          0
+        ]
+      },
+      "collider": {
+        "type": "aabb",
+        "halfExtents": [
+          1.5,
+          0.25,
+          3
+        ]
+      }
+    },
+    {
+      "id": "p1_1_floor",
+      "type": "platform",
+      "sector": "p1_1",
+      "transform": {
+        "position": [
+          54,
+          -0.25,
+          -1
+        ]
+      },
+      "collider": {
+        "type": "aabb",
+        "halfExtents": [
+          6,
+          0.25,
+          4
+        ]
+      }
+    },
+    {
+      "id": "p1_1_wall",
+      "type": "wall",
+      "sector": "p1_1",
+      "transform": {
+        "position": [
+          54,
+          1.75,
+          2
+        ]
+      },
+      "collider": {
+        "type": "aabb",
+        "halfExtents": [
+          3,
+          2,
+          0.5
+        ]
+      }
+    },
+    {
+      "id": "p1_1_switch",
+      "type": "switch",
+      "sector": "p1_1",
+      "transform": {
+        "position": [
+          54,
+          0.5,
+          -3
+        ]
+      },
+      "collider": {
+        "type": "aabb",
+        "halfExtents": [
+          0.5,
+          0.5,
+          0.5
+        ],
+        "solid": false
+      }
+    },
+    {
+      "id": "p1_2_wall_left_back",
+      "type": "shell_wall",
+      "transform": {
+        "position": [
+          68.25,
+          1.5,
+          -1.5
+        ]
+      },
+      "collider": {
+        "type": "aabb",
+        "halfExtents": [
+          0.25,
+          1.5,
+          0.5
+        ]
+      },
+      "sector": "p1_2"
+    },
+    {
+      "id": "p1_2_wall_left_front",
+      "type": "shell_wall",
+      "transform": {
+        "position": [
+          68.25,
+          1.5,
+          1.5
+        ]
+      },
+      "collider": {
+        "type": "aabb",
+        "halfExtents": [
+          0.25,
+          1.5,
+          0.5
+        ]
+      },
+      "sector": "p1_2"
+    },
+    {
+      "id": "p1_2_wall_left_lintel",
+      "type": "shell_wall",
+      "transform": {
+        "position": [
+          68.25,
+          2.5,
+          0
+        ]
+      },
+      "collider": {
+        "type": "aabb",
+        "halfExtents": [
+          0.25,
+          0.5,
+          1
+        ]
+      },
+      "sector": "p1_2"
+    },
+    {
+      "id": "p1_2_seam",
+      "type": "shell_seam",
+      "transform": {
+        "position": [
+          68.25,
+          1,
+          0
+        ]
+      },
+      "collider": {
+        "type": "aabb",
+        "halfExtents": [
+          0.25,
+          1,
+          1
+        ]
+      },
+      "sector": "p1_2"
+    },
+    {
+      "id": "p1_2_floor",
+      "type": "platform",
+      "sector": "p1_2",
+      "transform": {
+        "position": [
+          70,
+          -0.25,
+          0
+        ]
+      },
+      "collider": {
+        "type": "aabb",
+        "halfExtents": [
+          6,
+          0.25,
+          4
+        ]
+      }
+    },
+    {
+      "id": "p1_2_shell",
+      "type": "shell",
+      "sector": "p1_2",
+      "transform": {
+        "position": [
+          70,
+          1.5,
+          0
+        ]
+      },
+      "collider": {
+        "type": "aabb",
+        "halfExtents": [
+          2,
+          1.5,
+          2
+        ],
+        "solid": false
+      },
+      "model": "props_shell"
+    },
+    {
+      "id": "p1_2_wall_front",
+      "type": "shell_wall",
+      "transform": {
+        "position": [
+          70,
+          1.5,
+          1.75
+        ]
+      },
+      "collider": {
+        "type": "aabb",
+        "halfExtents": [
+          2,
+          1.5,
+          0.25
+        ]
+      },
+      "sector": "p1_2"
+    },
+    {
+      "id": "p1_2_wall_back",
+      "type": "shell_wall",
+      "transform": {
+        "position": [
+          70,
+          1.5,
+          -1.75
+        ]
+      },
+      "collider": {
+        "type": "aabb",
+        "halfExtents": [
+          2,
+          1.5,
+          0.25
+        ]
+      },
+      "sector": "p1_2"
+    },
+    {
+      "id": "p1_2_wall_top",
+      "type": "shell_wall",
+      "transform": {
+        "position": [
+          70,
+          2.75,
+          0
+        ]
+      },
+      "collider": {
+        "type": "aabb",
+        "halfExtents": [
+          2,
+          0.25,
+          2
+        ]
+      },
+      "sector": "p1_2"
+    },
+    {
+      "id": "p1_2_core",
+      "type": "core",
+      "sector": "p1_2",
+      "transform": {
+        "position": [
+          70,
+          1.5,
+          0
+        ]
+      },
+      "collider": {
+        "type": "aabb",
+        "halfExtents": [
+          0.5,
+          0.5,
+          0.5
+        ],
+        "solid": false
+      }
+    },
+    {
+      "id": "p1_2_wall_right",
+      "type": "shell_wall",
+      "transform": {
+        "position": [
+          71.75,
+          1.5,
+          0
+        ]
+      },
+      "collider": {
+        "type": "aabb",
+        "halfExtents": [
+          0.25,
+          1.5,
+          2
+        ]
+      },
+      "sector": "p1_2"
+    },
+    {
+      "id": "p2_1_pillar_a",
+      "type": "pillar",
+      "sector": "p2_1",
+      "transform": {
+        "position": [
+          79,
+          1,
+          -2
+        ]
+      },
+      "collider": {
+        "type": "aabb",
+        "halfExtents": [
+          0.25,
+          1,
+          0.25
+        ]
+      }
+    },
+    {
+      "id": "p2_1_pillar_b",
+      "type": "pillar",
+      "sector": "p2_1",
+      "transform": {
+        "position": [
+          79,
+          1,
+          2
+        ]
+      },
+      "collider": {
+        "type": "aabb",
+        "halfExtents": [
+          0.25,
+          1,
+          0.25
+        ]
+      }
+    },
+    {
+      "id": "p2_1_entry",
+      "type": "causeway",
+      "sector": "p2_1",
+      "transform": {
+        "position": [
+          79.5,
+          -0.25,
+          0
+        ]
+      },
+      "collider": {
+        "type": "aabb",
+        "halfExtents": [
+          1.5,
+          0.25,
+          3
+        ]
+      }
+    },
+    {
+      "id": "p2_1_slab_1",
+      "type": "causeway",
+      "sector": "p2_1",
+      "transform": {
+        "position": [
+          82,
+          -0.25,
+          0
+        ]
+      },
+      "collider": {
+        "type": "aabb",
+        "halfExtents": [
+          1,
+          0.25,
+          1.5
+        ]
+      }
+    },
+    {
+      "id": "p2_1_slab_2",
+      "type": "causeway",
+      "sector": "p2_1",
+      "transform": {
+        "position": [
+          84,
+          -0.25,
+          0
+        ]
+      },
+      "collider": {
+        "type": "aabb",
+        "halfExtents": [
+          1,
+          0.25,
+          1.5
+        ]
+      }
+    },
+    {
+      "id": "p2_1_slab_3",
+      "type": "causeway",
+      "sector": "p2_1",
+      "transform": {
+        "position": [
+          86,
+          -0.25,
+          0
+        ]
+      },
+      "collider": {
+        "type": "aabb",
+        "halfExtents": [
+          1,
+          0.25,
+          1.5
+        ]
+      }
+    },
+    {
+      "id": "p2_1_slab_4",
+      "type": "causeway",
+      "sector": "p2_1",
+      "transform": {
+        "position": [
+          88,
+          -0.25,
+          0
+        ]
+      },
+      "collider": {
+        "type": "aabb",
+        "halfExtents": [
+          1,
+          0.25,
+          1.5
+        ]
+      }
+    },
+    {
+      "id": "p2_1_slab_5",
+      "type": "causeway",
+      "sector": "p2_1",
+      "transform": {
+        "position": [
+          90,
+          -0.25,
+          0
+        ]
+      },
+      "collider": {
+        "type": "aabb",
+        "halfExtents": [
+          1,
+          0.25,
+          1.5
+        ]
+      }
+    },
+    {
+      "id": "p2_1_slab_6",
+      "type": "causeway",
+      "sector": "p2_1",
+      "transform": {
+        "position": [
+          92,
+          -0.25,
+          0
+        ]
+      },
+      "collider": {
+        "type": "aabb",
+        "halfExtents": [
+          1,
+          0.25,
+          1.5
+        ]
+      }
+    },
+    {
+      "id": "p2_1_exit",
+      "type": "causeway",
+      "sector": "p2_1",
+      "transform": {
+        "position": [
+          94,
+          -0.25,
+          0
+        ]
+      },
+      "collider": {
+        "type": "aabb",
+        "halfExtents": [
+          1,
+          0.25,
+          3
+        ]
+      }
+    },
+    {
+      "id": "p2_1_mark",
+      "type": "mark",
+      "sector": "p2_1",
+      "transform": {
+        "position": [
+          94,
+          0.25,
+          0
+        ]
+      },
+      "collider": {
+        "type": "aabb",
+        "halfExtents": [
+          0.75,
+          0.25,
+          0.75
+        ],
+        "solid": false
+      }
+    }
+  ],
+  "puzzles": [
+    {
+      "puzzleId": "F-1",
+      "requiredGenerations": [
+        "FC",
+        "PS1",
+        "PS2"
+      ],
+      "entities": [
+        "f1_vine_a",
+        "f1_vine_b",
+        "f1_braid",
+        "f1_pedestal"
+      ]
+    },
+    {
+      "puzzleId": "F-2",
+      "requiredGenerations": [
+        "FC"
+      ],
+      "entities": [
+        "f2_tile_1",
+        "f2_tile_2",
+        "f2_tile_3",
+        "f2_tile_4",
+        "f2_tile_5",
+        "f2_tile_6",
+        "f2_tile_7",
+        "f2_tile_8",
+        "f2_tile_9",
+        "f2_tile_10",
+        "f2_lamp_1",
+        "f2_lamp_2",
+        "f2_lamp_3",
+        "f2_lamp_4",
+        "f2_swarm_1",
+        "f2_swarm_2",
+        "f2_swarm_3",
+        "f2_swarm_4",
+        "f2_swarm_5",
+        "f2_swarm_6",
+        "f2_swarm_7",
+        "f2_swarm_8",
+        "f2_swarm_9",
+        "f2_swarm_10",
+        "f2_swarm_11",
+        "f2_swarm_12",
+        "f2_pedestal"
+      ]
+    },
+    {
+      "puzzleId": "S-1",
+      "requiredGenerations": [
+        "SFC"
+      ],
+      "entities": [
+        "s1_pivot",
+        "s1_platform",
+        "s1_island",
+        "s1_pedestal"
+      ]
+    },
+    {
+      "puzzleId": "P1-1",
+      "requiredGenerations": [
+        "PS1",
+        "PS2"
+      ],
+      "entities": [
+        "p1_1_wall",
+        "p1_1_switch"
+      ]
+    },
+    {
+      "puzzleId": "P1-2",
+      "requiredGenerations": [
+        "PS1"
+      ],
+      "entities": [
+        "p1_2_shell",
+        "p1_2_core",
+        "p1_2_seam"
+      ]
+    },
+    {
+      "puzzleId": "P2-1",
+      "requiredGenerations": [
+        "PS2"
+      ],
+      "entities": [
+        "p2_1_slab_1",
+        "p2_1_slab_2",
+        "p2_1_slab_3",
+        "p2_1_slab_4",
+        "p2_1_slab_5",
+        "p2_1_slab_6",
+        "p2_1_mark"
+      ]
+    }
+  ],
+  "checkpoints": [
+    {
+      "id": "cp_f1",
+      "position": [
+        1,
+        1,
+        0
+      ],
+      "sector": "f1"
+    },
+    {
+      "id": "cp_f2",
+      "position": [
+        17,
+        1,
+        0
+      ],
+      "sector": "f2"
+    },
+    {
+      "id": "cp_s1",
+      "position": [
+        33,
+        1,
+        0
+      ],
+      "sector": "s1"
+    },
+    {
+      "id": "cp_p1_1",
+      "position": [
+        49,
+        1,
+        0
+      ],
+      "sector": "p1_1"
+    },
+    {
+      "id": "cp_p1_2",
+      "position": [
+        65,
+        1,
+        0
+      ],
+      "sector": "p1_2"
+    },
+    {
+      "id": "cp_p2_1",
+      "position": [
+        81,
+        1,
+        0
+      ],
+      "sector": "p2_1"
+    }
+  ],
+  "spawn": {
+    "position": [
+      1,
+      1,
+      0
+    ],
+    "facing": 1,
+    "sector": "f1"
+  }
+}

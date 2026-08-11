@@ -1,0 +1,43 @@
+{
+  "name": "console-chaos-workspace",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "engines": {
+    "node": ">=22"
+  },
+  "workspaces": [
+    "packages/*",
+    "apps/*"
+  ],
+  "scripts": {
+    "lint": "npm run lint -w @console-chaos/engine && npm run lint -w @console-chaos/engine-testkit && npm run lint -w @console-chaos/console-chaos && npm run lint -w @console-chaos/racing",
+    "test:engine": "npm run test -w @console-chaos/engine && npm run test -w @console-chaos/engine-testkit",
+    "test:console": "npm run test -w @console-chaos/console-chaos",
+    "test:racing": "npm run test -w @console-chaos/racing",
+    "test:e2e": "npm run test:e2e -w @console-chaos/racing",
+    "check:boundaries": "tsx tools/check-boundaries.ts",
+    "check:budget": "npm run check:budget -w @console-chaos/console-chaos",
+    "check:levels": "npm run check:levels -w @console-chaos/console-chaos",
+    "check:assets": "npm run check:assets -w @console-chaos/console-chaos",
+    "check:trademark": "npm run check:trademark -w @console-chaos/console-chaos",
+    "check:reference": "tsx tools/check-reference-snapshot.ts",
+    "build:engine": "npm run build -w @console-chaos/engine",
+    "build:testkit": "npm run build -w @console-chaos/engine-testkit",
+    "build:console": "npm run build -w @console-chaos/console-chaos",
+    "build:racing": "npm run build -w @console-chaos/racing",
+    "verify:console-baseline": "npm run verify -w @console-chaos/console-chaos",
+    "verify": "npm run lint && npm run test:engine && npm run test:console && npm run test:racing && npm run test:e2e && npm run check:boundaries && npm run check:budget && npm run check:levels && npm run check:assets && npm run check:trademark && npm run check:reference && npm run build:engine && npm run build:testkit && npm run build:console && npm run build:racing"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.13.0",
+    "@types/node": "^26.1.2",
+    "eslint": "^9.13.0",
+    "prettier": "^3.3.3",
+    "tsx": "^4.19.0",
+    "typescript": "^5.6.0",
+    "typescript-eslint": "^8.11.0",
+    "vite": "^6.4.3",
+    "vitest": "^4.1.10"
+  }
+}

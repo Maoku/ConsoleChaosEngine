@@ -1,0 +1,105 @@
+# Console Chaos
+
+廃棄されたブラウン管テレビの内部に閉じ込められたデータ生命体を操作する、
+2D と 3D を行き来するアクションパズル。
+
+テレビには 4 つのチャンネルが残っており、それぞれが異なる時代の映像規格で
+**同じ 1 つの空間**を映し出している。空間そのものは変わらない。
+チャンネルによって、見え方と触れ方が変わるだけ。
+
+- CH 1（第1世代）: 固定色数・ブロック単位の色制限・走査線あたりのスプライト制限
+- CH 2（第2世代）: 色数が増え、制限が緩む
+- CH 3（第3世代）: 奥行きが現れる。ただし頂点は揺れ、テクスチャは歪む
+- CH 4（第4世代）: 安定した 3D 表示
+
+## 本作の性質について（重要）
+
+1. **本作は特定のゲーム機のエミュレータではありません。**
+   ROM・BIOS・実機のアセット（画像、音声、フォント、プログラム）を
+   一切使用しておらず、同梱もしていません。
+2. 各世代の表現は、**公開されている技術仕様を参考にした独自実装による
+   様式的な再現**です。実機のハードウェアを再現・複製するものではありません。
+3. 説明のために言及する製品名・会社名は各社の商標であり、
+   **本作は権利者と一切関係がありません。** また権利者による承認・後援も受けていません。
+4. **実機の挙動と意図的に異なる箇所があります。**
+   たとえば CH 1 で斜め移動を禁止しているのは、入力の粗さを遊びに使うために
+   本作が意図的に定めた規則です。
+   意図的な差分の一覧は [Docs/GAME_PLAN.md](Docs/GAME_PLAN.md) の §4.1 を参照してください。
+
+作中・UI では実機名を使わず、「CH 1」〜「CH 4」および「第1世代」〜「第4世代」と表記します。
+ソースコード内部の識別子 `FC` / `SFC` / `PS1` / `PS2` は略号であり、表示名とは
+完全に分離されています（`src/generation/profiles.ts`）。
+
+混入がないことは `npm run check:trademark` が CI で機械的に検査します。
+
+## 開発
+
+必要環境: Node.js 22 以上
+
+```bash
+npm install
+npm run dev
+```
+
+| コマンド | 内容 |
+|---|---|
+| `npm run dev` | 開発サーバ |
+| `npm run build` | 本番ビルド（`dist/`） |
+| `npm run test` | 単体・ゴールデン・リプレイテスト |
+| `npm run lint` | ESLint + 型検査 |
+| `npm run check:budget` | 描画ラッパーの行数バジェット検査 |
+| `npm run check:levels` | レベル・パズルのバリデータ |
+| `npm run check:trademark` | 実機名・商標由来語の混入チェック |
+| `npm run check:assets` | アセットがローダのサブセット範囲に収まっているかの検査 |
+| `npm run bench:sort` | 三角形ソートのベンチマーク |
+| `npm run playtest` | 試遊用にビルドしてサーバを立てる（同じネットワークの別 PC からも開ける） |
+| `npm run playtest:report -- <JSON…>` | 試遊記録の集計（ゲート G1-3 の判定） |
+| `npm run verify` | 上記すべて（CI と同一） |
+
+### 遊ぶ
+
+`npm run dev` のあと `/?scene=mini&level=area1`（既定）でエリア 1 を通しで遊べます。
+
+| 操作 | キー |
+|---|---|
+| 移動 | 矢印 / WASD |
+| ジャンプ | Space |
+| チャンネル切替 | `1`〜`4`（`Q` / `E` で隣へ） |
+| ヒント（段階的） | `H` |
+| やり直し | `R` |
+| プレイテスト記録の保存 | `P`（JSON でダウンロード） |
+| 試遊を終える（進行役） | `Esc` |
+
+ゲームパッドも使えます（接続すると自動で有効）。BGM は開始画面の「はじめる」から鳴り始めます
+（ブラウザの自動再生制限のため）。
+
+試遊（T1-20）の手順は [Docs/measurements/T1-20_playtest_kit.md](Docs/measurements/T1-20_playtest_kit.md) に
+まとめてあります。開始画面が邪魔な開発中は `?playtest=0` で切れます。
+
+### 検証用シーン
+
+開発サーバでは `?scene=` で技術検証用の画面を切り替えられます。
+
+| URL | 内容 |
+|---|---|
+| `/?scene=switch` | 4 世代の切替（`1`〜`4` キーで世代、`Q` で CRT 品質） |
+| `/?scene=ps1` | 第3世代の頂点量子化とアフィン UV |
+| `/?scene=fc` | 第1世代のカラークラッシュ |
+| `/?scene=mini` | レベルを遊ぶ（`&level=area1` / `mini` / `puzzle_lab`） |
+| `/?scene=player` | Blender 出力のプレイヤーモデルを 4 世代で表示 |
+
+## ドキュメント
+
+| 文書 | 内容 |
+|---|---|
+| [Docs/CORE_PLAN.md](Docs/CORE_PLAN.md) | 企画の核 |
+| [Docs/GAME_PLAN.md](Docs/GAME_PLAN.md) | ゲームデザイン（何を作るか） |
+| [Docs/IMPLEMENTATION_PLAN.md](Docs/IMPLEMENTATION_PLAN.md) | 実装計画（どう作るか） |
+| [Docs/GRAPHICS_STAGE_PLAN.md](Docs/GRAPHICS_STAGE_PLAN.md) | 試作ステージのグラフィックス強化計画（SG-01〜SG-11） |
+| [Docs/ASSET_REQUEST_STAGE.md](Docs/ASSET_REQUEST_STAGE.md) | 素材制作依頼リスト（発注仕様の正本） |
+| [Docs/asset-rules.md](Docs/asset-rules.md) | アセット規則（glTF サブセットの対応範囲） |
+| [Docs/measurements/](Docs/measurements/) | 計測記録（日付・機材・ブラウザとセット） |
+
+## ライセンス
+
+未定（リリース前に決定する）。

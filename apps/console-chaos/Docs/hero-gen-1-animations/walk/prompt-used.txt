@@ -1,0 +1,9 @@
+Create a production-ready 2D game character animation sprite sheet using the shown hero concept as the exact visual identity and style reference.
+
+ACTION: side-view walk cycle, character facing right.
+SHEET: exactly 6 equal cells in a 2-row by 3-column grid, read left-to-right across the top row, then the bottom row.
+FRAME PLAN: contact, down/compression, passing, opposite contact, down/compression, passing back toward frame 1. Walk in place with a natural energetic stride.
+
+Preserve the heroine's pink bobbed hair, high spiral side ponytail, navy bow, large pink eyes, red-and-warm-white cropped windbreaker with oversized sleeves, cream jumper skirt, opaque red shorts, heart clasps and motifs, scrunched cream socks, and red-and-cream platform sneakers. Preserve her youthful chibi proportions and clean polished anime-game style.
+
+Use a strict right-facing side profile, full body, fixed camera distance and anatomical scale. Keep the torso centered and feet on one ground-contact line. Keep the whole character in the central 65% safe area. Use a solid flat #FF00FF background with no scenery, shadows, text, borders, separators, motion lines, dust, detached effects, or edge crossing.

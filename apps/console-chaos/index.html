@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Console Chaos</title>
+    <style>
+      html,
+      body {
+        margin: 0;
+        padding: 0;
+        height: 100%;
+        background: #000;
+        color: #ccc;
+        font-family: system-ui, sans-serif;
+        overflow: hidden;
+      }
+      /*
+        HUD（T1-18）は CRT フレームの外側に置く。そのための場所を
+        レイアウトで確保する：上下に帯、真ん中がゲーム画面。
+        画面が狭いときはキャンバスの方が縮む（帯は必ず外に残る）。
+      */
+      #app {
+        position: absolute;
+        inset: 0;
+        display: grid;
+        grid-template-rows: var(--hud-bar) 1fr var(--hud-bar);
+      }
+      /* 中央の行だけがゲーム画面。min-height:0 が無いと画面が縮まず、帯が押し出される */
+      #stage {
+        min-height: 0;
+        display: grid;
+        place-items: center;
+      }
+      :root {
+        --hud-bar: 40px;
+      }
+      .hud-bar {
+        width: 100%;
+        height: var(--hud-bar);
+        display: flex;
+        justify-content: center;
+        pointer-events: none;
+      }
+      canvas {
+        display: block;
+        image-rendering: pixelated;
+        max-width: 100%;
+        max-height: 100%;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="app">
+      <div id="hud-top" class="hud-bar"></div>
+      <div id="stage"><canvas id="screen"></canvas></div>
+      <div id="hud-bottom" class="hud-bar"></div>
+    </div>
+    <script type="module" src="/src/bootstrap.ts"></script>
+  </body>
+</html>

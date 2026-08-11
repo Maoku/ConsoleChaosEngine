@@ -1,0 +1,11 @@
+Create a production-ready 2D game character animation sprite sheet using the provided hero concept as the exact visual identity, costume, palette, proportions, and polished anime-game rendering reference.
+
+ACTION: energetic side-view walk cycle in place, character facing right.
+SHEET: exactly 6 equal invisible cells in a 2-row by 3-column grid, read left-to-right across the top row and then the bottom row. No visible grid lines or separators.
+FRAME PLAN: right-foot contact, down/compression, passing pose, left-foot contact, down/compression, passing back toward frame 1. Use natural arm counter-swing and controlled ponytail/skirt secondary motion.
+
+Preserve the same young heroine from the reference in every cell: pink bobbed hair and high spiral side ponytail, large navy bow, large pink-magenta eyes, blue oversized cropped windbreaker with yellow hood/collar, red, green, and yellow sleeve panels, blue ribbed turtleneck, blue pleated skirt with colored panels and white ruffle underskirt, navy shorts, pink heart zipper pull and heart belt buckle/charms, white knee socks with red-yellow-blue stripes, and blue platform sneakers with green/pink/yellow accents and heart emblems. Preserve her youthful chibi proportions, face, exact color relationships, clean line art, and crisp polished anime game-sprite finish.
+
+Use a strict right-facing orthographic side profile, full body, fixed camera distance, and identical standing-equivalent anatomical scale in all frames. Walk in place with the torso near each cell center and all grounded feet on one contact line. Keep the entire character inside the central 65% safe area with generous magenta padding. Nothing may touch or cross cell boundaries. No per-frame zooming.
+
+Background must be 100% solid flat #FF00FF with no gradient, texture, floor, shadow, scenery, text, labels, UI, borders, boxes, separators, motion lines, dust, glow, particles, or detached effects. Exactly six poses only.

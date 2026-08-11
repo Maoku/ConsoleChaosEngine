@@ -1,0 +1,32 @@
+{
+  "level": "puzzle_lab",
+  "puzzle": "F-1",
+  "spawn": [
+    1,
+    1,
+    0
+  ],
+  "generation": "FC",
+  "inputs": [
+    {
+      "ticks": 143,
+      "move": [
+        1,
+        0
+      ]
+    },
+    {
+      "ticks": 12
+    }
+  ],
+  "expect": {
+    "solved": true,
+    "solvedAtTick": 142,
+    "position": [
+      11.75,
+      0.8,
+      0
+    ],
+    "tolerance": 0.001
+  }
+}

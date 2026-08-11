@@ -1,0 +1,112 @@
+{
+  "level": "puzzle_lab",
+  "puzzle": "S-1",
+  "spawn": [
+    33,
+    1,
+    0
+  ],
+  "generation": "SFC",
+  "inputs": [
+    {
+      "ticks": 26,
+      "move": [
+        1,
+        0
+      ]
+    },
+    {
+      "ticks": 20
+    },
+    {
+      "ticks": 1,
+      "move": [
+        -1,
+        0
+      ]
+    },
+    {
+      "ticks": 6
+    },
+    {
+      "ticks": 1,
+      "move": [
+        -1,
+        0
+      ]
+    },
+    {
+      "ticks": 6
+    },
+    {
+      "ticks": 1,
+      "move": [
+        -1,
+        0
+      ]
+    },
+    {
+      "ticks": 6
+    },
+    {
+      "ticks": 1,
+      "move": [
+        -1,
+        0
+      ]
+    },
+    {
+      "ticks": 4
+    },
+    {
+      "ticks": 1,
+      "move": [
+        -1,
+        0
+      ]
+    },
+    {
+      "ticks": 5
+    },
+    {
+      "ticks": 1,
+      "move": [
+        -1,
+        0
+      ]
+    },
+    {
+      "ticks": 4
+    },
+    {
+      "ticks": 1,
+      "move": [
+        -1,
+        0
+      ]
+    },
+    {
+      "ticks": 541
+    },
+    {
+      "ticks": 16,
+      "move": [
+        1,
+        0
+      ]
+    },
+    {
+      "ticks": 12
+    }
+  ],
+  "expect": {
+    "solved": true,
+    "solvedAtTick": 640,
+    "position": [
+      36.174485,
+      0.8,
+      2.015356
+    ],
+    "tolerance": 0.001
+  }
+}

@@ -1,0 +1,24 @@
+/**
+ * 第2世代（SFC）の色量子化（T0-13。T2-11 でスプライト面の合成を追加）。
+ *
+ * 第2世代は固定パレットではなく、各チャンネル 5bit（32 段階）の色空間を持っていた。
+ * 選べる色は増えたが**中間色は依然として飛ぶ**。第1世代のような
+ * ブロック単位の色数制限は無いため、1 パスで完結する。
+ *
+ * 第1世代との差（色数制限がある / ない）が、そのままパズルの差になる。
+ * その差はスプライトの扱いにも出る。FC はブロックパレットを面ごとに選び直すが、
+ * ここは**重ねてから同じ量子化を掛けるだけ**でよい（背景と色を取り合わない）。
+ */
+
+uniform float uLevels;      // チャンネルあたりの段階数（RGB555 なら 32）
+uniform float uAmount;      // 0 = 素通し、1 = 完全な量子化
+uniform sampler2D uSprite;  // スプライト面。α = 0 は「何も描かれていない」
+
+void main() {
+  // 抜きは 0 か 255 しかない（asset-rules.md §11）ので、しきい値で分ければ足りる
+  vec4 sprite = texture(uSprite, vUv);
+  vec3 source = sprite.a >= 0.5 ? sprite.rgb : sampleSource(vUv).rgb;
+  float steps = max(uLevels - 1.0, 1.0);
+  vec3 quantized = floor(source * steps + 0.5) / steps;
+  fragColor = vec4(mix(source, quantized, uAmount), 1.0);
+}

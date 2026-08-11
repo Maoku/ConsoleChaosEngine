@@ -1,0 +1,2668 @@
+{
+  "schemaVersion": 1,
+  "source": {
+    "repository": "../Opus5ConsoleChaos",
+    "commit": "628119358e720514a1f17006654f61e82cc4c207",
+    "shortCommit": "6281193",
+    "status": "clean"
+  },
+  "capturedAt": "2026-08-11",
+  "fileCount": 531,
+  "files": [
+    {
+      "path": ".claude/launch.json",
+      "size": 385,
+      "sha256": "386f3f43d4d9084470678e308f73ac78873c5258ad6e637eae141648bfb494e5"
+    },
+    {
+      "path": ".github/workflows/ci.yml",
+      "size": 484,
+      "sha256": "fc6cb1574e33abbcb0ba38af1047ad7c20ee0998065a997cd42168d977f41aa3"
+    },
+    {
+      "path": ".gitignore",
+      "size": 43,
+      "sha256": "a3c83ccc6fa910f962ff05e122c3d5c317358cb5442a7442ab726a2c79eab5c5"
+    },
+    {
+      "path": ".prettierrc.json",
+      "size": 89,
+      "sha256": "17182153c3c918d4c0d3612ad1b6500e6408bdd6b488e29e451ab27f2087891a"
+    },
+    {
+      "path": "Docs/ASSET_REQUEST_STAGE.md",
+      "size": 21162,
+      "sha256": "7b230b4b56943cb301807aa77e26143eba532a0fc7ab8cea3a6d28b93bd7f3e6"
+    },
+    {
+      "path": "Docs/asset-rules.md",
+      "size": 15456,
+      "sha256": "b4d6ddbf39dc98a53f4dbed8a2dacd8a8d66bee60ca779e9143521d46f35e03e"
+    },
+    {
+      "path": "Docs/BUG_FIX_PLAN.md",
+      "size": 18459,
+      "sha256": "277e38afe66ddab7e8c272ae36a5046999e38a60ff86cdb9f6c81c88470dea5c"
+    },
+    {
+      "path": "Docs/BUG_REPORT.md",
+      "size": 719,
+      "sha256": "09688842113fe2cbe8acc7ad55dd039a3e05dbcf0bb6f50e4defd3072d5d8839"
+    },
+    {
+      "path": "Docs/concept/source/src_backdrop_far.png",
+      "size": 15874,
+      "sha256": "d78adb36a0ffab2d7cfd178d9b2e3c9b594633b9467c954b2093b2cb1ee34d12"
+    },
+    {
+      "path": "Docs/concept/source/src_backdrop_near.png",
+      "size": 6727,
+      "sha256": "e9347de9e65cdffffdc4a6d66763281b3a1b4789ab0cefe3f6216173fe58f169"
+    },
+    {
+      "path": "Docs/concept/source/src_cloud_bank.png",
+      "size": 3415,
+      "sha256": "a5d5e659159d06abe0748816e488ad5e8746d656422fafd06404e3a4d2436c5c"
+    },
+    {
+      "path": "Docs/concept/source/src_enemy_body.png",
+      "size": 4869,
+      "sha256": "3115080d5865a551a20a9ca2987075de389a204182d14e6617941abe10c92785"
+    },
+    {
+      "path": "Docs/concept/source/src_foliage_tuft.png",
+      "size": 3069,
+      "sha256": "d2ecee7e828a8bf4c102a194d7db0196e75e9026759a005cf28a90421ef6f324"
+    },
+    {
+      "path": "Docs/concept/source/src_gate_glow.png",
+      "size": 2251,
+      "sha256": "07348b83a3562321cabc5358c63719e42621cb0e0e678a0bb2339d7b939fce65"
+    },
+    {
+      "path": "Docs/concept/source/src_grass_top.png",
+      "size": 4737,
+      "sha256": "92b2465b4bad95afad16ebbe4fc665f5dffa9c16f30e482836e6c64f3c4e5fb1"
+    },
+    {
+      "path": "Docs/concept/source/src_pedestal_top.png",
+      "size": 17522,
+      "sha256": "324d03ef122e978ec6129ca58b65da88d7e4d44e4212aff12d26cde90b7a2b6f"
+    },
+    {
+      "path": "Docs/concept/source/src_stone_floor.png",
+      "size": 3087,
+      "sha256": "6639d983820ffc6dbc19e671a777f06a48907f6f7179eb1ee87b84e084505769"
+    },
+    {
+      "path": "Docs/concept/source/src_stone_wall.png",
+      "size": 3077,
+      "sha256": "099018a085a3838076fcb5dc5b273f1caaeeeafd095db6e3ba842bd816808059"
+    },
+    {
+      "path": "Docs/concept/source/src_tree_pine.png",
+      "size": 3913,
+      "sha256": "ee11da136cf48b4400535fb1c463999bef68a2e047d1f36fb4849ca4366f9704"
+    },
+    {
+      "path": "Docs/concept/source/src_vine_green.png",
+      "size": 3036,
+      "sha256": "1979981a69e2c2155d6aeed2bd9cb8f467aa645bcf625315fc7a58bd93bfebe5"
+    },
+    {
+      "path": "Docs/concept/source/src_vine_yellow.png",
+      "size": 3061,
+      "sha256": "eac03a61c003ac4951118bbeec0b843df89bb2ced8b19c5ecf4cf351c99aa4d9"
+    },
+    {
+      "path": "Docs/concept/source/src_water_fall.png",
+      "size": 2523,
+      "sha256": "66941227ffcc8e05f6474af610f80c7fc9ced5844021882367dda97a825d6e72"
+    },
+    {
+      "path": "Docs/concept/stage-02-emerald-sky-gen-04.png",
+      "size": 2446179,
+      "sha256": "28a0bc1cf2d42613e1b91d0a98e091cf79107d8d3a04398979c599623915b3a1"
+    },
+    {
+      "path": "Docs/console-chaos-title.png",
+      "size": 2747944,
+      "sha256": "d52e183ac68e17dedaf41719b027d06ffcfa2f91c65b3dc438253ec6260bb2dd"
+    },
+    {
+      "path": "Docs/CORE_PLAN.md",
+      "size": 2073,
+      "sha256": "ee4c73828591db2123e6c5c3a4ececce3d0517784de0dea101805182cd018dd2"
+    },
+    {
+      "path": "Docs/GAME_PLAN.md",
+      "size": 66925,
+      "sha256": "7fe008fdd17be48be7995840594c187d4cc55a43a5a223884346676189812df5"
+    },
+    {
+      "path": "Docs/GRAPHICS_KEY_VISUAL_PLAN.md",
+      "size": 21978,
+      "sha256": "39c83567bc8ad52d17eb8a253dd0416b745cb05b59911244c798b5867d291a02"
+    },
+    {
+      "path": "Docs/GRAPHICS_STAGE_IMPL_PLAN.md",
+      "size": 37751,
+      "sha256": "d9a49fa7e33c3cfa225091d543ce1941c5c7bc623aa285eb6ce56c0c8d09ebc0"
+    },
+    {
+      "path": "Docs/GRAPHICS_STAGE_PLAN.md",
+      "size": 24481,
+      "sha256": "034f6ad1991aa7418d7696fcfc1327d6dfaf32716f065df357e366dbac98c9bf"
+    },
+    {
+      "path": "Docs/hero-gen-1-animations/character-scale-profile.json",
+      "size": 673,
+      "sha256": "5b191922405d52985566c49309d707a547335c120a54536292ce7b33b3bd1b94"
+    },
+    {
+      "path": "Docs/hero-gen-1-animations/hand-forward/animation.gif",
+      "size": 47405,
+      "sha256": "612868933835ab1870c6f7643c9e205466d639139ba05cd19095c704e50c8e73"
+    },
+    {
+      "path": "Docs/hero-gen-1-animations/hand-forward/hand-forward-1.png",
+      "size": 31787,
+      "sha256": "3a569ce78efd65d9d7bf3eb29c807ecce119a815251c8e1463eb776f66a455ed"
+    },
+    {
+      "path": "Docs/hero-gen-1-animations/hand-forward/hand-forward-2.png",
+      "size": 34268,
+      "sha256": "21752457e1931731b87c877cff62f5c3e7963eaf538d79d97dd997a86f0176ac"
+    },
+    {
+      "path": "Docs/hero-gen-1-animations/hand-forward/hand-forward-3.png",
+      "size": 34971,
+      "sha256": "b79148b6da98b8787d4c3be911d346d5957201863f99491a663514be20195ade"
+    },
+    {
+      "path": "Docs/hero-gen-1-animations/hand-forward/hand-forward-4.png",
+      "size": 34851,
+      "sha256": "85f7ee51ec568f5bce3caa643e6718adce8ed5c6b6eee7460558f97cef8a8fc0"
+    },
+    {
+      "path": "Docs/hero-gen-1-animations/hand-forward/pipeline-meta.json",
+      "size": 7502,
+      "sha256": "b048ef91e830e8014e6e0f9fc72de9397cb2ca60550273b703b11ddb2e5bd852"
+    },
+    {
+      "path": "Docs/hero-gen-1-animations/hand-forward/prompt-used.txt",
+      "size": 1365,
+      "sha256": "5b497903e80125327c011c62deb49cc9a5ed87f5dde61f5a60e2cf9dbac19074"
+    },
+    {
+      "path": "Docs/hero-gen-1-animations/hand-forward/raw-sheet-clean.png",
+      "size": 715714,
+      "sha256": "e24f7fe5abc3122e03ac97cc9a7ff7cadbebe29855ce35a7a11808593570b265"
+    },
+    {
+      "path": "Docs/hero-gen-1-animations/hand-forward/raw-sheet.png",
+      "size": 1680118,
+      "sha256": "b38247116846b89d2f06e1b1f040b29b87aaff90c8c9e7dbddf8b6844d154532"
+    },
+    {
+      "path": "Docs/hero-gen-1-animations/hand-forward/sheet-transparent.png",
+      "size": 123718,
+      "sha256": "a6657b0a028107aa80ec0c5a898d53db549de949078a0883b0817c43cbbc1319"
+    },
+    {
+      "path": "Docs/hero-gen-1-animations/jump/animation.gif",
+      "size": 57507,
+      "sha256": "9db24f0e6aefb89ce44bb76bf854bb6f9bd5ee57bdcf817510602a2bbb692c7b"
+    },
+    {
+      "path": "Docs/hero-gen-1-animations/jump/jump-1.png",
+      "size": 26966,
+      "sha256": "d5945b58899ff20bd858142cc57451ce50db36c23e24f565e67aa21a23a2bcb9"
+    },
+    {
+      "path": "Docs/hero-gen-1-animations/jump/jump-2.png",
+      "size": 30479,
+      "sha256": "c08f8909444e3fe298b96fd93386bff126c526c1543fb4ed2753e7ab5e54c04f"
+    },
+    {
+      "path": "Docs/hero-gen-1-animations/jump/jump-3.png",
+      "size": 30746,
+      "sha256": "46b24020055681b581985d416f65544e2aa71e544d716c6ce5edd8c82c981b4e"
+    },
+    {
+      "path": "Docs/hero-gen-1-animations/jump/jump-4.png",
+      "size": 23694,
+      "sha256": "75bbc27c26cfc4b90c2fa673f9790b134bc77cd38f08aca3545070abd8106371"
+    },
+    {
+      "path": "Docs/hero-gen-1-animations/jump/jump-5.png",
+      "size": 28285,
+      "sha256": "903642fc349aa93f470146909677ca654edd03671993a93f2eaba70e705dcf0b"
+    },
+    {
+      "path": "Docs/hero-gen-1-animations/jump/jump-6.png",
+      "size": 26165,
+      "sha256": "0fbe2bd135a98e40ba0c322d1857604a625d1c6d587d55118db824f66306b2c4"
+    },
+    {
+      "path": "Docs/hero-gen-1-animations/jump/pipeline-meta.json",
+      "size": 10118,
+      "sha256": "56c35bcf7fcae5adf83d9c957509a21256d987fb26c6504ed35f2e7e7de8bbe5"
+    },
+    {
+      "path": "Docs/hero-gen-1-animations/jump/prompt-used.txt",
+      "size": 1212,
+      "sha256": "e8791e501f5767f5e3047278b3c32d0eaba5f5e1a8c54df9aa96d327c5b24717"
+    },
+    {
+      "path": "Docs/hero-gen-1-animations/jump/raw-sheet-clean.png",
+      "size": 618787,
+      "sha256": "27dad687c5c00cdb6e0ee0a2564a535c5596622b0a86b5593b714b1108992834"
+    },
+    {
+      "path": "Docs/hero-gen-1-animations/jump/raw-sheet.png",
+      "size": 1590754,
+      "sha256": "98d3a7ccbb1889a8eb4b3591fd4203015eb6721d4a27c1d06bb7829e91baf209"
+    },
+    {
+      "path": "Docs/hero-gen-1-animations/jump/sheet-transparent.png",
+      "size": 153318,
+      "sha256": "b9fa9f9bc2516400c5369658d27338ff034dd2e8accfe2f5e7238762fed6b5b8"
+    },
+    {
+      "path": "Docs/hero-gen-1-animations/README.md",
+      "size": 1728,
+      "sha256": "d442e554aa9bfc458712c669c1593b50422a6630f322704aca8973572b0c44dd"
+    },
+    {
+      "path": "Docs/hero-gen-1-animations/walk/animation.gif",
+      "size": 65713,
+      "sha256": "bd85bab6dcd0ad4e540461fabdeafb44ea0b0fecd5b4e40540c177e101f82472"
+    },
+    {
+      "path": "Docs/hero-gen-1-animations/walk/pipeline-meta.json",
+      "size": 10193,
+      "sha256": "168466a548e7798a84fb75b562c2f8b2d894ebdcb5757fc30382e05f05eede9e"
+    },
+    {
+      "path": "Docs/hero-gen-1-animations/walk/prompt-used.txt",
+      "size": 1196,
+      "sha256": "679945dc99b69d35ab0199cab418722d1023c510bf43546ca401e9e5882efb7b"
+    },
+    {
+      "path": "Docs/hero-gen-1-animations/walk/raw-sheet-clean.png",
+      "size": 700837,
+      "sha256": "d58d8bbe02a91bc7a7cedfa177d392b1d327961464de2a2ddbb53180be897b2e"
+    },
+    {
+      "path": "Docs/hero-gen-1-animations/walk/raw-sheet.png",
+      "size": 1674966,
+      "sha256": "08a046e074cf0f78cddbc2e0b17cc75c54958abc99cd1503def29df359869b84"
+    },
+    {
+      "path": "Docs/hero-gen-1-animations/walk/sheet-transparent.png",
+      "size": 173751,
+      "sha256": "21af49e734c5b60e09cfdcc5bb706bc6fa89d2e817992464147729c0b1d918c8"
+    },
+    {
+      "path": "Docs/hero-gen-1-animations/walk/walk-1.png",
+      "size": 33092,
+      "sha256": "ec87731501e25571cba31a529bce422033ac1c3d3f1bf5ad78a09fe226f657a0"
+    },
+    {
+      "path": "Docs/hero-gen-1-animations/walk/walk-2.png",
+      "size": 30580,
+      "sha256": "f79e453a40c0184f9171cb237cc276b6b50a1a4a2610f3c0568910060d7ee153"
+    },
+    {
+      "path": "Docs/hero-gen-1-animations/walk/walk-3.png",
+      "size": 32505,
+      "sha256": "6bc382e85d4b82d2df4cabf91c101cee270ee46511cb25437db5272f62a7b1ea"
+    },
+    {
+      "path": "Docs/hero-gen-1-animations/walk/walk-4.png",
+      "size": 32445,
+      "sha256": "ea271f0ed7d3f611d2dcdb2e8ce7b950e4b6aeaeece2a14cd03452aef43c21c2"
+    },
+    {
+      "path": "Docs/hero-gen-1-animations/walk/walk-5.png",
+      "size": 28479,
+      "sha256": "2be22f132550e4a4b515dd56820b5a77d6a85119dfed29e1f57dd904a705f13b"
+    },
+    {
+      "path": "Docs/hero-gen-1-animations/walk/walk-6.png",
+      "size": 32779,
+      "sha256": "cdaddbba57301494fea0cd04658d3bfd1238270e260bde2a9953f34e34e2f672"
+    },
+    {
+      "path": "Docs/hero-gen-2-animations/character-scale-profile.json",
+      "size": 673,
+      "sha256": "8c9900ef6bf666ab73bc560078e18b6a226d024eeb8a08dfc0669b157578f28d"
+    },
+    {
+      "path": "Docs/hero-gen-2-animations/hand-forward/animation.gif",
+      "size": 45353,
+      "sha256": "ef3c62f459aafe809446b2ebf59b295fa281c61d6ffe217cd3489e5ce0d482ea"
+    },
+    {
+      "path": "Docs/hero-gen-2-animations/hand-forward/hand-forward-1.png",
+      "size": 33140,
+      "sha256": "d4730e241563b900c2c892818a81c0875460cd6039477d3ea441d3f98a15bff7"
+    },
+    {
+      "path": "Docs/hero-gen-2-animations/hand-forward/hand-forward-2.png",
+      "size": 35718,
+      "sha256": "f201377ddaa01c75fe52f718a2b2b30783bdf31d881cf58374b637fbff6d9c69"
+    },
+    {
+      "path": "Docs/hero-gen-2-animations/hand-forward/hand-forward-3.png",
+      "size": 36109,
+      "sha256": "386c9c1cdf63606331701949792500a9cc70d8a1bf87bf3ce4c120aaa5ad12ac"
+    },
+    {
+      "path": "Docs/hero-gen-2-animations/hand-forward/hand-forward-4.png",
+      "size": 36656,
+      "sha256": "054538b9e342312e7e601cc44d2237e519f93b838bba0201e6fe0ffe79a5ca86"
+    },
+    {
+      "path": "Docs/hero-gen-2-animations/hand-forward/pipeline-meta.json",
+      "size": 7497,
+      "sha256": "883cef16933ee8beb592a5b18f49a6f6e151ba7a76aadd79a7d2621e86fe814d"
+    },
+    {
+      "path": "Docs/hero-gen-2-animations/hand-forward/prompt-used.txt",
+      "size": 2158,
+      "sha256": "511a6ce78e4ceadb16a87443385170f3111eb2ca5bf4cf2967b5bd5aaa38c16a"
+    },
+    {
+      "path": "Docs/hero-gen-2-animations/hand-forward/raw-sheet-clean.png",
+      "size": 770051,
+      "sha256": "835fd155e98f96a61889a15bb3ab1b8b05b29114c02e3e4f96d6fe052b9fff0c"
+    },
+    {
+      "path": "Docs/hero-gen-2-animations/hand-forward/raw-sheet.png",
+      "size": 1727041,
+      "sha256": "8197e636cf5606ef90280af90c518d97c5a8c4da74300eb7d205163c42769f71"
+    },
+    {
+      "path": "Docs/hero-gen-2-animations/hand-forward/sheet-transparent.png",
+      "size": 129901,
+      "sha256": "57b4987ba294e01d096c9c835e39df4bb68155fc602a6e052e71ed640e3dad17"
+    },
+    {
+      "path": "Docs/hero-gen-2-animations/jump/animation.gif",
+      "size": 54518,
+      "sha256": "a588bfdd4d9f0a4e0a333ac0ef6dc2902211c822d035b908dd8644e0db0eecbf"
+    },
+    {
+      "path": "Docs/hero-gen-2-animations/jump/jump-1.png",
+      "size": 27486,
+      "sha256": "395fe246ffb22d562a7c4949f449afea7e5d1e86a99a59ce2e986e1061957bde"
+    },
+    {
+      "path": "Docs/hero-gen-2-animations/jump/jump-2.png",
+      "size": 31600,
+      "sha256": "0fdb4b39bfd93037c4a16acb96b4ccecba87d63fc242d50ab983b427166b48ee"
+    },
+    {
+      "path": "Docs/hero-gen-2-animations/jump/jump-3.png",
+      "size": 32143,
+      "sha256": "ee71a94e86fdffa3231264d8cbf4562c0b0e98a712dfa03084f76458b9789d20"
+    },
+    {
+      "path": "Docs/hero-gen-2-animations/jump/jump-4.png",
+      "size": 25822,
+      "sha256": "97d421fc56d586f802cf96f83513057f0b0fe06961bca29f2f64e3c51528b4b0"
+    },
+    {
+      "path": "Docs/hero-gen-2-animations/jump/jump-5.png",
+      "size": 26197,
+      "sha256": "e7785bf4631871d559a6d6d9aa3d4528ccdc1b9916c17be7f4cf5b392d05ea26"
+    },
+    {
+      "path": "Docs/hero-gen-2-animations/jump/jump-6.png",
+      "size": 26049,
+      "sha256": "38af66e80ff4ade535c969b7f438cea4013a8364111cb0bcb27bb48be1ecc397"
+    },
+    {
+      "path": "Docs/hero-gen-2-animations/jump/pipeline-meta.json",
+      "size": 10124,
+      "sha256": "f1235f0d0bb57e4aae8a6b6f9d663096f42713447690b2b18512e247d398ce6a"
+    },
+    {
+      "path": "Docs/hero-gen-2-animations/jump/prompt-used.txt",
+      "size": 1970,
+      "sha256": "597ac7192f45a557598a4c6b5cd935f1aa1c097aab1f3f7d15cb67804004084d"
+    },
+    {
+      "path": "Docs/hero-gen-2-animations/jump/raw-sheet-clean.png",
+      "size": 645448,
+      "sha256": "99b8d6e80cbe268b74f81c6e30448714f7cf434f5446e1099f59f86799da436e"
+    },
+    {
+      "path": "Docs/hero-gen-2-animations/jump/raw-sheet.png",
+      "size": 1626702,
+      "sha256": "bf3baa797ea2eab7e00d3ebc88c592779f2f6e07098dddafe0049fb166dc9125"
+    },
+    {
+      "path": "Docs/hero-gen-2-animations/jump/sheet-transparent.png",
+      "size": 156697,
+      "sha256": "c98ba313bdc0e690afa83276560fbaf12f452452c45168a91d00e6f745dd652c"
+    },
+    {
+      "path": "Docs/hero-gen-2-animations/README.md",
+      "size": 1867,
+      "sha256": "a2a64dd2a5cccd097c1774a6bff325d2c5175e5bc4686429ecc1b34fd7910e88"
+    },
+    {
+      "path": "Docs/hero-gen-2-animations/walk/animation.gif",
+      "size": 70872,
+      "sha256": "ae65ec0a65165ba661bc7f316f2b5b04c86542d5895792e942daf377cea176ac"
+    },
+    {
+      "path": "Docs/hero-gen-2-animations/walk/pipeline-meta.json",
+      "size": 10249,
+      "sha256": "1ff8354c1ddba64d47a87153dd50caa84c7aa9546e73beac2f6eb3e053f6f33d"
+    },
+    {
+      "path": "Docs/hero-gen-2-animations/walk/prompt-used.txt",
+      "size": 1953,
+      "sha256": "763aa16da08e9e3e4c109dc8957946af700a560100b2ea53b6ae1f0d9ecc0b18"
+    },
+    {
+      "path": "Docs/hero-gen-2-animations/walk/raw-sheet-clean.png",
+      "size": 829730,
+      "sha256": "7eccca869cc80a758b2ad5286a235a169d44f406684e00eb304830e33318ef15"
+    },
+    {
+      "path": "Docs/hero-gen-2-animations/walk/raw-sheet.png",
+      "size": 1792740,
+      "sha256": "f0ef798f0ece475f50db833f73597c53a4786ead2bfa0cdd8bc20e94cbbbda0b"
+    },
+    {
+      "path": "Docs/hero-gen-2-animations/walk/sheet-transparent.png",
+      "size": 204316,
+      "sha256": "79cd5ee8a77c4c4917d6fc41c748eec508c490023d2347c0ba09394f18045130"
+    },
+    {
+      "path": "Docs/hero-gen-2-animations/walk/walk-1.png",
+      "size": 39369,
+      "sha256": "72e5238f4fd849863948408ab0bcfd82d55c4344f3951cd8628338abde7119ea"
+    },
+    {
+      "path": "Docs/hero-gen-2-animations/walk/walk-2.png",
+      "size": 32908,
+      "sha256": "cba1f388a6e43b25410d5699fbbd3dc241cdaa15c9a0a8dbebb33671ed941cd0"
+    },
+    {
+      "path": "Docs/hero-gen-2-animations/walk/walk-3.png",
+      "size": 39065,
+      "sha256": "5f9cc07a06bc97b69e7e30eb3da86f49f824f27a28209d2366065ef1045ea48d"
+    },
+    {
+      "path": "Docs/hero-gen-2-animations/walk/walk-4.png",
+      "size": 36924,
+      "sha256": "eb01b98329edad121b9532f57c9d5e3628d83ac017837bd91a4e4ff6d84ad9a9"
+    },
+    {
+      "path": "Docs/hero-gen-2-animations/walk/walk-5.png",
+      "size": 34097,
+      "sha256": "56ff9ddf0afa9fc4b68194cc835999e0a8b46e7c1a1402fe571314506ba0b507"
+    },
+    {
+      "path": "Docs/hero-gen-2-animations/walk/walk-6.png",
+      "size": 39217,
+      "sha256": "538a99c9869cd11f14f596124c164ecfd1b25e964bea4ec62b81a40a87be2563"
+    },
+    {
+      "path": "Docs/IMPLEMENTATION_PLAN.md",
+      "size": 66457,
+      "sha256": "631831959b66ea8c1efef0445d3aff22691f8b736bdb91d37995cd2f48e6e664"
+    },
+    {
+      "path": "Docs/measurements/.gitkeep",
+      "size": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "Docs/measurements/f1_rope_CH1.png",
+      "size": 22623,
+      "sha256": "563f866863e6e8dc0dfadee26fa4020d110f86e775ed5abfef4a3054cd40f366"
+    },
+    {
+      "path": "Docs/measurements/f1_rope_CH3.png",
+      "size": 40232,
+      "sha256": "fc32810e6699ea9e5158cdd0889a8e37678e1edfa303e86849c81d9d38d7a629"
+    },
+    {
+      "path": "Docs/measurements/F1_rope_uv.md",
+      "size": 5114,
+      "sha256": "2b098f71e7370d8761507110f9df0cda5397e02794597d15bceee6cfcd8bdb9c"
+    },
+    {
+      "path": "Docs/measurements/G0-1_playtest_kit.md",
+      "size": 6655,
+      "sha256": "bae23bdff79cde16336bae773d09aef2d8dcd6d2539c894289aa63b00d518a53"
+    },
+    {
+      "path": "Docs/measurements/KV-01_palette.md",
+      "size": 7597,
+      "sha256": "ce0a7b5a601208380252f15b6ef273b33a6626981e169c352d8d85ff1de08bbd"
+    },
+    {
+      "path": "Docs/measurements/KV-02_backdrop.md",
+      "size": 5439,
+      "sha256": "35f6870b8fe8efae8e268a7392034c1a6cfb8aeea7dc74173a61f6c03f3a1043"
+    },
+    {
+      "path": "Docs/measurements/KV-03_texture_sets.md",
+      "size": 7911,
+      "sha256": "7940bf39864e94712b61a20a1ac0893bcb390326e16af8a1b5bd77d3545fdc5c"
+    },
+    {
+      "path": "Docs/measurements/KV-04_07_four_worlds.md",
+      "size": 7760,
+      "sha256": "5af8d1ab40c342920ab0f97132803fb111b26c7a0e842328fda5b562fc677c08"
+    },
+    {
+      "path": "Docs/measurements/kv-04_07_worlds_FC.png",
+      "size": 1250684,
+      "sha256": "eb2c212d48985729f682f2d8b55be107281bfab01598f91f3e34f73e48fb1cca"
+    },
+    {
+      "path": "Docs/measurements/kv-04_07_worlds_PS1.png",
+      "size": 1011543,
+      "sha256": "f3ce41b39bf359cd36c7f83bb6dc788fb5ac99cfc3a2042d0cd6c6e361145d5e"
+    },
+    {
+      "path": "Docs/measurements/kv-04_07_worlds_PS2.png",
+      "size": 912287,
+      "sha256": "b02c9931ecf51598a5aa492f01a155cdbac6ca4b74260def9d82523eceb8fea4"
+    },
+    {
+      "path": "Docs/measurements/kv-04_07_worlds_SFC.png",
+      "size": 1170788,
+      "sha256": "8ca74c11c49dd6de2fe61cb37648c20e5eb2b27dcd3d4c71da69d09edf0c8037"
+    },
+    {
+      "path": "Docs/measurements/KV-08_ribbon.md",
+      "size": 3680,
+      "sha256": "32d44742931485e48ffaf10b9d03b8c00c0a60da0ca2adf3cc86b3f3212052a3"
+    },
+    {
+      "path": "Docs/measurements/kv-08_ribbon.png",
+      "size": 1208274,
+      "sha256": "a992238ec70f3731c6144ab3f0aea7c207b8ba9993617b99fd6e04f62d9e5921"
+    },
+    {
+      "path": "Docs/measurements/kv-09_heart_glyph.png",
+      "size": 36683,
+      "sha256": "419041fe2fb40141cb8321da8615744a4235ba5572ec47453ba4077aed696175"
+    },
+    {
+      "path": "Docs/measurements/kv-09_mark_pedestal.png",
+      "size": 1225081,
+      "sha256": "4c1ba02037fecddcc2c47be30d8cd15d338d9ef1c6108db8d63c59f44be2f9fe"
+    },
+    {
+      "path": "Docs/measurements/KV-09_mark.md",
+      "size": 3288,
+      "sha256": "22555229a636ba03b8333ef039b76e2ef55c50ea7946954a8c1f97da16f043c1"
+    },
+    {
+      "path": "Docs/measurements/PHASE0_GATE_REPORT.md",
+      "size": 6007,
+      "sha256": "2e48df915a7ccae4ca49458e963c7f7ae464867e704aa2b59540bcfbee897c9a"
+    },
+    {
+      "path": "Docs/measurements/PHASE1_STATUS.md",
+      "size": 6380,
+      "sha256": "2558a4c7a4f4f37daa6ed369706c090afa5df8a852082112bc257ab18b45907f"
+    },
+    {
+      "path": "Docs/measurements/sg-00_current_CH1.png",
+      "size": 18763,
+      "sha256": "12a1119b9287e05f92e9f3fcb57190b8f99d2fbd26697a9504591231d28704ff"
+    },
+    {
+      "path": "Docs/measurements/sg-00_current_CH2.png",
+      "size": 21315,
+      "sha256": "b2f36ce458f3e3951c32764fc7c525af2b6180c3ef62db0c1c2722854acb13ad"
+    },
+    {
+      "path": "Docs/measurements/sg-00_current_CH3.png",
+      "size": 33889,
+      "sha256": "d7ec40e83ee514bf3d21f4d39828b2e68faeb79d0fe7ab9ba302b490aa37e13d"
+    },
+    {
+      "path": "Docs/measurements/sg-00_current_CH4.png",
+      "size": 69352,
+      "sha256": "139ec842684eecd0f994de039b1cdd49640b72a1a12f84eeacd427a84e5d5544"
+    },
+    {
+      "path": "Docs/measurements/SG-01_import.md",
+      "size": 9361,
+      "sha256": "3be165eacb8809760ab1a41cfcceb834495210f690fb9ff8d4205ee89a242fab"
+    },
+    {
+      "path": "Docs/measurements/SG-02_fc_palette.md",
+      "size": 5572,
+      "sha256": "5e7aa2a65b84342393c971f58b62047713568abb8c82d4ae4e9c4ebae00435d7"
+    },
+    {
+      "path": "Docs/measurements/SG-03_sky.md",
+      "size": 6437,
+      "sha256": "7b5ce30c6d1bdfafb6ca58248ae08aa27e20750227633d7d905e0fc8e6234839"
+    },
+    {
+      "path": "Docs/measurements/SG-04_top_face.md",
+      "size": 4679,
+      "sha256": "89348e47e4e51702bd7d6496d67c8453a72888391fd2e8502d5c17edf53e01e4"
+    },
+    {
+      "path": "Docs/measurements/SG-05_decor.md",
+      "size": 3508,
+      "sha256": "392d62dd2af4415be2c38007cd0f9257b75599c6809ea04b91d074b580698dfc"
+    },
+    {
+      "path": "Docs/measurements/SG-06_flora.md",
+      "size": 4565,
+      "sha256": "d0bc688f9c02f39f39d8c77a0bc0367cbf6c821e4be271e0d032596aef3243ff"
+    },
+    {
+      "path": "Docs/measurements/SG-07_cloud.md",
+      "size": 3684,
+      "sha256": "b7adc3010d54f1efa18a9d4f97bfe75df93b6eb41b956e2ed428cb338d2e778a"
+    },
+    {
+      "path": "Docs/measurements/SG-08_water.md",
+      "size": 3380,
+      "sha256": "5049733ead29871d5777d6441adac4c0d6627701b378391f6fe806ea666271dd"
+    },
+    {
+      "path": "Docs/measurements/SG-09_light.md",
+      "size": 4155,
+      "sha256": "2e170c45806baad7fd079e47c147beaf6a8882a6726c147f5de2bdfe9be82d4c"
+    },
+    {
+      "path": "Docs/measurements/SG-10_gate.md",
+      "size": 5707,
+      "sha256": "2bb272fe604641e8528ed7fbd3bc7ff7da1974d271e2850981e49446a87ca47a"
+    },
+    {
+      "path": "Docs/measurements/sg-11_CH1.png",
+      "size": 22692,
+      "sha256": "348e675f4083404679f9be259312caf1c485751c01957ae9eed2623ef9f13c36"
+    },
+    {
+      "path": "Docs/measurements/sg-11_CH2.png",
+      "size": 27561,
+      "sha256": "d97af07084e38db2cbc6eaac31542a75afc74ea499a269ecbe6e2e37271e4d8d"
+    },
+    {
+      "path": "Docs/measurements/sg-11_CH3.png",
+      "size": 42671,
+      "sha256": "517d99b21e75535e883fd0856a01076b9bcd7c99ee2a3d7c6115429b156022b3"
+    },
+    {
+      "path": "Docs/measurements/sg-11_CH4.png",
+      "size": 131096,
+      "sha256": "2cc04a3447081b7fba684eed0303fdaa937ab6f763e3918c0be32438ab7da11a"
+    },
+    {
+      "path": "Docs/measurements/SG-11_four_channels.md",
+      "size": 9485,
+      "sha256": "19101ecba32964a51ff1eace8701c76c33fbb5f00496cddc97d397cb0c5f682d"
+    },
+    {
+      "path": "Docs/measurements/t0-06_blender_player_FC.png",
+      "size": 547355,
+      "sha256": "ddf8e6d0d26049a06143f39c6da72753c36b6ae34d264e0cdb7a9e6859ae5e56"
+    },
+    {
+      "path": "Docs/measurements/t0-06_blender_player_PS1.png",
+      "size": 468990,
+      "sha256": "feec4bf338d54356580014349bf194cd61f6e0e4a70631a3a71280329753f687"
+    },
+    {
+      "path": "Docs/measurements/t0-06_blender_player_PS2.png",
+      "size": 389376,
+      "sha256": "af1ba728f835c2aa38c55df98d2c3c0363e7524e0d23ad957d9049e7d029b316"
+    },
+    {
+      "path": "Docs/measurements/t0-08_ps1_affine_uv_only.png",
+      "size": 15467,
+      "sha256": "d0e4b602410107395ff94b4beb8ec2cc1e101b9d919f6932ef57112630dd46c3"
+    },
+    {
+      "path": "Docs/measurements/t0-08_ps1_baseline_no_quantize_no_affine.png",
+      "size": 18041,
+      "sha256": "7a2f4a69b4fa7d2737218c402ed90b6084e72562e58f83ac906604f442ce408c"
+    },
+    {
+      "path": "Docs/measurements/t0-08_ps1_quantize_step2_affine.png",
+      "size": 15125,
+      "sha256": "bb5de91964bf29299013cfa252a894e558aadc302db4a66a2e5fda7b7e020f66"
+    },
+    {
+      "path": "Docs/measurements/t0-08_ps1_quantize_step8_affine.png",
+      "size": 15668,
+      "sha256": "0e99857b0c89c6278845d68d6a75c13c5a2e8805cb8d01158826e2e89362d573"
+    },
+    {
+      "path": "Docs/measurements/T0-08_ps1_vertex_affine.md",
+      "size": 3349,
+      "sha256": "3c8985c6a4f456a6fbc9f09d509d985e13127c38999415b63f157e2fb41cee60"
+    },
+    {
+      "path": "Docs/measurements/T0-09_ps1_triangle_sort.md",
+      "size": 4430,
+      "sha256": "017f0b25d1c9892b4ab10454be4dbd7395c34fa60bac84ade7af0975aa25e2fb"
+    },
+    {
+      "path": "Docs/measurements/t0-10_fc_color_crush_16x16.png",
+      "size": 10930,
+      "sha256": "2e9a88804dd69315b198c224bd3648e93bbd2af5c8dce62e3878238407e9c18e"
+    },
+    {
+      "path": "Docs/measurements/T0-10_fc_color_crush.md",
+      "size": 4216,
+      "sha256": "b6b821da947562ea68a7f6e0b7684a98d618b097a1637afff36dd1c5a32a71f7"
+    },
+    {
+      "path": "Docs/measurements/t0-10_fc_source_no_quantize.png",
+      "size": 81550,
+      "sha256": "a4f61f4b108298f29c19336c9f41f72f8c80889664d807d1924fae902cf87f0f"
+    },
+    {
+      "path": "Docs/measurements/t0-11_crt_component_full.png",
+      "size": 361607,
+      "sha256": "5cb71aa5bfa1ac7d7dfcc44a9277155cee109f1a4d104599cd9b588d33d29efe"
+    },
+    {
+      "path": "Docs/measurements/t0-11_crt_composite_full.png",
+      "size": 536311,
+      "sha256": "069bd86c374a981ab5220ce70135d1ebd97d86d34f75d5214e98e557f9cb44ad"
+    },
+    {
+      "path": "Docs/measurements/t0-11_crt_off.png",
+      "size": 10930,
+      "sha256": "2e9a88804dd69315b198c224bd3648e93bbd2af5c8dce62e3878238407e9c18e"
+    },
+    {
+      "path": "Docs/measurements/T0-11_crt_presets.md",
+      "size": 3980,
+      "sha256": "22c32c5ad6d9986c731f7689c3ffbd110703b0429eb6560a4a719e04b3e9faa4"
+    },
+    {
+      "path": "Docs/measurements/t0-11_crt_rf_full.png",
+      "size": 573657,
+      "sha256": "7a28759a091488576f00c7ad0f5a745f3619a54faa45c38cc61b6a37de0184bb"
+    },
+    {
+      "path": "Docs/measurements/t0-11_crt_rf_light.png",
+      "size": 144740,
+      "sha256": "bb539769e9e2ae0570c1c762399284127c03fa2d5c3cf0a5e8637fd18c48b64d"
+    },
+    {
+      "path": "Docs/measurements/t0-11_crt_svideo_full.png",
+      "size": 491974,
+      "sha256": "1e485e526a23b5ad0a9a2942724456c9c481d79abc609bc7475c3cb86059ca71"
+    },
+    {
+      "path": "Docs/measurements/t0-12_generation_FC.png",
+      "size": 353078,
+      "sha256": "95d9b16568242504e379d222101bd987d81c9830f48ad8d019d6e8ed1becfa5a"
+    },
+    {
+      "path": "Docs/measurements/t0-12_generation_PS1.png",
+      "size": 367671,
+      "sha256": "535c976ccf72c803ca9029ade932520481a3bcf2e56023c07a33eae65e6414e0"
+    },
+    {
+      "path": "Docs/measurements/t0-12_generation_PS2.png",
+      "size": 273478,
+      "sha256": "3723cc049dd7af58bc9b50a0a12294fbb7e7a8a944dcda2cd2423c13209979f2"
+    },
+    {
+      "path": "Docs/measurements/t0-12_generation_SFC.png",
+      "size": 314420,
+      "sha256": "9d0fd94211fc9475cfd3588376491f701f36a4825545001b295f2625cdcc4a7b"
+    },
+    {
+      "path": "Docs/measurements/T0-12_generation_switch.md",
+      "size": 3573,
+      "sha256": "95061a3621687ae77b44d6026f017b577d41a6f678d5e0fa1044b4c35c7e1e32"
+    },
+    {
+      "path": "Docs/measurements/t0-15_mini_2d_bridge_visible.png",
+      "size": 271504,
+      "sha256": "5756118fbe8d2856b97e291f0ab038598dc43397bbedc7b120d32b917353b811"
+    },
+    {
+      "path": "Docs/measurements/t0-15_mini_2d_crossed_blocked_by_wall.png",
+      "size": 297918,
+      "sha256": "f1d5f59af6f4ff511ba389f4f1a3bd835a5bfbe3df434ebe26f0da9ab1b1c6df"
+    },
+    {
+      "path": "Docs/measurements/t0-15_mini_3d_after_z_anchor.png",
+      "size": 260681,
+      "sha256": "a63a7b03348b28328f43317c4f1c8736674df3fdc5f29f9373a475027e535b72"
+    },
+    {
+      "path": "Docs/measurements/t0-15_mini_3d_start.png",
+      "size": 226872,
+      "sha256": "167c8e971305909f43c6a44b69232ada29049790c305cd91c5b64cdc5ea2d8c8"
+    },
+    {
+      "path": "Docs/measurements/T0-15_projection_mini_level.md",
+      "size": 4425,
+      "sha256": "a90024bc45f0867a78ba963eca38379d3f6901dae67bf6099716ec9397276cab"
+    },
+    {
+      "path": "Docs/measurements/T0-18_bgm_phase_sync.md",
+      "size": 3412,
+      "sha256": "7ccbbfb9db4ee18b9458351bfb186dd79217a9d11a5979e58e33a199de4f035f"
+    },
+    {
+      "path": "Docs/measurements/t0-19_character_FC_dark_bg.png",
+      "size": 358769,
+      "sha256": "b739b2cdb117de94c4cd2ad90dadbbd4e0a135c82e8a3c600465e843f2b8bef1"
+    },
+    {
+      "path": "Docs/measurements/t0-19_character_FC_front.png",
+      "size": 546196,
+      "sha256": "a2598d333b1f5ed883c2977939e5d691a7cb656e6a347c55c02e21d6f481d3bc"
+    },
+    {
+      "path": "Docs/measurements/T0-19_character_fc_quantized.md",
+      "size": 5608,
+      "sha256": "5f8036e63a5f8ce5e4e1d0e8a16f457a10297426576d5a929c68356e6955ce33"
+    },
+    {
+      "path": "Docs/measurements/t0-19_character_FC.png",
+      "size": 555959,
+      "sha256": "527ec970bf599887baa889a92867cdaa86ecccaf36440313b0c4677b97234cd2"
+    },
+    {
+      "path": "Docs/measurements/t0-19_character_PS1.png",
+      "size": 475446,
+      "sha256": "f0057c5ca240a466b2357dfc51759a26c986b31205fb19017fc70fd7ec17b311"
+    },
+    {
+      "path": "Docs/measurements/t0-19_character_PS2.png",
+      "size": 394554,
+      "sha256": "f1ec1f05f7f7a30e986aa432bb5dbd8d57ce80e270820b0482e70cfe705a964e"
+    },
+    {
+      "path": "Docs/measurements/t0-19_character_SFC.png",
+      "size": 536442,
+      "sha256": "818c22fdbe306f89d88579444ee69afc72409501caa6c5873085a6412da87705"
+    },
+    {
+      "path": "Docs/measurements/t1-08_player_FC_closeup.png",
+      "size": 1171238,
+      "sha256": "eb9e2ca4a404355d40c4bff06ee8a2aa874e85cd6bc589cba48cfed0d2b50879"
+    },
+    {
+      "path": "Docs/measurements/t1-08_player_FC_gameplay_scale.png",
+      "size": 1151505,
+      "sha256": "74b18405b48fba2ca4ab7b3bb495cf771ebcdf06d02ee187de19a55cb620eec5"
+    },
+    {
+      "path": "Docs/measurements/t1-08_player_FC_walk.png",
+      "size": 1152097,
+      "sha256": "65332212de083817be0930a878cf12590d692bc0a09b0ac48911702e2b57e667"
+    },
+    {
+      "path": "Docs/measurements/T1-08_player_model.md",
+      "size": 5747,
+      "sha256": "80cfaf1a7a4d206c8ecb7bac349a458e62a3c863b29dd8e5b14d6db133b866b3"
+    },
+    {
+      "path": "Docs/measurements/t1-08_player_PS2_closeup.png",
+      "size": 813886,
+      "sha256": "5d429fda59e28c64c05a9248e9e52f9b87a26e07ab01bf28b760c2dcf00ed6b1"
+    },
+    {
+      "path": "Docs/measurements/T1-15_area1.md",
+      "size": 4521,
+      "sha256": "26a483f0bca64d89f3468f92cee6c105ea5459c89c16d4d485eaeb02f9d787eb"
+    },
+    {
+      "path": "Docs/measurements/T1-16_music.md",
+      "size": 12875,
+      "sha256": "0c9433a2f99f3916863dce84b5928ca5daa22d533f052b8a62608496a2fbdfda"
+    },
+    {
+      "path": "Docs/measurements/T1-17_hints.md",
+      "size": 3567,
+      "sha256": "2b825939adf06592fdc152b745773cafa9890953087b6e0452c070da731867f0"
+    },
+    {
+      "path": "Docs/measurements/T1-18_hud.md",
+      "size": 3176,
+      "sha256": "c357041d7a370d878b15c974523a81601de7bf2caefbba827a546b5c1741bd04"
+    },
+    {
+      "path": "Docs/measurements/t1-19_area1_FC.png",
+      "size": 607839,
+      "sha256": "7e26709873fd36acc9fad54053394daa31f4baca97e460b09616cba95ff4330d"
+    },
+    {
+      "path": "Docs/measurements/t1-19_area1_PS1.png",
+      "size": 551661,
+      "sha256": "62c4e7fe40bd972b0aedad45fdd28820bb97f6328c4089dc98d8c7f77ec612b6"
+    },
+    {
+      "path": "Docs/measurements/t1-19_area1_PS2.png",
+      "size": 221919,
+      "sha256": "c303c44e65fff3868720d4c0a73703e04de8fee5fdaacf96aa823f927d8c8383"
+    },
+    {
+      "path": "Docs/measurements/t1-19_area1_SFC.png",
+      "size": 563691,
+      "sha256": "a448ebcf41f3e81d1d10488a5462bed7c9bc7b99d133ed1d56a5687e6057ffd6"
+    },
+    {
+      "path": "Docs/measurements/T1-19_trademark_scan.md",
+      "size": 3460,
+      "sha256": "420c7a9753d6b61196dd9083b8bb695345cc2a45e42bccef00c41c0fb6f0b52f"
+    },
+    {
+      "path": "Docs/measurements/T1-20_playtest_kit.md",
+      "size": 9929,
+      "sha256": "f6e6ed60932a81108a88196ae97165c2eb0cd24af31daf559a3f2d931851b320"
+    },
+    {
+      "path": "Docs/measurements/T1-21_material.md",
+      "size": 12000,
+      "sha256": "3cbd0ededbd3bb5e72e355d2f59f8600f3333198006c2426663de4eba3ecc2f7"
+    },
+    {
+      "path": "Docs/measurements/t1-21_surface_CH3.png",
+      "size": 691919,
+      "sha256": "d47f21e330e69f4c918e3b46628b3676f8f17af1810c45a40d541faf681a9939"
+    },
+    {
+      "path": "Docs/measurements/t1-21_surface_CH4.png",
+      "size": 436540,
+      "sha256": "be3d23b3658393b748875ea1d88c6535f3755f6b59df2bfa267cb48c08cc74a9"
+    },
+    {
+      "path": "Docs/measurements/t1-22_wobble_CH3_a.png",
+      "size": 690734,
+      "sha256": "b4ca33d1747a61af3e166e50f86f90447483ef7198810e664662fefdd01a1ec4"
+    },
+    {
+      "path": "Docs/measurements/t1-22_wobble_CH3_b.png",
+      "size": 689188,
+      "sha256": "69fb59a447df48a6836622aae4bbafcd64a3062922669bc08ef284bd3256f41e"
+    },
+    {
+      "path": "Docs/measurements/t1-22_wobble_CH4_a.png",
+      "size": 437122,
+      "sha256": "7ed102a23cca7eca856219cd0403874abd50a88e5c97a498113b2d4bd54339f1"
+    },
+    {
+      "path": "Docs/measurements/t1-22_wobble_CH4_b.png",
+      "size": 436682,
+      "sha256": "427a39ab2041d28b5969a283581e790955c0d57a7d8065ad3510750d1398b2f9"
+    },
+    {
+      "path": "Docs/measurements/t1-23_vocab_f2_CH1.png",
+      "size": 609341,
+      "sha256": "adb0a1b676a4e25dc6c7c1ebbb59081f66aff5532f6415d0b98c4c18a4cbb28b"
+    },
+    {
+      "path": "Docs/measurements/t1-23_vocab_f2_CH3.png",
+      "size": 737718,
+      "sha256": "dad99493dd04d1e55e520c22c51226d3031cf2cd19ae653498cddb40292c3d71"
+    },
+    {
+      "path": "Docs/measurements/t1-23_vocab_p1_1_CH3.png",
+      "size": 680740,
+      "sha256": "03bec28afdee07a1219b1f4e0141c0ac2441ad7a4b491bfc50d13850589f84c3"
+    },
+    {
+      "path": "Docs/measurements/t1-24_f1_vines_CH1.png",
+      "size": 662433,
+      "sha256": "ff9d059140d1d7629923ab61ec7cfeeed79fc3702d2ec3da1f56e7212c5506c6"
+    },
+    {
+      "path": "Docs/measurements/t1-24_f1_vines_CH2.png",
+      "size": 586550,
+      "sha256": "93fa706a2f8369224e5d46ed66ae5aabf1f0f8012e419b1dd9239f2d61f581d1"
+    },
+    {
+      "path": "Docs/measurements/t1-24_f1_vines_CH3.png",
+      "size": 593606,
+      "sha256": "25c01a82dab7ec7d373a707a6822496ce5542b3cc87bf57948b095c597b9af56"
+    },
+    {
+      "path": "Docs/measurements/t1-24_f1_vines_CH4.png",
+      "size": 307328,
+      "sha256": "16098c5b692a83130dd674079fb7b6c9ce4d1fc12b2d4e656df91ee420b7e469"
+    },
+    {
+      "path": "Docs/measurements/T1-24_render_path.md",
+      "size": 5900,
+      "sha256": "202d06fd94431ba76471f31cf6a869ae530e56d11db90e5be186d03e9a68112a"
+    },
+    {
+      "path": "Docs/measurements/t1-25_translucent_CH1.png",
+      "size": 600523,
+      "sha256": "76fa7de1ecf65b1b1ddd489446a4f1df8293cab8b2f61c5897d5b936c0f408c2"
+    },
+    {
+      "path": "Docs/measurements/t1-25_translucent_CH2.png",
+      "size": 558627,
+      "sha256": "13a6d61b24f6b68d81bcf468b8e51a8e120d87dda583a857dfce5e7e7cf43a75"
+    },
+    {
+      "path": "Docs/measurements/t1-25_translucent_CH3.png",
+      "size": 632141,
+      "sha256": "6cb8d65f5128dce593116358f060efac87e4c159cba5ad2fc79c1a06d9eb7534"
+    },
+    {
+      "path": "Docs/measurements/t1-25_translucent_CH4.png",
+      "size": 372247,
+      "sha256": "fd2ee8b91c99c3b138943024c5565dcb3bfefee0da0208495c8dee9bc11c5679"
+    },
+    {
+      "path": "Docs/measurements/T1-25_translucent.md",
+      "size": 2341,
+      "sha256": "85308fdc9672d828c4d7581d27ed27fca84bdd215f7a7ed120185f91d213f100"
+    },
+    {
+      "path": "Docs/measurements/t1-26_shadow_CH3.png",
+      "size": 741073,
+      "sha256": "5593a415934372425c6803529527e88ad95903a99a4d7a882500529a1abf9eb2"
+    },
+    {
+      "path": "Docs/measurements/t1-26_shadow_CH4_away.png",
+      "size": 552381,
+      "sha256": "2511039ffd5dc09c5dc8cd6096358c6d70c3c07efdc97de00dbb1c425221e948"
+    },
+    {
+      "path": "Docs/measurements/t1-26_shadow_CH4_on_mark.png",
+      "size": 552594,
+      "sha256": "b8c79470ba6845d3273a63276c09307684e9c5c05748e9e15bfbdf6c6b49c65d"
+    },
+    {
+      "path": "Docs/measurements/T1-26_shadow.md",
+      "size": 4291,
+      "sha256": "dc25eba49745807e24f8abb2b3cbb9037a2d8a9e3dd31b65aa17ef2063ff673d"
+    },
+    {
+      "path": "Docs/measurements/t1-27_seam_CH3.png",
+      "size": 685912,
+      "sha256": "49f49a13ad2e8d261117ed4a3f6d543fde3d91673fbe34913bad26408191194e"
+    },
+    {
+      "path": "Docs/measurements/t1-27_seam_CH4.png",
+      "size": 451838,
+      "sha256": "a3893ac13c52520e0915f2aede4888702ca8c627f9322168351d136460d89bff"
+    },
+    {
+      "path": "Docs/measurements/t1-27_shell_CH3.png",
+      "size": 718440,
+      "sha256": "bb7cb84fffc818d7a933c5d49099307f48ca9a07616dc091b3e1dac76785b2e8"
+    },
+    {
+      "path": "Docs/measurements/t1-27_shell_CH4.png",
+      "size": 479074,
+      "sha256": "e215165597c8a939af7b33403bcd59cefc86e3f966032dc6f3970c990b241fd5"
+    },
+    {
+      "path": "Docs/measurements/T1-27_sort_break.md",
+      "size": 7160,
+      "sha256": "ba9a59fc94c746abc932c39d01dd912ec55cc8df63a5d2b899482065d6617adb"
+    },
+    {
+      "path": "Docs/measurements/T1-28_area1_retune.md",
+      "size": 4438,
+      "sha256": "e2edeae3409491956557fc468571b47041a0b56b40bba1dc74fbc9c37613ec73"
+    },
+    {
+      "path": "Docs/measurements/T2_gimmick_rework.md",
+      "size": 6783,
+      "sha256": "d56d982fd98146991b4e6fefc1454a45f0ff5408bfb19c4bfac9daa9e7226edf"
+    },
+    {
+      "path": "Docs/measurements/T2-09_hero_sprite.md",
+      "size": 9657,
+      "sha256": "d45d5427ce1bf4aad0e472e1b115924004c23cf3cd120bfd2e52003691093899"
+    },
+    {
+      "path": "Docs/measurements/T2-10_sprite_plane.md",
+      "size": 5672,
+      "sha256": "4c809e83eb01424e2eca9b2f654c749434a51ffe8816e454fabbd4e3783f70a2"
+    },
+    {
+      "path": "Docs/measurements/T2-11_hero_gen2_sprite.md",
+      "size": 9692,
+      "sha256": "9a7e8605147af9e1ce7ce4a64dff728da66a8ddd608e232d26804b0c7aa30d78"
+    },
+    {
+      "path": "Docs/PHASE1_FEEDBACK_PLAN.md",
+      "size": 27146,
+      "sha256": "c8afa2229494eb86bd17de43df9d602b44605b9b0b6423945f3e8442e6cafd3d"
+    },
+    {
+      "path": "Docs/PHASE2_GIMMICK_PLAN.md",
+      "size": 22384,
+      "sha256": "413bb4de8f42e79514cc07ec3657f8c7a08b330c4eff51795e38081aef6f188e"
+    },
+    {
+      "path": "Docs/trademark-blocklist.txt",
+      "size": 893,
+      "sha256": "0256337f08ea10fb31437a873c565903549d0e44cab3e62273c8d216219ae226"
+    },
+    {
+      "path": "eslint.config.js",
+      "size": 3965,
+      "sha256": "edc312d7242c08b3a650a40c210d184e85b0be40ac473394c8e5e3dd82bfc820"
+    },
+    {
+      "path": "index.html",
+      "size": 1701,
+      "sha256": "509e0b34ba7f1b2296d5e523f37bb2b8eacef5c01cb5a34d2cdcb6bee4dea748"
+    },
+    {
+      "path": "package-lock.json",
+      "size": 115875,
+      "sha256": "075d527cb268c770d059713090182514941e3a401a224b4b7e5d9d8180c43666"
+    },
+    {
+      "path": "package.json",
+      "size": 1444,
+      "sha256": "0bca4991b8d4e71ea4ef46a15e027bca7bd4d21f2cbedfac10549e893a4d1d61"
+    },
+    {
+      "path": "public/assets/audio/.gitkeep",
+      "size": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "public/assets/fonts/.gitkeep",
+      "size": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "public/assets/levels/.gitkeep",
+      "size": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "public/assets/levels/area1.json",
+      "size": 78549,
+      "sha256": "7d80cf71fd3147cc003c4ab6d1b5d45fd094ce665ec3beb414142324280c71d5"
+    },
+    {
+      "path": "public/assets/levels/mini.json",
+      "size": 1610,
+      "sha256": "8d6ae2638570f12be64712a584c96fcbe86e34badae8415b7adf6b8de5a42ba4"
+    },
+    {
+      "path": "public/assets/levels/puzzle_lab.json",
+      "size": 25901,
+      "sha256": "6d9b8cf72eb5b7746d58fa49e90f4bee3c67eaf074027ac8cccd3e87d41ca311"
+    },
+    {
+      "path": "public/assets/models/.gitkeep",
+      "size": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "public/assets/models/gen3_character.glb",
+      "size": 519408,
+      "sha256": "f0ef5325a5e9e501be2771718957e9ccdb253bfd9d8406b38265d0aea3afb746"
+    },
+    {
+      "path": "public/assets/models/gen4_character.glb",
+      "size": 541128,
+      "sha256": "021810e676e3f1f8113b17495933276ceb304d098e20aa30f5abe19779871ab5"
+    },
+    {
+      "path": "public/assets/models/player.bin",
+      "size": 15280,
+      "sha256": "80cb932f196fa269d058a8140040a87b61c756bb70dd26270d48b9282f67653b"
+    },
+    {
+      "path": "public/assets/models/player.gltf",
+      "size": 25790,
+      "sha256": "9aff731395b39b67a73d68f62f76c14248174c149eb761c459421ce03a25e58b"
+    },
+    {
+      "path": "public/assets/models/props_caster.bin",
+      "size": 1120,
+      "sha256": "017b7204f5800c7c3e243130d26b3656c30e544c5ed33f6d8d050e4d7bb4541f"
+    },
+    {
+      "path": "public/assets/models/props_caster.gltf",
+      "size": 1459,
+      "sha256": "d1c6a0c299cc00c15f4cf87ec626e5dbc8aecaff45706330312208cdd4a74ff6"
+    },
+    {
+      "path": "public/assets/models/props_enemy.bin",
+      "size": 560,
+      "sha256": "ce807acfb83035104bd2bad5ddfa369ab7e2a761eeef960a2d42df80f88e9426"
+    },
+    {
+      "path": "public/assets/models/props_enemy.gltf",
+      "size": 1487,
+      "sha256": "057608fc04b8f7cc4ff68d493e2af291fffb80fe171dd2934a382c6e4b28dc62"
+    },
+    {
+      "path": "public/assets/models/props_gate.bin",
+      "size": 6440,
+      "sha256": "8b1433cd05ac4e3f6b91a8d6f14ade286d105968376c96bf53f66c825d948e0b"
+    },
+    {
+      "path": "public/assets/models/props_gate.gltf",
+      "size": 1548,
+      "sha256": "2e5b8365ef89b9bf13cb0927ddadb14fcf6969fbe4ac6a50c235425ce4ec72b2"
+    },
+    {
+      "path": "public/assets/models/props_mark.bin",
+      "size": 840,
+      "sha256": "dc05e898e45eb9019dbef46c712a1dc83d116dde97aee41b69b6afa912269397"
+    },
+    {
+      "path": "public/assets/models/props_mark.gltf",
+      "size": 1449,
+      "sha256": "8762d9794f16b36001b8974f74195a4335be91a392c7c71199be1f33b7bff630"
+    },
+    {
+      "path": "public/assets/models/props_pedestal.bin",
+      "size": 3360,
+      "sha256": "40f11ec9b46cfd2457c9d82b431ee8ac3deddcd8fe30b450380bf98aa4474def"
+    },
+    {
+      "path": "public/assets/models/props_pedestal.gltf",
+      "size": 1558,
+      "sha256": "c78eb2743841d854460fb0d686dd6226f2ba85ddc05b57f7c166aca5c492ee4c"
+    },
+    {
+      "path": "public/assets/models/props_shell.bin",
+      "size": 6720,
+      "sha256": "aa7ad4130263905c2a91ad2668e5fb7b36d70efb674e63a79296cfc0004d98c2"
+    },
+    {
+      "path": "public/assets/models/props_shell.gltf",
+      "size": 1539,
+      "sha256": "a3e9b438cd03b810d99022db0b2f82c7791164e413a1abab8e1ab1243086cced"
+    },
+    {
+      "path": "public/assets/models/props_shell.plates.json",
+      "size": 1639,
+      "sha256": "c509e304b9c9d77bc80dfa871f3eecb007f509b01aa9624724aeeb4604c8ae6d"
+    },
+    {
+      "path": "public/assets/models/props_switch.bin",
+      "size": 1960,
+      "sha256": "76a2fbf700116cac1e4ce837fad6c8bd7697eea2e6ac5175e291e7ff73d7afe9"
+    },
+    {
+      "path": "public/assets/models/props_switch.gltf",
+      "size": 1529,
+      "sha256": "387c877187db1f719ed5b9a16f5271fff67e1a8099473f6116fd54845fcbff12"
+    },
+    {
+      "path": "public/assets/models/props_vine.bin",
+      "size": 560,
+      "sha256": "6f22876b63a382668918b47ff4c35d23a9bdbdf0cd9082f5a5cff292159e0092"
+    },
+    {
+      "path": "public/assets/models/props_vine.gltf",
+      "size": 1449,
+      "sha256": "ca88c5472cb47482544ac9cf0746ff3f6694853ff4e5cee1a7b933d0a2f9501d"
+    },
+    {
+      "path": "public/assets/models/test_skinned.gltf",
+      "size": 4246,
+      "sha256": "59b7f5f626d87dd8303b0a76d34bdbb7f2f17f6a5c583dc2dd13cad0fbe4cc15"
+    },
+    {
+      "path": "public/assets/sprites/hero_gen1.png",
+      "size": 28966,
+      "sha256": "54b7c00a932ac41127d2e16af3aa9610873eb9f2a595bc826ef797c92af6a379"
+    },
+    {
+      "path": "public/assets/sprites/hero_gen2.png",
+      "size": 32579,
+      "sha256": "c7d3a5062e5d18d9f8d240e8b30cef4d4358841a98a65d3c5b70cf92d32d2495"
+    },
+    {
+      "path": "public/assets/textures/.gitkeep",
+      "size": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "public/assets/textures/gen1/backdrop_far.png",
+      "size": 1267,
+      "sha256": "3fb16f5984550dec801a60aa60024d87443fb6e0bb008654bc470c9b5b36715c"
+    },
+    {
+      "path": "public/assets/textures/gen1/backdrop_near.png",
+      "size": 915,
+      "sha256": "895426e40a38c4b9263ffa4bcbb1566db58fa04127a81cd0b72621b10bc7f422"
+    },
+    {
+      "path": "public/assets/textures/gen1/cloud_bank.png",
+      "size": 443,
+      "sha256": "4cfd4d849870f99ca9f69e5cae1dfd82ceece45f03c6e8327712b25b568ca4b6"
+    },
+    {
+      "path": "public/assets/textures/gen1/enemy_body.png",
+      "size": 480,
+      "sha256": "0baf9e62a7eac3b91e4e2889445126166ac83dee34d32d085407ca0abda9707f"
+    },
+    {
+      "path": "public/assets/textures/gen1/foliage_tuft.png",
+      "size": 393,
+      "sha256": "b7acdb9f6f2f5fc7551c3ab36d9341167b82e84359e0ab4c8e333624b7ba1b74"
+    },
+    {
+      "path": "public/assets/textures/gen1/gate_glow.png",
+      "size": 376,
+      "sha256": "4970eb1185e75f69600a9b8463a0d72bd2baa3aaa4dc0a216ee1e82ce4c311de"
+    },
+    {
+      "path": "public/assets/textures/gen1/grass_top.png",
+      "size": 750,
+      "sha256": "77379921e488469e67bdbd165958d5f46ee617e35a2c069e90329d2e96d143a7"
+    },
+    {
+      "path": "public/assets/textures/gen1/mark_glyph.png",
+      "size": 287,
+      "sha256": "93f5505e041633f60e61955514101cae97652aea1f79962136548a5fd9ace555"
+    },
+    {
+      "path": "public/assets/textures/gen1/metal_grate.png",
+      "size": 496,
+      "sha256": "2e8a6f45ec5968ba7d949ce625d0db1317dfb4ab7e6cc1d47faad8bc1baab784"
+    },
+    {
+      "path": "public/assets/textures/gen1/pedestal_top.png",
+      "size": 304,
+      "sha256": "a43cb4ad788bcdad2e9162900a8052c5bf7c50d97507220b8bd427b3fe938cfe"
+    },
+    {
+      "path": "public/assets/textures/gen1/shell_plate.png",
+      "size": 514,
+      "sha256": "d972829f732b09dcb840b39585e8308bfe301f7fdbea6a8844880f5824fa719f"
+    },
+    {
+      "path": "public/assets/textures/gen1/stone_floor.png",
+      "size": 516,
+      "sha256": "20e9054414a31739e269ad90eb6e42eab1264816f40a086ae2914ad0288884d6"
+    },
+    {
+      "path": "public/assets/textures/gen1/stone_wall.png",
+      "size": 429,
+      "sha256": "aca9bb59626a910058cbb384030edb652daf612b04f40b1fb80ccb5c11d524d2"
+    },
+    {
+      "path": "public/assets/textures/gen1/tree_pine.png",
+      "size": 515,
+      "sha256": "6f946e20c06d7482b429084fc89a521a68e46c08c5959d212ad67b4b5983c359"
+    },
+    {
+      "path": "public/assets/textures/gen1/vine_green.png",
+      "size": 383,
+      "sha256": "3f222ef36a039f2ccf47becdf1baade4e2633142c66d04597e6d1cf986d4fd5b"
+    },
+    {
+      "path": "public/assets/textures/gen1/vine_yellow.png",
+      "size": 383,
+      "sha256": "3f222ef36a039f2ccf47becdf1baade4e2633142c66d04597e6d1cf986d4fd5b"
+    },
+    {
+      "path": "public/assets/textures/gen1/water_fall.png",
+      "size": 857,
+      "sha256": "a543c2eb366e54e2fd5b9318beafc69700c1e5bedec0b0e8652d1c247c45749f"
+    },
+    {
+      "path": "public/assets/textures/gen2/backdrop_far.png",
+      "size": 1532,
+      "sha256": "6746df94884cf616f3a1c40da46664e1320da1fb3b73749f689f106d7b4a413f"
+    },
+    {
+      "path": "public/assets/textures/gen2/backdrop_near.png",
+      "size": 1033,
+      "sha256": "4d7b3d7c58257c637ff1784bfdf358d7a7fb58e19561f0849e1e16e27567e5d8"
+    },
+    {
+      "path": "public/assets/textures/gen2/cloud_bank.png",
+      "size": 538,
+      "sha256": "3b33e4df3852307f257d6e8a70d4acd115aeb3a154f209dbce8d694c57c8f094"
+    },
+    {
+      "path": "public/assets/textures/gen2/enemy_body.png",
+      "size": 552,
+      "sha256": "db0b197ee89aaaaf04097f9eddee4f36378c839e019b42a3155e1c44b06ce3dd"
+    },
+    {
+      "path": "public/assets/textures/gen2/foliage_tuft.png",
+      "size": 499,
+      "sha256": "63e130c70e3340e6adaead0c49c08d2a223bc19c3ed4569ea358c98d87425d08"
+    },
+    {
+      "path": "public/assets/textures/gen2/gate_glow.png",
+      "size": 377,
+      "sha256": "d504cf808895bd7e31cc6e87c6d748fbd52f2ed7437212625f747b2bda6f6594"
+    },
+    {
+      "path": "public/assets/textures/gen2/grass_top.png",
+      "size": 1626,
+      "sha256": "05a88fa04956921a783d187b0cab7a80f0abb58b685fd3995365942d0ac30fb9"
+    },
+    {
+      "path": "public/assets/textures/gen2/mark_glyph.png",
+      "size": 291,
+      "sha256": "c4b32143041ebee247bac33b464b0b3cd23a30f69ff72eda33264a4da5bf1417"
+    },
+    {
+      "path": "public/assets/textures/gen2/metal_grate.png",
+      "size": 496,
+      "sha256": "e9a7187899bdc5f7bc4af53b2cb1325ebe89275d4abb701343c7b8cd1ed82918"
+    },
+    {
+      "path": "public/assets/textures/gen2/pedestal_top.png",
+      "size": 306,
+      "sha256": "8684af5ad714ab56687d8cb7b378475aa5a2a26ceb13877471e71bf096fec878"
+    },
+    {
+      "path": "public/assets/textures/gen2/shell_plate.png",
+      "size": 518,
+      "sha256": "7ac5900ca013e108986be5e8b0e771eb23ecee39523bf8a1f16f43e0c3d5c010"
+    },
+    {
+      "path": "public/assets/textures/gen2/stone_floor.png",
+      "size": 793,
+      "sha256": "e22e6bc610594732024e409671f78963592e79ed0fe227dae20442e0e6f21d6e"
+    },
+    {
+      "path": "public/assets/textures/gen2/stone_wall.png",
+      "size": 860,
+      "sha256": "d981efb7bef8897c90ce61d68b927c8d54f701082da8cb80844383f2c62076ab"
+    },
+    {
+      "path": "public/assets/textures/gen2/tree_pine.png",
+      "size": 537,
+      "sha256": "ca642da81f12eb798fa1c51c5ec5e8564692da50d591a33fd5b97f225e4439d9"
+    },
+    {
+      "path": "public/assets/textures/gen2/vine_green.png",
+      "size": 391,
+      "sha256": "ff132d8dd5766eaf68a1f85aedb454f26ea7c17785895abd89ff93ccd8a61e80"
+    },
+    {
+      "path": "public/assets/textures/gen2/vine_yellow.png",
+      "size": 385,
+      "sha256": "d8a2b065f8be70d60bb93ef5d526ee809c84eed54a92562c6fc52b4a2014eb0e"
+    },
+    {
+      "path": "public/assets/textures/gen2/water_fall.png",
+      "size": 875,
+      "sha256": "7ade608c3e9a02b55201e2896019005c5d2f466dfca15ca50aaa54dc75294aa4"
+    },
+    {
+      "path": "public/assets/textures/gen3/backdrop_far.png",
+      "size": 1535,
+      "sha256": "a662bc3ee9e1f32364dbe7d21e20a4e13f8429442ca5073d2c6b5bc4d0d85d27"
+    },
+    {
+      "path": "public/assets/textures/gen3/backdrop_near.png",
+      "size": 1037,
+      "sha256": "1ba695cf655260fa1cc782d7f844bbf19a539a42ccac79bb32cd71be68354eb1"
+    },
+    {
+      "path": "public/assets/textures/gen3/cloud_bank.png",
+      "size": 541,
+      "sha256": "a4ee1ee332fb8076cd0d84214bbcf2ecf3dd89b53420925b35302c89dd084b76"
+    },
+    {
+      "path": "public/assets/textures/gen3/enemy_body.png",
+      "size": 554,
+      "sha256": "80f8d531bcd3c39a3333df5b3142528a0603aee063f48c6bad8e5034d4a5c8d2"
+    },
+    {
+      "path": "public/assets/textures/gen3/foliage_tuft.png",
+      "size": 498,
+      "sha256": "dd8e40c2fe46a9643810e2f7797b7072c7bd58c0606a35aab2a69a38de63cc06"
+    },
+    {
+      "path": "public/assets/textures/gen3/gate_glow.png",
+      "size": 382,
+      "sha256": "0fe6278bceb2eb296d1c721c4ad357420602a3814161fec23f74a7a7f8fe7949"
+    },
+    {
+      "path": "public/assets/textures/gen3/grass_top.png",
+      "size": 1638,
+      "sha256": "35485f85e2247f87be27139b1bbcbe9f9cca9157ea7512a997acb85a971249a3"
+    },
+    {
+      "path": "public/assets/textures/gen3/mark_glyph.png",
+      "size": 290,
+      "sha256": "ce286686f10b60953b0e4fe18260a5bd10ec2efc08561a5a3d330fdafb005cff"
+    },
+    {
+      "path": "public/assets/textures/gen3/metal_grate.png",
+      "size": 497,
+      "sha256": "91f006a7f127caa90b664e3234efcf5e637745b8ff98d7cccfed7e130bb9967e"
+    },
+    {
+      "path": "public/assets/textures/gen3/pedestal_top.png",
+      "size": 308,
+      "sha256": "436525d0650a96d1ba3348694ddd96b79814d2d4518bc5c59fc0e971b6f102e2"
+    },
+    {
+      "path": "public/assets/textures/gen3/shell_plate.png",
+      "size": 517,
+      "sha256": "de2c3146b9d1364971d63812458f006306e2fa8e11135c68e24c7bbd7bf7c0a0"
+    },
+    {
+      "path": "public/assets/textures/gen3/stone_floor.png",
+      "size": 793,
+      "sha256": "cf727de93fe4c19942d984e27f353565e049309a7c27d1509b592bd2319a810c"
+    },
+    {
+      "path": "public/assets/textures/gen3/stone_wall.png",
+      "size": 867,
+      "sha256": "5833cd7429e19d31369a45aa943a8acfee3001fbcef8a7fed830f33c619a8841"
+    },
+    {
+      "path": "public/assets/textures/gen3/tree_pine.png",
+      "size": 535,
+      "sha256": "df69301b705b3491334d72acf8c1c4e34b0a2273d2c01b095baf6ac53dc706ed"
+    },
+    {
+      "path": "public/assets/textures/gen3/vine_green.png",
+      "size": 391,
+      "sha256": "3ba7bb4c32cfd61d1d182e3318ceff7522616c702737afaf704673d0ebc790ea"
+    },
+    {
+      "path": "public/assets/textures/gen3/vine_yellow.png",
+      "size": 391,
+      "sha256": "d4d9ba33b8c395efff92651fcd839b6594f5cc1ebc872f8478998f61edad0500"
+    },
+    {
+      "path": "public/assets/textures/gen3/water_fall.png",
+      "size": 879,
+      "sha256": "97cee322a1c034b1b60c2ad47c6835f2980dd868040125cbc91611d054bd84b4"
+    },
+    {
+      "path": "public/assets/textures/gen4/backdrop_far.png",
+      "size": 1541,
+      "sha256": "f537262d2dfbbd12688b9ade791877cf291584c86852ae247c11529533896108"
+    },
+    {
+      "path": "public/assets/textures/gen4/backdrop_near.png",
+      "size": 1036,
+      "sha256": "84f07350d40d8efc8b4241fbaa7250e1c3e12362c35bf490443ecd85c47bb60c"
+    },
+    {
+      "path": "public/assets/textures/gen4/cloud_bank.png",
+      "size": 541,
+      "sha256": "ec44ba0c004a41b711ae14c0326005374cf432093b4d1e56ff7e6907ef9bd7e5"
+    },
+    {
+      "path": "public/assets/textures/gen4/enemy_body.png",
+      "size": 555,
+      "sha256": "67176132c96d658f2ea3125decfa9626fd3d7a31f646291b587e133cf8ad8581"
+    },
+    {
+      "path": "public/assets/textures/gen4/foliage_tuft.png",
+      "size": 498,
+      "sha256": "4e5d1235800cdc5e3d90ad5b5fddb70f12b9d407daad45b0deccda747cd3ed88"
+    },
+    {
+      "path": "public/assets/textures/gen4/gate_glow.png",
+      "size": 377,
+      "sha256": "417d5d960b8798843a7eb8000c548310f0dc6446720fd40ff42f9a88565cf5af"
+    },
+    {
+      "path": "public/assets/textures/gen4/grass_top.png",
+      "size": 1635,
+      "sha256": "05f2567ed95ce2a98a159b8dccaae467a54f6749e5a74e3ee6c1209bcb77033c"
+    },
+    {
+      "path": "public/assets/textures/gen4/mark_glyph.png",
+      "size": 288,
+      "sha256": "0b8d4e6976dbe0af936fb389a83e234a7e5093b8dd6b5ba5fd2f51bb359b6f41"
+    },
+    {
+      "path": "public/assets/textures/gen4/metal_grate.png",
+      "size": 497,
+      "sha256": "b624c4a80758cd870db2c4d13328b99e2e36416b4b9c9cac14af8a45d72bd8b8"
+    },
+    {
+      "path": "public/assets/textures/gen4/pedestal_top.png",
+      "size": 304,
+      "sha256": "cce27ac6548a365d78889e23a2361943d0307ef1ebce6d103298c7633b311b1c"
+    },
+    {
+      "path": "public/assets/textures/gen4/shell_plate.png",
+      "size": 518,
+      "sha256": "910c1be75dcf56c7a3e99f7024c4589c3ad84434d5809c1aecb2e7bd382c9be3"
+    },
+    {
+      "path": "public/assets/textures/gen4/stone_floor.png",
+      "size": 794,
+      "sha256": "2d808b6f7e461d75173ee0df5c0ec4770ed89820ae12aaba70ab07a7376433b3"
+    },
+    {
+      "path": "public/assets/textures/gen4/stone_wall.png",
+      "size": 869,
+      "sha256": "5673325da2cc7545530f875415ce057926a51b922e0dcfe2c559277e34760838"
+    },
+    {
+      "path": "public/assets/textures/gen4/tree_pine.png",
+      "size": 533,
+      "sha256": "eb3d53b665aae50cf721fc5426147a2df06976e6ce09ac0c3589a6d3b9193280"
+    },
+    {
+      "path": "public/assets/textures/gen4/vine_green.png",
+      "size": 386,
+      "sha256": "9f967d9aea0e7621d45aa8552ac52a6e6d8323ae4c24ca1f5488d47c9fd2dd4f"
+    },
+    {
+      "path": "public/assets/textures/gen4/vine_yellow.png",
+      "size": 390,
+      "sha256": "4ba04c20e1dcfaef3cc7cb6c51469d9fe5bc302f1a819e30a59cd3353f51e538"
+    },
+    {
+      "path": "public/assets/textures/gen4/water_fall.png",
+      "size": 878,
+      "sha256": "6f199ddd545bb8ce52e48f4d12d2a7e9121c2a26739399d018f777868ca3922c"
+    },
+    {
+      "path": "public/assets/title/key_visual.png",
+      "size": 1662774,
+      "sha256": "bfdab6d2dbb90014f0f919c6d49808d125e944dfca4d7a868425bb4065739b7c"
+    },
+    {
+      "path": "README.md",
+      "size": 5465,
+      "sha256": "6b5d949f81e4c9524a909f66d0a949b65f574c164cfe1f4cc29cd87840ce41b6"
+    },
+    {
+      "path": "src/audio/adpcm_ps1.ts",
+      "size": 7458,
+      "sha256": "85504e8d78a20f64fff45b4b50e8db321cbb006807d514b10788d2784a13c308"
+    },
+    {
+      "path": "src/audio/clock.ts",
+      "size": 3059,
+      "sha256": "5d14f39e6d69181b59eb90fb0dbe64d578e4d0ab9d45f08f28302cc1ef65e08e"
+    },
+    {
+      "path": "src/audio/director.ts",
+      "size": 8061,
+      "sha256": "edda4ee430ed6f01632a14817a1997140be0d0a02da13f8f3de65abc2b4f31c4"
+    },
+    {
+      "path": "src/audio/engine.ts",
+      "size": 8263,
+      "sha256": "3319285d1d52dfbcc3ffa8e31f3c1267b40d90b5e5f9b384c028bddac75485de"
+    },
+    {
+      "path": "src/audio/music.ts",
+      "size": 16816,
+      "sha256": "e04cd1ffd4cb8e4219b7ed31defd2e982a9928f8b7bd4f791776084414ce0620"
+    },
+    {
+      "path": "src/audio/sampler_sfc.ts",
+      "size": 6938,
+      "sha256": "6a65d07bbbefc63298cb9aa581b5f3d7dfa94b8ea979db7378a91d105c496a4d"
+    },
+    {
+      "path": "src/audio/score.ts",
+      "size": 2443,
+      "sha256": "64ed8589816210868071d5e0099ff9d09860ae925baa7f59a412a39077aedaee"
+    },
+    {
+      "path": "src/audio/sfx.ts",
+      "size": 5048,
+      "sha256": "a6f761311c079d7279edb717596e47318addfd80a572625cdaabcce86e14c8cc"
+    },
+    {
+      "path": "src/audio/songs.ts",
+      "size": 1839,
+      "sha256": "5b1677bd111e24c9baaadb93ad93120697e5ba262c80b82f095e8236dfdd7e11"
+    },
+    {
+      "path": "src/audio/stream_ps2.ts",
+      "size": 6942,
+      "sha256": "c500419752613db53fba004ea4d3d4b902fc472dfece7f1e5935bb0fc832f236"
+    },
+    {
+      "path": "src/audio/synth_fc.ts",
+      "size": 6730,
+      "sha256": "ac467d95186b86199e1deb74fe8d99b4cc90631bff3797004c86146003475a62"
+    },
+    {
+      "path": "src/audio/voicelimit.ts",
+      "size": 2427,
+      "sha256": "895eda5d4018f8c390a8aa0fc6ad9860ca157b25acb685b20aa1b54e38deb71b"
+    },
+    {
+      "path": "src/core/assert.ts",
+      "size": 687,
+      "sha256": "32f480216ee632f4c57d408b99f5059095f7d7c7b67a57796d5ad8ddf7c7022b"
+    },
+    {
+      "path": "src/core/ecs/component.ts",
+      "size": 1056,
+      "sha256": "9235088803812c70cfe616c63f7e6432d7c8e07732d10f5a61481d04d4c930f7"
+    },
+    {
+      "path": "src/core/ecs/query.ts",
+      "size": 2388,
+      "sha256": "15006edb57323963265ae4b11386e9f76aeb18d9a55f39b16e1284a17b89f4f4"
+    },
+    {
+      "path": "src/core/ecs/system.ts",
+      "size": 2546,
+      "sha256": "e1234af1571dfbd7793af285925aa077aa1a14426bc08c1bc87a5c4f258f376d"
+    },
+    {
+      "path": "src/core/ecs/world.ts",
+      "size": 3707,
+      "sha256": "7cb229586bdf0bb82a002843d02429887506d804ce04b986312602a3e116532b"
+    },
+    {
+      "path": "src/core/events.ts",
+      "size": 3100,
+      "sha256": "a70af24579a8f7df4a16fb6373755dd5339367ed652b8f0102d36e8fa3df67bc"
+    },
+    {
+      "path": "src/core/loop.ts",
+      "size": 3937,
+      "sha256": "b940474bea8548469862ebe86f2a1fac7b4e29cf68dc23d5467a3e1c9c141467"
+    },
+    {
+      "path": "src/core/rng.ts",
+      "size": 2884,
+      "sha256": "64d9844d39d73696dec83f1e769809f3653d894e67e4b208e41260ad8738ecb3"
+    },
+    {
+      "path": "src/core/time.ts",
+      "size": 1423,
+      "sha256": "75ba78482cef7a7ac270935733fb326517d70a922a217f53b09a53406020c775"
+    },
+    {
+      "path": "src/core/world.ts",
+      "size": 101,
+      "sha256": "cfcb123c986396fcda66a7e4d854ed64ddbda811629f808ec9c71fbabbc517c3"
+    },
+    {
+      "path": "src/debug/bgm_control.ts",
+      "size": 3247,
+      "sha256": "b1a68f05f7c31bf90816ab75835f695bf47ed1238557778369f91f71fd86f9eb"
+    },
+    {
+      "path": "src/debug/collider_hud.ts",
+      "size": 3316,
+      "sha256": "0ef1557fa0cd58ebf4861835b14e49b50272b79997029fdd1f6b9e2f09facbad"
+    },
+    {
+      "path": "src/debug/collider_view.ts",
+      "size": 8668,
+      "sha256": "7f694defddddd33cfbdd98771aa03ff560816b1ae8e63b6ec5dc0d96baa78b83"
+    },
+    {
+      "path": "src/debug/freecam.ts",
+      "size": 55,
+      "sha256": "359d60b03938ee408a1d6c00e979f2d5182936cc705d490fbdf24b526fe5d8d7"
+    },
+    {
+      "path": "src/debug/mini_level.ts",
+      "size": 9942,
+      "sha256": "bb2f8f4bf0d844d572314c2e82f0c85b3b146a351aaac4e141a9b4f45bd91384"
+    },
+    {
+      "path": "src/debug/notice_hud.ts",
+      "size": 1994,
+      "sha256": "c0bf192bc21768280ba6ea0a7e598de14da3082fb06852637110d7dc62b4e82a"
+    },
+    {
+      "path": "src/debug/overlay.ts",
+      "size": 85,
+      "sha256": "c13585f4009c861a49fc39fb3da3ae58042c6704a855b13416f39a9b13164506"
+    },
+    {
+      "path": "src/debug/playtest_flow.ts",
+      "size": 10151,
+      "sha256": "cca3fe41d7e6a32e698f9504602ea423cb3443cf5b2b632cec2795cb3e766050"
+    },
+    {
+      "path": "src/debug/playtest_hud.ts",
+      "size": 2292,
+      "sha256": "892872992bba4814c1e3b44193ccc5b890786c9ea457caae751721122675b5c5"
+    },
+    {
+      "path": "src/debug/playtest_log.ts",
+      "size": 8197,
+      "sha256": "fe074930acd3decaa8a8cbfe2fde5b0f0e3744030e3da893e785109841b81ea5"
+    },
+    {
+      "path": "src/debug/profiler.ts",
+      "size": 49,
+      "sha256": "84a7267659f1f93f4e68dff6ae2657aa3fcb885bf40d816c1018dbbe62017e19"
+    },
+    {
+      "path": "src/debug/smoke_character.ts",
+      "size": 7149,
+      "sha256": "60d2ade159353b115d8ca20cb6236b4ef92463a43156aab7ff5357b4539aaa6b"
+    },
+    {
+      "path": "src/debug/smoke_fc.ts",
+      "size": 4141,
+      "sha256": "1eaf241d57ad8c4fc4b7159d9b669da6ab171ed5c576e1c304f084aaa7245ecb"
+    },
+    {
+      "path": "src/debug/smoke_model.ts",
+      "size": 4151,
+      "sha256": "0b235d9e4a32ebb5cc2ca46649a4ec50588fe4d814f5ffcee5bc524ae77f7f69"
+    },
+    {
+      "path": "src/debug/smoke_player.ts",
+      "size": 9497,
+      "sha256": "a63047053f6a23c9c629d2a70f35d24e3b9d36f1a7907fde19731009fb4c9ac1"
+    },
+    {
+      "path": "src/debug/smoke_postfx.ts",
+      "size": 2129,
+      "sha256": "d538d402feddb4cb767221dbd8435b7efaddbed55222a80037fb94d1b5de4197"
+    },
+    {
+      "path": "src/debug/smoke_ps1.ts",
+      "size": 5460,
+      "sha256": "7cf94dbc2c938a31a88d76e4719f2e35d9f8ecf10353be7be667a384f75c7339"
+    },
+    {
+      "path": "src/debug/smoke_switch.ts",
+      "size": 6502,
+      "sha256": "5e29933a617506d285edd3ba89a9583cdb356ae0b4014b7438efbb3ccb4fdba3"
+    },
+    {
+      "path": "src/debug/smoke_triangle.ts",
+      "size": 2044,
+      "sha256": "898f436b36c5e9d86abae22049220c9ac28284235c1cff340e723f5d174c4a0c"
+    },
+    {
+      "path": "src/gameplay/audio_cues.ts",
+      "size": 3405,
+      "sha256": "5aff2d681819ed1a3e12dedb7b95cd3d2b752efabb791db4f5bbace762f1fd50"
+    },
+    {
+      "path": "src/gameplay/checkpoint.ts",
+      "size": 4856,
+      "sha256": "f0f8272ea7cdce4c88fb0474d14c91e1722493da128c48eed2298d6ba4e0cc68"
+    },
+    {
+      "path": "src/gameplay/hints.ts",
+      "size": 10434,
+      "sha256": "64b49cbf2b2f2935cea1d7b9984c936751fd60f47ef300d651202057452c6d95"
+    },
+    {
+      "path": "src/gameplay/physics.ts",
+      "size": 9882,
+      "sha256": "4690ad44a5f91175fef6d178b216703d8e293a82ee9e358ff68065e0af0743ea"
+    },
+    {
+      "path": "src/gameplay/player.ts",
+      "size": 12347,
+      "sha256": "a9b68ee3338a14431290d190143372c175380c3fbb7e537696072566e7044ca4"
+    },
+    {
+      "path": "src/gameplay/projection.ts",
+      "size": 9649,
+      "sha256": "c90053cceb24e684c32f558fc78a3065e7bc401e9a4ff24eb3c0b66276dc5b13"
+    },
+    {
+      "path": "src/gameplay/puzzles/f1_color_crush.ts",
+      "size": 6672,
+      "sha256": "dcf7eae7739110e93d5f5b6a714b07613262639ca4cc49dadd8b68a934ac1516"
+    },
+    {
+      "path": "src/gameplay/puzzles/f2_flicker_gap.ts",
+      "size": 7164,
+      "sha256": "9285053e3eec73bcabc019fc96943337fe6178b9484334df4f411a343244c376"
+    },
+    {
+      "path": "src/gameplay/puzzles/p1_1_backside.ts",
+      "size": 1606,
+      "sha256": "7c76ed071cded5ebcd056d744920176c7cace0d2e76ad8650d50c9fba806e778"
+    },
+    {
+      "path": "src/gameplay/puzzles/p1_2_sort_break.ts",
+      "size": 2508,
+      "sha256": "5864b20beed37dac9894957fd39cb95555d9e339623ca7304dc1bd2d5a1e006c"
+    },
+    {
+      "path": "src/gameplay/puzzles/p2_1_torch.ts",
+      "size": 4730,
+      "sha256": "76e5d22ea34e671f707e248a5462c98fcb1a435da303651d4ff11e8c2d63c059"
+    },
+    {
+      "path": "src/gameplay/puzzles/registry.ts",
+      "size": 2478,
+      "sha256": "8aa87e688a581708021504400181ea55069a6b00cc11f9716597a0af4120efcc"
+    },
+    {
+      "path": "src/gameplay/puzzles/s1_affine_plane.ts",
+      "size": 5799,
+      "sha256": "fd55801d7bdc2eb6ace3fed6868b4a02f247889db7b1bafb4186379033ef91f8"
+    },
+    {
+      "path": "src/gameplay/puzzles/types.ts",
+      "size": 5617,
+      "sha256": "a96c489ec0bbb24bdd20e9a62df30c61bd0659f94cc9e33ca85fd8444ae03c31"
+    },
+    {
+      "path": "src/gameplay/save.ts",
+      "size": 53,
+      "sha256": "d12b4d5be012ee0f8c71ef4dc03d4a30e4e2a404bf5a2ac90e696e3db31c0ae8"
+    },
+    {
+      "path": "src/gameplay/scene.ts",
+      "size": 10427,
+      "sha256": "2127676548531a9e86e831546047ee44aa04bb8a7ab7f676a84bb26b0a46cd51"
+    },
+    {
+      "path": "src/gameplay/session.ts",
+      "size": 15628,
+      "sha256": "c49c6a3b9fdb8f19c1ced520c594218f93890d9055eb382edcab663ba86ed442"
+    },
+    {
+      "path": "src/generation/profiles.ts",
+      "size": 30064,
+      "sha256": "a30882a6cc2398c9d40d89077b7ff70718d9803459b100be76c27dab230b2536"
+    },
+    {
+      "path": "src/generation/switcher.ts",
+      "size": 10766,
+      "sha256": "6a9739cf211774259279511a3521368c8a024fc242092c200335681b7aeaf4eb"
+    },
+    {
+      "path": "src/generation/transition.ts",
+      "size": 3255,
+      "sha256": "73dec22f98610574af12ee0f1a3ab9dde1ff0eadfe02448cb88c695546f31ecc"
+    },
+    {
+      "path": "src/input/buffer.ts",
+      "size": 3337,
+      "sha256": "4bef36c3914bc80b9b699959900996d3f3e4057df00725d3c9718d7a91c306e0"
+    },
+    {
+      "path": "src/input/constraints.ts",
+      "size": 3836,
+      "sha256": "8c538de815c28d75333d304c5e2bec15887a4f4d83e75d1dff704a2993e0ee1b"
+    },
+    {
+      "path": "src/input/mapper.ts",
+      "size": 8327,
+      "sha256": "3385bb80cc49220fd2ac031321c936d7ad2712692e9e9579f02450eaef552863"
+    },
+    {
+      "path": "src/input/source_gamepad.ts",
+      "size": 4690,
+      "sha256": "933770092e8f00ab734909ac25bbc64e392b65b7178c0a038fdaa8aa624ba39f"
+    },
+    {
+      "path": "src/input/source_keyboard.ts",
+      "size": 5302,
+      "sha256": "0c4ddf552c50bbb72242c883c3e0520a2d5ec15e1c2f8089d5e3a2b8c050fd15"
+    },
+    {
+      "path": "src/level/loader.ts",
+      "size": 2343,
+      "sha256": "d623104df737471c4015d381299b9d2fa47e6de93b42d3dc06d73a2ee8eb3a33"
+    },
+    {
+      "path": "src/level/schema.ts",
+      "size": 16117,
+      "sha256": "ec7c42e39f118106d2c194a42e2594dfa83cec824c062acb0de1be960ed2757a"
+    },
+    {
+      "path": "src/level/sector.ts",
+      "size": 2939,
+      "sha256": "25f334bffbea3db0051176b8a9d8293712a82d670b7edb02a569bdc174cd217d"
+    },
+    {
+      "path": "src/main.ts",
+      "size": 13080,
+      "sha256": "f0679357385aaace26fc5d8f711ece8253fac6750b687a188a34c00ac0268150"
+    },
+    {
+      "path": "src/render/camera.ts",
+      "size": 1841,
+      "sha256": "b68cd898ab22124989ad0b0001fe41989636ec7ff727d85f7690aef64f6a95c7"
+    },
+    {
+      "path": "src/render/frame.ts",
+      "size": 7321,
+      "sha256": "c9291ed3f8fddbfe3ebff543a5bc86c7ca19e1abb3eda10a39b0c406909540ee"
+    },
+    {
+      "path": "src/render/geometry.ts",
+      "size": 8211,
+      "sha256": "21e359b9f843365389ee97c075d60a4200141a9f8a9a659983197e6b2c6dbefa"
+    },
+    {
+      "path": "src/render/gl/buffer.ts",
+      "size": 4209,
+      "sha256": "50d2c09ea1c89521af3530ac92f8f70fe04c51fd88e1950f6a73a03af93b2f9a"
+    },
+    {
+      "path": "src/render/gl/context.ts",
+      "size": 2225,
+      "sha256": "970d3c4cde7d8e4e04c317e6a6413ab3d47039bb7193365b1ddafd868a0dd97e"
+    },
+    {
+      "path": "src/render/gl/framebuffer.ts",
+      "size": 2846,
+      "sha256": "7ccd0e67f222168d07eedb49bd4326969b4d9bb960756608da267310113115b9"
+    },
+    {
+      "path": "src/render/gl/index.ts",
+      "size": 988,
+      "sha256": "b57e9ec3bc07e69fffee99d46c311694a4413d66048e6c61e886c2118dd3ab19"
+    },
+    {
+      "path": "src/render/gl/shader.ts",
+      "size": 6878,
+      "sha256": "3d2902cc5da5da764e1d5519cca3c62b9f35797b3e9803195a54199677cac30c"
+    },
+    {
+      "path": "src/render/gl/state.ts",
+      "size": 3529,
+      "sha256": "fa5d0bd996fd11c749223960c2cd328084fccb4186aeafbdcc466a03e9276ad0"
+    },
+    {
+      "path": "src/render/gl/texture.ts",
+      "size": 4586,
+      "sha256": "5c62a83451f8b1c74eacdde248c19ff25de3e66ee3a4ad7112d1200046157cd6"
+    },
+    {
+      "path": "src/render/key_palette.ts",
+      "size": 6680,
+      "sha256": "d9acb0b73c40193b5f0136973d684d70bd3503c2a075c2f5573ec3813c9b4f44"
+    },
+    {
+      "path": "src/render/loader/gltf.ts",
+      "size": 24655,
+      "sha256": "cc7d3ca09517ef36e85a2801b1eea75032afdc328f36193cc424e755d8ad7937"
+    },
+    {
+      "path": "src/render/material.ts",
+      "size": 17412,
+      "sha256": "c929300774233a91b8aaa30bb14c5b6c10f1f9077be87f2b8a548305748bab9f"
+    },
+    {
+      "path": "src/render/pipeline.ts",
+      "size": 13417,
+      "sha256": "0ff5606c8c8612869ce8f62f67cabfcfa985bde740127d73d8294a51330efe81"
+    },
+    {
+      "path": "src/render/postfx/chain.ts",
+      "size": 4918,
+      "sha256": "9b0c4ea43b0db0483a0e6e28694cdaeb0312d9b19b5d12ae9cf22fa566751bb6"
+    },
+    {
+      "path": "src/render/postfx/crt.ts",
+      "size": 2334,
+      "sha256": "b12cb81a89871143f724ee21f54d793486f06bb082c98a41bfc45fefe45352b0"
+    },
+    {
+      "path": "src/render/postfx/presets.ts",
+      "size": 3162,
+      "sha256": "5257de3025c64ec09563ec377c4c77b8366ab6966e5a6d9ff5d32853be3a29b5"
+    },
+    {
+      "path": "src/render/quantize/master_palette.ts",
+      "size": 3059,
+      "sha256": "069fb9042d3ebca9cc26b274e2d5a2eb925875e9ab40d745387a4c9246aecf22"
+    },
+    {
+      "path": "src/render/quantize/palette_fc.ts",
+      "size": 3353,
+      "sha256": "98314f57c16c4126f2af63942d3481c35aa8c6f7f525bcb801d720cfb6d2e422"
+    },
+    {
+      "path": "src/render/quantize/palette_sfc.ts",
+      "size": 2265,
+      "sha256": "7c1a75b94e05e19060f6598d439b915cd15058d53bb57a01ba1500d6970f5a3d"
+    },
+    {
+      "path": "src/render/renderer2d.ts",
+      "size": 54,
+      "sha256": "e0c84001bca690aa12cd6b6ffeaca8e0913fcb494b63670a9109ba130cd6d807"
+    },
+    {
+      "path": "src/render/renderer3d.ts",
+      "size": 45065,
+      "sha256": "e04a0822bd4858700b412d22aeb89cd689481265413b6335f7622c7254c6316e"
+    },
+    {
+      "path": "src/render/shaders/backdrop.frag.glsl",
+      "size": 2452,
+      "sha256": "f0b48680ac02c9a781e20933d75f4b1e1dfcaa97447ff449ead3ef2729995486"
+    },
+    {
+      "path": "src/render/shaders/backdrop.vert.glsl",
+      "size": 605,
+      "sha256": "b1162ee8090665f2d95bdd51237ff3ddb0fe4c160c6408ef9875d035b71f7cf3"
+    },
+    {
+      "path": "src/render/shaders/common.glsl",
+      "size": 1015,
+      "sha256": "3ed832e1dbd6a5b0d456d5552b7c286565e0533c27fa69764769cd9768e4af6e"
+    },
+    {
+      "path": "src/render/shaders/crt.glsl",
+      "size": 3739,
+      "sha256": "69504b2178abe00657c3014ed6f679ab74b40e37e286ba2d02e3b400466d4cbb"
+    },
+    {
+      "path": "src/render/shaders/fullscreen.vert.glsl",
+      "size": 444,
+      "sha256": "a50270b13687d9abfcad210fdf46691d19456ff0f7fcb05e387f7862b9283c10"
+    },
+    {
+      "path": "src/render/shaders/ps1_forward.glsl",
+      "size": 4027,
+      "sha256": "c0443794a5ea45b79e21763665f17ea7cdb0a101549d437b75c7f5339ba4a93b"
+    },
+    {
+      "path": "src/render/shaders/ps1_vertex.glsl",
+      "size": 2945,
+      "sha256": "80981688da2f96e5589f1989145b8c5f40ba34594fabf60414b35703f6f3cdc3"
+    },
+    {
+      "path": "src/render/shaders/quantize_fc_blocks.glsl",
+      "size": 3183,
+      "sha256": "d8a9db38cbadcc0c75e5e9bb5c3f9320a3d829436f2d795f042827d15643f9b8"
+    },
+    {
+      "path": "src/render/shaders/quantize_fc.glsl",
+      "size": 2635,
+      "sha256": "f86b7bb8a6d74cab1e93537ba4a54600bff606fd38559b5b575d6fb547d6fe03"
+    },
+    {
+      "path": "src/render/shaders/quantize_sfc.glsl",
+      "size": 1393,
+      "sha256": "ea9f2c4babe3c2decb0f76d7e3acfe2f581e8470066cdb4bd97ce70d655f458f"
+    },
+    {
+      "path": "src/render/shaders/skinned_test.frag.glsl",
+      "size": 286,
+      "sha256": "569a2f906a917410a85d0bc392a1cf8858ebf8acc8777980a0f8b1006b0441bc"
+    },
+    {
+      "path": "src/render/shaders/skinned_test.vert.glsl",
+      "size": 1732,
+      "sha256": "072a6b905b84fb1ac00b14ac820a9b2dcd4d27dc44ca05089f18930975b8ab1d"
+    },
+    {
+      "path": "src/render/shaders/smoke_triangle.frag.glsl",
+      "size": 126,
+      "sha256": "1173006f9d23d7a29210df9700c62bc1578c45c29b976f66bf551d7a8642838a"
+    },
+    {
+      "path": "src/render/shaders/smoke_triangle.vert.glsl",
+      "size": 336,
+      "sha256": "4b175a9a81a21f02d0d028a3a2654792a76ee1c67c4e98eab28de69ce536de0e"
+    },
+    {
+      "path": "src/render/shaders/test_scene_fc.glsl",
+      "size": 1707,
+      "sha256": "790afc4062a3e462ef82be320cb9f1714650e29071267c580fcebc649633f67b"
+    },
+    {
+      "path": "src/render/shaders/transition.glsl",
+      "size": 4032,
+      "sha256": "4a3c72039ceebf13fa5280fa931239c62f74153f208bde368935e4486925dc78"
+    },
+    {
+      "path": "src/render/shadow.ts",
+      "size": 3537,
+      "sha256": "da30189003f865d61da5a21a6f4963b3cd82bd42e7faec8e34a824fce72a4924"
+    },
+    {
+      "path": "src/render/sort.ts",
+      "size": 6676,
+      "sha256": "759dc6dc1e837d767e518bf00e9e7d383d004879ed3ab68a7b99256c0a5e2a91"
+    },
+    {
+      "path": "src/render/sprite_limit.ts",
+      "size": 3720,
+      "sha256": "2f355c15dcbebcb7612fe1374dc00199455c6f00056141f49097cad31e63fbfe"
+    },
+    {
+      "path": "src/render/sprite_sheet.ts",
+      "size": 2031,
+      "sha256": "39d64aed03971156736795ba920c6f36001587117af649e220ff8b61fafbbf4e"
+    },
+    {
+      "path": "src/ui/a11y.ts",
+      "size": 73,
+      "sha256": "5cb5e0da63fc9ce40e1fa69b68d7b500ac3babf78c66a7a43f739a09aa1749ee"
+    },
+    {
+      "path": "src/ui/channel_indicator.ts",
+      "size": 3811,
+      "sha256": "d446c8344c222ac907ccd49b27e4b61864ba5922896db7912a6eefe41f7fb55c"
+    },
+    {
+      "path": "src/ui/forced_banner.ts",
+      "size": 52,
+      "sha256": "66400cd8f24ec5fdcb7e5c2b8ca0863cb2073fcdf9c3163a38bc37c036d294b3"
+    },
+    {
+      "path": "src/ui/hud.ts",
+      "size": 6647,
+      "sha256": "778934e79bcfb3863d2dec738ee98243c3992b53c6832b39df32d0ba8451e3f5"
+    },
+    {
+      "path": "src/ui/settings.ts",
+      "size": 4021,
+      "sha256": "aa37152c31e2f333f5462103866714bd9b4b5c5b33f609a69969fa62d2059ce1"
+    },
+    {
+      "path": "tests/e2e/.gitkeep",
+      "size": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "tests/golden/.gitkeep",
+      "size": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "tests/golden/backdrop.test.ts",
+      "size": 17414,
+      "sha256": "0813ff7f50a4e3d09fb8c666d186e1809ac3086d661b4dc4454ff210bc3c90ea"
+    },
+    {
+      "path": "tests/golden/material.test.ts",
+      "size": 16177,
+      "sha256": "db276c64332c05297a464f489790d319a6456eebe0b90b2487c425ade5a84a0f"
+    },
+    {
+      "path": "tests/golden/palette_fc.test.ts",
+      "size": 3468,
+      "sha256": "1f25166ece35bd7189c90eafac9dbf76fceb3ac24778de2e8694c57fc80195c0"
+    },
+    {
+      "path": "tests/golden/palette_sfc.test.ts",
+      "size": 2259,
+      "sha256": "e91bf8e85f9d4ff94bea2672af82835ef731ee32c50b284d292704fa49b4a299"
+    },
+    {
+      "path": "tests/golden/player_model.test.ts",
+      "size": 5084,
+      "sha256": "9742dcc8ae1a53e9178d67e2c900346d66cc5857b13d3d6b08982949d6c69da5"
+    },
+    {
+      "path": "tests/golden/player_sprite.test.ts",
+      "size": 7635,
+      "sha256": "cb56433f1bcc9a4d2ef63ad78f32640653cc90b2fd9d5ccdc354ab18bad4f2d3"
+    },
+    {
+      "path": "tests/unit/.gitkeep",
+      "size": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "tests/unit/audio.test.ts",
+      "size": 7599,
+      "sha256": "09917f5681de32e482efe5f3d287c466f0bc0d2482f056d58dea06eaac05905b"
+    },
+    {
+      "path": "tests/unit/checkpoint.test.ts",
+      "size": 4431,
+      "sha256": "16c90f3efc452a9de93bd81404ce9218e162d411cf75dc6322d8d5d0f844484c"
+    },
+    {
+      "path": "tests/unit/collider_view.test.ts",
+      "size": 5582,
+      "sha256": "f85ebb3569fe60aafbd8846de3971402856444dd712ce6069f62afba51b54fb3"
+    },
+    {
+      "path": "tests/unit/ecs.test.ts",
+      "size": 6528,
+      "sha256": "35dece85ae5005ce047e7eb67d947d5dfe339734a39fb433f0b32a844eea3a44"
+    },
+    {
+      "path": "tests/unit/events.test.ts",
+      "size": 2984,
+      "sha256": "97bb47982a943ffd8d41570bb7b3ff52627cd789ff3fe85e96226447a5584484"
+    },
+    {
+      "path": "tests/unit/fake_audio.ts",
+      "size": 4215,
+      "sha256": "7973d1efe136db5a261a7dc55d1e16c5799f82087602e60f8322dda37e080bb4"
+    },
+    {
+      "path": "tests/unit/fake_gl.ts",
+      "size": 7634,
+      "sha256": "bce64526af709ad98f128ab9166cd28ccc1e5cabd5898139a2da7a20d21ed014"
+    },
+    {
+      "path": "tests/unit/geometry.test.ts",
+      "size": 8423,
+      "sha256": "473e0c4f5a99ee9e4af6b81e4b475fd39ac7e9456b9049e6a3b6b5dbd5050eef"
+    },
+    {
+      "path": "tests/unit/gl_wrapper.test.ts",
+      "size": 7706,
+      "sha256": "f279b2dd2a527967d3873f135d7ff37fde1e377f5139adb38592cfb5c24e1e57"
+    },
+    {
+      "path": "tests/unit/gltf.test.ts",
+      "size": 7441,
+      "sha256": "9c8c61138c5b5d027105e8f54162d0bebc99656482a2e717efd194e16d5de4e2"
+    },
+    {
+      "path": "tests/unit/hints.test.ts",
+      "size": 7443,
+      "sha256": "9b39209b6a11bfa3f6c94b4a80445e96425499929c8a7d3714ed30f4d4ea578b"
+    },
+    {
+      "path": "tests/unit/hud.test.ts",
+      "size": 4437,
+      "sha256": "8d90e2d823fbac689f7203ccb0854a53b0dc6369ade25c134c9988aa81d8226b"
+    },
+    {
+      "path": "tests/unit/input.test.ts",
+      "size": 14975,
+      "sha256": "6c38559136ef076727b7388e4b0ce80ea9bf1977a93d058d2c918cd087453029"
+    },
+    {
+      "path": "tests/unit/key_palette.test.ts",
+      "size": 5088,
+      "sha256": "f87bdcb683bdfad6ef481dcc62c40ef7664a571a0c76534f6c1c76afab746477"
+    },
+    {
+      "path": "tests/unit/level.test.ts",
+      "size": 7652,
+      "sha256": "3f80ff4f2cf92a6b195e0d144e06a35654f9d4ba20f44bdfd0d348fa39715c44"
+    },
+    {
+      "path": "tests/unit/loop.test.ts",
+      "size": 4396,
+      "sha256": "95175f460d54fb716a5d8040702b821404c1b0a04e133c6c6bca03484167b8d5"
+    },
+    {
+      "path": "tests/unit/music.test.ts",
+      "size": 22483,
+      "sha256": "db4d6f22c3bf7e828478da2cd62ce611a1e617cc2f3477648f1b65677ec16e11"
+    },
+    {
+      "path": "tests/unit/physics.test.ts",
+      "size": 8174,
+      "sha256": "1962111d7dabae347ce0d9cd037c65a70c398d09b1ec9dcd327161ec7c9fefc8"
+    },
+    {
+      "path": "tests/unit/pipeline.test.ts",
+      "size": 10308,
+      "sha256": "63f2baed53084a88e43940b7cd5e14fe59fab66b8a7551f0d04bb47048814569"
+    },
+    {
+      "path": "tests/unit/player.test.ts",
+      "size": 14753,
+      "sha256": "d1ee32fbcbbe72d81f0911300d0dbcad59f7d30b46ea70f1dfebc0c927c3028a"
+    },
+    {
+      "path": "tests/unit/playtest_report.test.ts",
+      "size": 5648,
+      "sha256": "e1b40ac2d3d813a603600f98037b55db1e4ebee8eea6e616e76851b461626928"
+    },
+    {
+      "path": "tests/unit/postfx_chain.test.ts",
+      "size": 3945,
+      "sha256": "1e4d1b0d04299400d6fdc3266aa00c98a3000baf82eca1b7d60d21cea590845a"
+    },
+    {
+      "path": "tests/unit/profiles.test.ts",
+      "size": 7558,
+      "sha256": "22e56ac09f753d4cd1b628141850360dedfebe55ed2e591157a9ca59e1dd670c"
+    },
+    {
+      "path": "tests/unit/projection.test.ts",
+      "size": 8162,
+      "sha256": "20459d2195fb86fb47b5a859141f771ed2aee797d30b08aedb4d6cc517268ce3"
+    },
+    {
+      "path": "tests/unit/puzzles.test.ts",
+      "size": 17325,
+      "sha256": "2bd65ab76a1f1c2a63936d3038f16630f688ce2b05dab008c0e0e27c66dda7f8"
+    },
+    {
+      "path": "tests/unit/replay/area1_full_run.replay.json",
+      "size": 5192,
+      "sha256": "2697b0b72b5b4a98c90110c916dd76e49922f1817d62908bcd6effde3be95da9"
+    },
+    {
+      "path": "tests/unit/replay/f1_braid_walk.replay.json",
+      "size": 378,
+      "sha256": "67bf3b7f7f989da230db0558c94020289bf70fed35b57268b36681cb25f1459d"
+    },
+    {
+      "path": "tests/unit/replay/f1_thin_vine_fall.replay.json",
+      "size": 327,
+      "sha256": "5b276397d0bbbe7d6b34a6dfc55981115c2aa98ad5f89426bddbc4accb59efe5"
+    },
+    {
+      "path": "tests/unit/replay/f1_thin_vine.replay.json",
+      "size": 7237,
+      "sha256": "8ff5db98c91a45cfd86feda8a658464c3a96af34f0072e55a76e5aaa5bf3c258"
+    },
+    {
+      "path": "tests/unit/replay/f2_flicker_hint.replay.json",
+      "size": 1087,
+      "sha256": "19d083fc33b7628ea8ec8718e56f12052c03fc4bf5b48accc2fdf87d0ac8accf"
+    },
+    {
+      "path": "tests/unit/replay/harness.ts",
+      "size": 5626,
+      "sha256": "8b7d6c443f8bde978ff17784b097b2f590f3daa6883dd246085e8c92e3c685ec"
+    },
+    {
+      "path": "tests/unit/replay/p1_1_backside.replay.json",
+      "size": 413,
+      "sha256": "13fcdda6b154a173bcb1c252668b17405dfe965eaf169ff051473b2420d15124"
+    },
+    {
+      "path": "tests/unit/replay/p1_2_sort_break_wall.replay.json",
+      "size": 393,
+      "sha256": "8a007375e333854d7a67501d78add9371e6b77652ece49773d72ca1b91c77e86"
+    },
+    {
+      "path": "tests/unit/replay/p1_2_sort_break.replay.json",
+      "size": 411,
+      "sha256": "0929f83a8d6bb475c36b2ec53bcce7e5a81c7a02ffa0079f43354e40db8b234e"
+    },
+    {
+      "path": "tests/unit/replay/p2_1_torch_walk.replay.json",
+      "size": 1603,
+      "sha256": "0f6a59fd622778471b08201076d766620bb5c567ab8ea134337f0254a4ae1ef0"
+    },
+    {
+      "path": "tests/unit/replay/s1_rotating_plane.replay.json",
+      "size": 1249,
+      "sha256": "45149ce74ddf413f853b3e0b7581b53e534c63f54b86ebbcd7cd3b4f5d3f8aa5"
+    },
+    {
+      "path": "tests/unit/replay.test.ts",
+      "size": 3536,
+      "sha256": "bc594d879aee704b55ab8dacc2902768d915794eba55273ac95cd72c9c1b0f01"
+    },
+    {
+      "path": "tests/unit/scene.test.ts",
+      "size": 14209,
+      "sha256": "a997aa356a75fba0e1775180f0185ea76634bf2b7b8f18c04445d0af9df6dbb8"
+    },
+    {
+      "path": "tests/unit/settings.test.ts",
+      "size": 2966,
+      "sha256": "f5d76a5eb79045e7d61c2fbdfb238808a79a4e56d96d01d9843d0250d7db3620"
+    },
+    {
+      "path": "tests/unit/shadow.test.ts",
+      "size": 4347,
+      "sha256": "5c44a2af9e5ef0eff19e85a3067fc6d4d2de8b030b51cb7ec3b3b15e11d4dc41"
+    },
+    {
+      "path": "tests/unit/shell_shape.test.ts",
+      "size": 3834,
+      "sha256": "f4f27ce0bd7eb4bc23490cc892cb6435a55066a8a60c190e8889d647069774c2"
+    },
+    {
+      "path": "tests/unit/sort.test.ts",
+      "size": 5967,
+      "sha256": "12fbf85d19e864184b66ba7f8beaf8aa46af59031666288894fda567e751e88f"
+    },
+    {
+      "path": "tests/unit/sprite_limit.test.ts",
+      "size": 5052,
+      "sha256": "d2d4630a82f68f5ae8a587a59879ae99e105a708aa83e5642dd31500622e7446"
+    },
+    {
+      "path": "tests/unit/sprite_sheet.test.ts",
+      "size": 2992,
+      "sha256": "034e8b06ac2ff49943ac90e5ab8049b196d9ad1ded4636efecfd6b314108ceec"
+    },
+    {
+      "path": "tests/unit/switcher.test.ts",
+      "size": 13616,
+      "sha256": "a0a81e7f7afa5a35484a693694cbc11291e3992db404be716a0dc64b5895c496"
+    },
+    {
+      "path": "tools/bench-sort.ts",
+      "size": 5314,
+      "sha256": "b2138bf6a399e0c1b8a73c597b74f845747a4bc194dc125d08873b3620251c83"
+    },
+    {
+      "path": "tools/blender_export_player.py",
+      "size": 12801,
+      "sha256": "c133b402b212de4c7f04cfb7bf2b916a13074e9ebd5b2774dc8cc0ba041b2c74"
+    },
+    {
+      "path": "tools/blender_export_props.py",
+      "size": 11432,
+      "sha256": "5ec0a8a35f21e1bae41c677992a6fed920f42ef48e2875f618b99a80ee1356e8"
+    },
+    {
+      "path": "tools/blender_export_shell.py",
+      "size": 7808,
+      "sha256": "1faa1b729b21dc0d9243ab1e404132a4797ab62872f7aedb9e1af9c59501985a"
+    },
+    {
+      "path": "tools/check-levels.ts",
+      "size": 4296,
+      "sha256": "78d84bdcf341d0126ac6b261956b3504bb953113910a16ca60d976d46ac8b6a3"
+    },
+    {
+      "path": "tools/check-line-budget.ts",
+      "size": 3762,
+      "sha256": "c65bde4924b25416de31cd80b21aa18bffbb4d0d269df08de2e02e7e66718948"
+    },
+    {
+      "path": "tools/check-textures.ts",
+      "size": 21009,
+      "sha256": "12830f197c43c3535f76a702bc5f5ee0b5704e8959b87b47d272103a4cc91792"
+    },
+    {
+      "path": "tools/check-trademark.ts",
+      "size": 3582,
+      "sha256": "3d861ab0b77a8e390bc3488a2e7e1ecce42693f455202dd8f8da45269b1ae3b2"
+    },
+    {
+      "path": "tools/eslint-rules/index.js",
+      "size": 4236,
+      "sha256": "d38f6cf7e450bf7e6aa3bb6112bc806846b88b0d2cd03455d2c82a91d2426f4e"
+    },
+    {
+      "path": "tools/gltf-preflight.ts",
+      "size": 6262,
+      "sha256": "5e64e5ee1e668d73ad627fb55272ed5c44a4e00d601b2b42a2ca7b2c261ff2b7"
+    },
+    {
+      "path": "tools/glyph_heart.ts",
+      "size": 1705,
+      "sha256": "5ba2ce0c03dfbc6661199798a14048ae8ea05955c6d3e581e0773331d89613b3"
+    },
+    {
+      "path": "tools/import-textures.ts",
+      "size": 17363,
+      "sha256": "a28f391fa35e7c5dd22a4ab14053f645ae31e71bcaf1e388ccf629db9de5b20c"
+    },
+    {
+      "path": "tools/make-hero-sprite.ts",
+      "size": 10657,
+      "sha256": "0ab24d6cfe545483daba628ce1b409586c40d7e8077a9ac3e5c30357e3dbc10c"
+    },
+    {
+      "path": "tools/make-test-gltf.ts",
+      "size": 5713,
+      "sha256": "133f3a24cc6759d1cffbf397570de45d864a956e1169ea7d5eb6648956ddc208"
+    },
+    {
+      "path": "tools/make-textures.ts",
+      "size": 14389,
+      "sha256": "461a1669c6ce21847f197696fb2080843c3e4ecc17d75680f05f242491554e84"
+    },
+    {
+      "path": "tools/playtest-report.ts",
+      "size": 11343,
+      "sha256": "6660b680c6d74eb714075a14eaa3159fabe5884956a521c19e179991527bbc79"
+    },
+    {
+      "path": "tools/png.ts",
+      "size": 5378,
+      "sha256": "fcf30751f0abf0809486a7a594f36a047ff754c5032b13b924e39215cfcda283"
+    },
+    {
+      "path": "tools/texture_spec.ts",
+      "size": 13192,
+      "sha256": "e811204f6c1f10d194d082dc802a66550804ca8804b5e330b675c22d9f13247d"
+    },
+    {
+      "path": "tools/vite-plugin-capture.ts",
+      "size": 1993,
+      "sha256": "7bd9cd18c8bdeae19a33953fe3faa7a34b7b10651040e7bca264f26c9e10bfa2"
+    },
+    {
+      "path": "tsconfig.base.json",
+      "size": 626,
+      "sha256": "35e69512ca1bb582b1149b8394ce8ec9ede7498b757f40213dbee95f0d43ca37"
+    },
+    {
+      "path": "tsconfig.json",
+      "size": 259,
+      "sha256": "4243138b9faeb5737698f79a69d7ab811ca28e6462d5a680cb31d939d1b4f3f8"
+    },
+    {
+      "path": "tsconfig.node.json",
+      "size": 315,
+      "sha256": "8c575a2e6321dd894c8faa9787375cf5edc0c6a100cda6753119e35f93f2a2d3"
+    },
+    {
+      "path": "vite.config.ts",
+      "size": 543,
+      "sha256": "3c8f950619773b168f1503d13d5b6a38551a35637b563d13d46ae46d74fbca48"
+    },
+    {
+      "path": "vitest.config.ts",
+      "size": 411,
+      "sha256": "70099dafbbf3d8d06f6fd58cc2c9f5d21b9272f49f9f3893579b037c42458786"
+    }
+  ]
+}

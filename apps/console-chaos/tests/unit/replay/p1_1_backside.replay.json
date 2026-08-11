@@ -1,0 +1,35 @@
+{
+  "level": "puzzle_lab",
+  "puzzle": "P1-1",
+  "spawn": [
+    54,
+    1,
+    0
+  ],
+  "generation": "PS1",
+  "inputs": [
+    {
+      "ticks": 10
+    },
+    {
+      "ticks": 35,
+      "move": [
+        0,
+        -1
+      ]
+    },
+    {
+      "ticks": 20
+    }
+  ],
+  "expect": {
+    "solved": true,
+    "solvedAtTick": 33,
+    "position": [
+      54,
+      0.8,
+      -3.208
+    ],
+    "tolerance": 0.001
+  }
+}

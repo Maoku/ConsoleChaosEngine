@@ -1,0 +1,38 @@
+# 商標・実機名の禁止語リスト（GAME_PLAN §7.1.1 / IMPLEMENTATION_PLAN §7.3）
+#
+# 本作は特定のハードウェアのエミュレータではなく、4 つの「世代の表現」を扱う作品である。
+# ソース・アセット名・UI テキストに実機名やロゴ由来の語が混入していないことを CI で検査する。
+#
+# 書式: 1 行 1 語（小文字で書く。検査は大文字小文字を区別しない）。`#` 始まりはコメント。
+# 内部識別子として使う FC / SFC / PS1 / PS2 は略号であり、ここには含めない（§5.2.1 で表示名と分離済み）。
+
+famicom
+famicon
+nintendo
+super famicom
+superfamicom
+nes
+snes
+playstation
+play station
+psx
+sony
+sega
+megadrive
+mega drive
+genesis
+dreamcast
+gamecube
+game boy
+gameboy
+xbox
+microsoft
+atari
+n64
+nintendo64
+wii
+switch console
+dualshock
+dual shock
+joy-con
+joycon

@@ -1,0 +1,9 @@
+{
+  // ツール・テスト・ビルド設定（Node 上で動くもの）。
+  "extends": "./tsconfig.base.json",
+  "compilerOptions": {
+    "lib": ["ES2022", "DOM", "DOM.Iterable"],
+    "types": ["node", "vite/client"]
+  },
+  "include": ["tools/**/*.ts", "tests/**/*.ts", "vite.config.ts", "vitest.config.ts"]
+}

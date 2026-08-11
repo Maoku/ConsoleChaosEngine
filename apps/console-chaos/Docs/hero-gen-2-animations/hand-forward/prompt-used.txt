@@ -1,0 +1,11 @@
+Create a production-ready 2D game character animation sprite sheet using the provided hero concept as the exact visual identity, costume, palette, proportions, and polished anime-game rendering reference.
+
+ACTION: right-facing side-view animation in which the heroine extends her anatomical RIGHT hand forward with an open palm, as if activating, stopping, or commanding something. Body only; no magic or detached effect.
+SHEET: exactly 4 equal invisible cells in a 2-row by 2-column grid, read left-to-right across the top row and then the bottom row. No visible grid lines or separators.
+FRAME PLAN: grounded ready stance with right elbow bent; right arm lifting with palm opening; decisive full forward extension of the right arm with open palm; stable held pose with subtle follow-through. Keep the left arm secondary and close to the body.
+
+Preserve the same young heroine from the reference in every cell: pink bobbed hair and high spiral side ponytail, large navy bow, large pink-magenta eyes, blue oversized cropped windbreaker with yellow hood/collar, red, green, and yellow sleeve panels, blue ribbed turtleneck, blue pleated skirt with colored panels and white ruffle underskirt, navy shorts, pink heart zipper pull and heart belt buckle/charms, white knee socks with red-yellow-blue stripes, and blue platform sneakers with green/pink/yellow accents and heart emblems. Preserve her youthful chibi proportions, face, exact color relationships, clean line art, and crisp polished anime game-sprite finish.
+
+Use a strict right-facing orthographic side profile, full body, fixed camera distance, and identical anatomical scale. Plant both feet on one ground-contact line and keep the pelvis and torso root fixed. Keep the arm compact enough that the complete silhouette stays inside the central 65% safe area with generous magenta padding. Nothing may touch or cross cell boundaries. No per-frame zooming.
+
+Background must be 100% solid flat #FF00FF with no gradient, texture, floor, shadow, scenery, text, labels, UI, borders, boxes, separators, magic, projectiles, glow, particles, motion lines, dust, or detached effects. Exactly four poses only.
