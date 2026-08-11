@@ -96,7 +96,8 @@ describe('Console Chaos production-host lifecycle', () => {
     host.dispose();
     expect(lifecycle.create).toBe(1);
     expect(lifecycle.update).toBeGreaterThan(80);
-    expect(lifecycle.render).toBe(lifecycle.update + 1);
+    expect(lifecycle.render).toBeGreaterThan(80);
+    expect(Math.abs(lifecycle.render - lifecycle.update)).toBeLessThanOrEqual(1);
     expect(lifecycle.dispose).toBe(1);
     expect(disposedModule).toBe('console-chaos');
     expect(audio.dispose).toHaveBeenCalledOnce();

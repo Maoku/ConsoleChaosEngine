@@ -26,12 +26,10 @@ export function createConsoleAudioPresenter(audio: AudioService, initialSong: Sc
   return {
     start(profile, fromTick = 0): void {
       hardware = profile;
-      audio.setGenerationProfile(profile);
       audio.playScore(arrangement(profile), fromTick);
     },
     applyGeneration(profile): void {
       hardware = profile;
-      audio.setGenerationProfile(profile);
       audio.useScore(arrangement(profile));
     },
     playSfx(id, hardware, options): void {
