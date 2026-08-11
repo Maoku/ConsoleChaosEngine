@@ -40,7 +40,11 @@ apps/racing 以下のレーシングゲームをリニューアルします。
 # モデル
 
 第１、第２世代は $Image Gen スキルを用いた画像生成を行う
-第１、第２世代は 3Dメッシュ
+第３、第４世代は 3Dメッシュ
+
+- 第3世代は `apps/racing/data/gen3_car.glb` を変換して使用する
+- 第4世代は `apps/racing/data/gen4_car.glb` を変換して使用する
+- 第1・第2世代は上記3Dモデルを使用せず、生成済み2D spriteとroad/background assetを使用する
 
 # ステージ
 
