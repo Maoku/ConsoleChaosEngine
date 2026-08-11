@@ -15,12 +15,17 @@ import { buildConsoleChaosFrame } from '@/presentation/frame';
 import { createConsoleAudioPresenter } from '@/audio/presenter';
 import { createCueTracker, pollCues } from '@/gameplay/audio_cues';
 import { songOf } from '@/audio/songs';
+import type { Session } from '@/gameplay/session';
 
-/**
- * Console Chaos の決定的セッションを engine lifecycle へ載せるアダプタ。
- * 現行 WebGL 表示は parity を守るため段階移行中も `main.ts` が担当する。
- */
-export function createConsoleChaosModule(level: LevelFile): GameModule {
+export interface ConsoleChaosModuleHooks {
+  onCreate?(session: Session): void;
+  onFixedUpdate?(session: Session): void;
+  onRender?(session: Session): void;
+  onDispose?(session: Session): void;
+}
+
+/** Console Chaos の決定的セッションと presentation を engine lifecycle へ載せる。 */
+export function createConsoleChaosModule(level: LevelFile, hooks: ConsoleChaosModuleHooks = {}): GameModule {
   return {
     id: 'console-chaos',
     async create(context) {
@@ -41,6 +46,7 @@ export function createConsoleChaosModule(level: LevelFile): GameModule {
       const disconnectAudio = context.events.on('generationSwitch', (event) => {
         audio.applyGeneration(event.toProfile);
       });
+      hooks.onCreate?.(session);
       let snapshot = createNeutralConsoleChaosActions();
       return {
         prepareFixedUpdate({ dtMs }): void {
@@ -56,13 +62,16 @@ export function createConsoleChaosModule(level: LevelFile): GameModule {
         fixedUpdate(): void {
           session.tick(snapshot);
           for (const cue of pollCues(cues, session)) audio.playSfx(cue, context.generation.profile);
+          hooks.onFixedUpdate?.(session);
         },
         buildRenderFrame(frame: RenderFrame): void {
           buildConsoleChaosFrame(frame, session, level, context);
+          hooks.onRender?.(session);
         },
         dispose(): void {
           actions.reset();
           disconnectAudio();
+          hooks.onDispose?.(session);
           session.dispose();
         },
       };
