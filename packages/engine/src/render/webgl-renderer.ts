@@ -11,6 +11,7 @@ import {
 import type { GenerationController } from '../generation/controller';
 import type { GenerationId, HardwareGenerationProfile } from '../generation/profiles';
 import { createCamera } from './camera';
+import { createAffineSurfacePass } from './affine/pass';
 import type {
   BackgroundCommand,
   GeometryCommand,
@@ -42,6 +43,7 @@ import {
 } from './gl/index';
 import { createGenerationPipeline } from './generation-pipeline';
 import { nearestMasterIndex } from './master-palette';
+import { resolveFrameLighting } from './lighting';
 import type { CrtPreset, CrtQuality } from './postfx/presets';
 import ps1Fragment from './shaders/ps1_forward';
 import ps1Vertex from './shaders/ps1_vertex';
@@ -49,10 +51,11 @@ import skinnedVertex from './shaders/skinned_test.vert';
 import backdropFragment from './shaders/backdrop.frag';
 import backdropVertex from './shaders/backdrop.vert';
 import { createSortWorkspace, sortTrianglesByDepth, type TriangleSortWorkspace } from './sort';
+import { createRasterSurfacePass } from './raster/pass';
 import type { FrameRenderer } from './renderer';
 
-const STATIC_LIGHT: [number, number, number] = [0.4, 1, 0.6];
 const WHITE_AMBIENT: [number, number, number] = [1, 1, 1];
+const WHITE_LIGHT: [number, number, number] = [1, 1, 1];
 const NO_POINT_LIGHT: [number, number, number, number] = [0, 0, 0, 0];
 const NO_FOG: [number, number, number, number] = [0, 0, 0, 0];
 const NO_UV_SCROLL: [number, number] = [0, 0];
@@ -260,7 +263,9 @@ async function createGpuBackend(
   const sceneProgram: Program = createProgram(ctx, 'command-scene', ps1Vertex, ps1Fragment);
   const skinProgram: Program = createProgram(ctx, 'command-skin', skinnedVertex, ps1Fragment);
   const backgroundProgram: Program = createProgram(ctx, 'command-background', backdropVertex, backdropFragment);
-  disposables.push(sceneProgram, skinProgram, backgroundProgram);
+  const rasterSurfacePass = createRasterSurfacePass(ctx, state);
+  const affineSurfacePass = createAffineSurfacePass(ctx, state);
+  disposables.push(sceneProgram, skinProgram, backgroundProgram, rasterSurfacePass, affineSurfacePass);
 
   function buildInterleaved(vertices: Float32Array, indices: Uint16Array, mode: 'triangles' | 'lines' = 'triangles'): Shape {
     const vbo = createBuffer(ctx, 'vertex', vertices);
@@ -424,9 +429,14 @@ async function createGpuBackend(
   const distances: number[] = [];
   const order: number[] = [];
   const pointLight: [number, number, number, number] = [0, 0, 0, 0];
+  const pointLightColor: [number, number, number] = [1, 1, 1];
+  const directionalLight: [number, number, number] = [0.4, 1, 0.6];
+  const directionalLightColor: [number, number, number] = [1, 1, 1];
   const fog: [number, number, number, number] = [0, 0, 0, 0];
   const ambientTint: [number, number, number] = [1, 1, 1];
   const ambient: [number, number, number] = [0, 0, 0];
+  const cameraUniformPosition: [number, number, number] = [0, 0, 0];
+  const surfaceResolution: [number, number] = [1, 1];
   let appliedFilter: TextureFilter | null = null;
   let triangleCount = 0;
   let frame: RenderFrame | null = null;
@@ -456,6 +466,7 @@ async function createGpuBackend(
     for (let axis = 0; axis < 3; axis++) {
       camera.position[axis] = active.camera.position[axis]!;
       camera.target[axis] = active.camera.target[axis]!;
+      cameraUniformPosition[axis] = active.camera.position[axis]!;
     }
     camera.update(profile.video.internalWidth / profile.video.internalHeight);
     if (appliedFilter !== profile.video.textureFilter) {
@@ -538,6 +549,7 @@ async function createGpuBackend(
 
   function drawMesh(mesh: MeshCommand, profile: HardwareGenerationProfile, active: RenderFrame, parts?: readonly Shape[]): void {
     const material = materialFor(mesh);
+    const environment = material.environmentTexture ? textures.get(material.environmentTexture) : undefined;
     transformFor(mesh, material, active);
     sceneProgram.use();
     sceneProgram.setUniforms({
@@ -549,10 +561,17 @@ async function createGpuBackend(
       uBaseColor: textureOf(material.baseColorTexture, profile.id),
       uTopColor: textureOf(material.topColorTexture ?? material.baseColorTexture, profile.id),
       uBaseColorFactor: material.colorFactor ?? colorFactor(material.color ?? mesh.color),
-      uLightDirection: STATIC_LIGHT,
+      uLightDirection: directionalLight,
+      uDirectionalColor: directionalLightColor,
       uAmbient: ambientOf(material),
       uDiffuse: material.diffuse ?? 0.55,
       uPointLight: pointLight,
+      uPointLightColor: pointLightColor,
+      uEnvironment: environment ?? textureOf(undefined, profile.id),
+      uEnvironmentStrength: profile.video.environmentMap && environment
+        ? Math.min(Math.max(material.environmentStrength ?? 0, 0), 1)
+        : 0,
+      uCameraPosition: cameraUniformPosition,
       uFog: fog,
       uUvScroll: [0, (material.uvScrollY ?? 0) * (options.motionAmount?.() ?? 1) * active.timeSeconds],
       uAlphaCutoff: material.alphaCutoff ?? 0,
@@ -643,9 +662,14 @@ async function createGpuBackend(
         uTopColor: fallback,
         uBaseColorFactor: [0, 0, 0, SHADOW_STRENGTH * projected.strength],
         uLightDirection: [0, 1, 0],
+        uDirectionalColor: WHITE_LIGHT,
         uAmbient: WHITE_AMBIENT,
         uDiffuse: 0,
         uPointLight: NO_POINT_LIGHT,
+        uPointLightColor: WHITE_LIGHT,
+        uEnvironment: fallback,
+        uEnvironmentStrength: 0,
+        uCameraPosition: cameraUniformPosition,
         uFog: NO_FOG,
         uUvScroll: NO_UV_SCROLL,
         uAlphaCutoff: 0,
@@ -683,10 +707,15 @@ async function createGpuBackend(
         uBaseColor: rig.maps[index]!,
         uTopColor: rig.maps[index]!,
         uBaseColorFactor: [base[0] * tint[0], base[1] * tint[1], base[2] * tint[2], base[3] * tint[3]],
-        uLightDirection: STATIC_LIGHT,
+        uLightDirection: directionalLight,
+        uDirectionalColor: directionalLightColor,
         uAmbient: [0.45 * ambientTint[0], 0.45 * ambientTint[1], 0.45 * ambientTint[2]],
         uDiffuse: 0.55,
         uPointLight: pointLight,
+        uPointLightColor: pointLightColor,
+        uEnvironment: textureOf(undefined, profile.id),
+        uEnvironmentStrength: 0,
+        uCameraPosition: cameraUniformPosition,
         uFog: fog,
         uUvScroll: NO_UV_SCROLL,
         uAlphaCutoff: 0,
@@ -718,10 +747,15 @@ async function createGpuBackend(
       uBaseColor: sheet.texture,
       uTopColor: sheet.texture,
       uBaseColorFactor: colorFactor(command.color),
-      uLightDirection: STATIC_LIGHT,
+      uLightDirection: directionalLight,
+      uDirectionalColor: directionalLightColor,
       uAmbient: WHITE_AMBIENT,
       uDiffuse: 0,
       uPointLight: pointLight,
+      uPointLightColor: pointLightColor,
+      uEnvironment: textureOf(undefined, profile.id),
+      uEnvironmentStrength: 0,
+      uCameraPosition: cameraUniformPosition,
       uFog: fog,
       uUvScroll: NO_UV_SCROLL,
       uAlphaCutoff: command.alphaCutoff ?? 0,
@@ -737,14 +771,45 @@ async function createGpuBackend(
     for (let axis = 0; axis < 3; axis++) fog[axis] = horizon[axis]! * brightness;
     fog[3] = sky?.fogDensity ?? 0;
     const skyLuma = luma(horizon);
+    const fallbackAmbient: Vec3 = [
+      skyLuma === 0 ? 1 : 1 + ((horizon[0]! / skyLuma) - 1) * brightness,
+      skyLuma === 0 ? 1 : 1 + ((horizon[1]! / skyLuma) - 1) * brightness,
+      skyLuma === 0 ? 1 : 1 + ((horizon[2]! / skyLuma) - 1) * brightness,
+    ];
+    const lighting = resolveFrameLighting(active.lights, profile.id, profile.video.dynamicLight, fallbackAmbient);
     for (let axis = 0; axis < 3; axis++) {
-      ambientTint[axis] = skyLuma === 0 ? 1 : 1 + ((horizon[axis]! / skyLuma) - 1) * brightness;
+      ambientTint[axis] = lighting.ambient[axis]!;
+      directionalLight[axis] = lighting.directionalDirection[axis]!;
+      directionalLightColor[axis] = lighting.directionalColor[axis]!;
+      pointLight[axis] = lighting.point[axis]!;
+      pointLightColor[axis] = lighting.pointColor[axis]!;
     }
-    const light = active.lights.find((candidate) => candidate.kind === 'point' && applies(candidate, profile.id));
-    pointLight[0] = light?.position[0] ?? 0;
-    pointLight[1] = light?.position[1] ?? 0;
-    pointLight[2] = light?.position[2] ?? 0;
-    pointLight[3] = profile.video.dynamicLight ? (light?.radius ?? 0) * (light?.intensity ?? 1) : 0;
+    pointLight[3] = lighting.point[3];
+  }
+
+  function drawSurfaces(profile: HardwareGenerationProfile, active: RenderFrame): void {
+    surfaceResolution[0] = profile.video.internalWidth;
+    surfaceResolution[1] = profile.video.internalHeight;
+    if (profile.video.rasterScroll) {
+      for (const command of active.rasterSurfaces) {
+        if (!applies(command, profile.id)) continue;
+        rasterSurfacePass.draw(command, textureOf(command.texture, profile.id), surfaceResolution);
+        triangleCount++;
+      }
+    }
+    if (profile.video.affinePlane) {
+      for (const command of active.affineSurfaces) {
+        if (!applies(command, profile.id)) continue;
+        affineSurfacePass.draw(command, textureOf(command.texture, profile.id), surfaceResolution);
+        triangleCount++;
+      }
+    }
+    state.apply({
+      depthTest: profile.video.depthBuffer,
+      depthWrite: profile.video.depthBuffer,
+      blend: 'none',
+      cull: 'back',
+    });
   }
 
   function drawScene(profile: HardwareGenerationProfile): void {
@@ -756,6 +821,7 @@ async function createGpuBackend(
     beginPass(profile, active);
     configureLighting(profile, active);
     drawBackground(profile, active);
+    drawSurfaces(profile, active);
     sceneProgram.use();
     for (const mesh of active.meshes) {
       if (mesh.visible === false || !applies(mesh, profile.id) || mesh.wireframe || (mesh.layer ?? 0) >= 0) continue;

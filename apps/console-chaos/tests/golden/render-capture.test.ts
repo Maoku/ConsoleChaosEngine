@@ -7,6 +7,7 @@ import {
   createGameHost,
   createNullAudioService,
   createRenderFrame,
+  renderFrameSnapshot,
   type GenerationId,
 } from '@console-chaos/engine';
 import { createManualLoopHost, createRecordingRenderer } from '@console-chaos/engine-testkit';
@@ -47,7 +48,7 @@ function signature(setupResult: ReturnType<typeof setup>) {
   const frame = createRenderFrame();
   presentation.fixedUpdate(session);
   presentation.build(frame, session, host.context);
-  const normalized = JSON.stringify(frame, (_key, value: unknown) => (
+  const normalized = JSON.stringify(renderFrameSnapshot(frame), (_key, value: unknown) => (
     typeof value === 'number' ? Number(value.toFixed(6)) : value
   ));
   const visible = <Command extends { visible?: boolean }>(commands: readonly Command[]): number => (

@@ -43,7 +43,14 @@ export function createManualLoopHost(): ManualLoopHost {
 }
 
 export interface RecordingRenderer extends FrameRenderer {
-  readonly frames: Array<{ meshes: number; sprites: number; overlays: number; generation: string }>;
+  readonly frames: Array<{
+    meshes: number;
+    sprites: number;
+    overlays: number;
+    rasterSurfaces: number;
+    affineSurfaces: number;
+    generation: string;
+  }>;
 }
 
 export function createRecordingRenderer(): RecordingRenderer {
@@ -51,7 +58,14 @@ export function createRecordingRenderer(): RecordingRenderer {
   return {
     frames,
     render(frame: RenderFrame, profile: HardwareGenerationProfile, _generation: GenerationController): void {
-      frames.push({ meshes: frame.meshes.length, sprites: frame.sprites.length, overlays: frame.overlays.length, generation: profile.id });
+      frames.push({
+        meshes: frame.meshes.length,
+        sprites: frame.sprites.length,
+        overlays: frame.overlays.length,
+        rasterSurfaces: frame.rasterSurfaces.length,
+        affineSurfaces: frame.affineSurfaces.length,
+        generation: profile.id,
+      });
     },
     resize: () => {},
     dispose: () => {},

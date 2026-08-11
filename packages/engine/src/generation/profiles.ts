@@ -19,11 +19,13 @@ export interface HardwareGenerationProfile {
     spritesPerScanline: number;
     tileSnap: number;
     alphaBlend: boolean;
+    rasterScroll: boolean;
     affinePlane: boolean;
     depthBuffer: boolean;
     affineTexture: boolean;
     vertexQuantize: number;
     dynamicLight: boolean;
+    environmentMap: boolean;
     textureFilter: 'nearest' | 'linear';
     animationHz: number;
   };
@@ -46,25 +48,25 @@ export interface HardwareGenerationProfile {
 export const HARDWARE_GENERATION_PROFILES: Record<GenerationId, HardwareGenerationProfile> = {
   FC: {
     id: 'FC',
-    video: { internalWidth: 256, internalHeight: 224, projection: 'ortho2d', signal: 'rf', paletteMode: 'fixed54', maxSimultaneousColors: 25, paletteBlockSize: 16, spritesPerScanline: 8, tileSnap: 8, alphaBlend: false, affinePlane: false, depthBuffer: false, affineTexture: false, vertexQuantize: 0, dynamicLight: false, textureFilter: 'nearest', animationHz: 6 },
+    video: { internalWidth: 256, internalHeight: 224, projection: 'ortho2d', signal: 'rf', paletteMode: 'fixed54', maxSimultaneousColors: 25, paletteBlockSize: 16, spritesPerScanline: 8, tileSnap: 8, alphaBlend: false, rasterScroll: true, affinePlane: false, depthBuffer: false, affineTexture: false, vertexQuantize: 0, dynamicLight: false, environmentMap: false, textureFilter: 'nearest', animationHz: 6 },
     audio: { channels: 5, synth: 'psg', sampleRate: 0, reverb: false, positional: false },
     input: { directional: 'dpad4', allowDiagonal: false, analogAxes: 0, pressureSensitive: false, rumble: false },
   },
   SFC: {
     id: 'SFC',
-    video: { internalWidth: 256, internalHeight: 224, projection: 'ortho2d', signal: 'composite', paletteMode: 'rgb555', maxSimultaneousColors: 256, paletteBlockSize: 8, spritesPerScanline: 32, tileSnap: 1, alphaBlend: true, affinePlane: true, depthBuffer: false, affineTexture: false, vertexQuantize: 0, dynamicLight: false, textureFilter: 'nearest', animationHz: 12 },
+    video: { internalWidth: 256, internalHeight: 224, projection: 'ortho2d', signal: 'composite', paletteMode: 'rgb555', maxSimultaneousColors: 256, paletteBlockSize: 8, spritesPerScanline: 32, tileSnap: 1, alphaBlend: true, rasterScroll: false, affinePlane: true, depthBuffer: false, affineTexture: false, vertexQuantize: 0, dynamicLight: false, environmentMap: false, textureFilter: 'nearest', animationHz: 12 },
     audio: { channels: 8, synth: 'brr', sampleRate: 32000, reverb: true, positional: false },
     input: { directional: 'dpad8', allowDiagonal: true, analogAxes: 0, pressureSensitive: false, rumble: false },
   },
   PS1: {
     id: 'PS1',
-    video: { internalWidth: 320, internalHeight: 240, projection: 'perspective3d', signal: 'svideo', paletteMode: 'truecolor', maxSimultaneousColors: -1, paletteBlockSize: 0, spritesPerScanline: -1, tileSnap: 0, alphaBlend: true, affinePlane: false, depthBuffer: false, affineTexture: true, vertexQuantize: 2, dynamicLight: false, textureFilter: 'nearest', animationHz: 30 },
+    video: { internalWidth: 320, internalHeight: 240, projection: 'perspective3d', signal: 'svideo', paletteMode: 'truecolor', maxSimultaneousColors: -1, paletteBlockSize: 0, spritesPerScanline: -1, tileSnap: 0, alphaBlend: true, rasterScroll: false, affinePlane: false, depthBuffer: false, affineTexture: true, vertexQuantize: 2, dynamicLight: false, environmentMap: false, textureFilter: 'nearest', animationHz: 30 },
     audio: { channels: 24, synth: 'adpcm', sampleRate: 44100, reverb: true, positional: true },
     input: { directional: 'analog', allowDiagonal: true, analogAxes: 2, pressureSensitive: false, rumble: true },
   },
   PS2: {
     id: 'PS2',
-    video: { internalWidth: 640, internalHeight: 448, projection: 'perspective3d', signal: 'component', paletteMode: 'truecolor', maxSimultaneousColors: -1, paletteBlockSize: 0, spritesPerScanline: -1, tileSnap: 0, alphaBlend: true, affinePlane: false, depthBuffer: true, affineTexture: false, vertexQuantize: 0, dynamicLight: true, textureFilter: 'linear', animationHz: 60 },
+    video: { internalWidth: 640, internalHeight: 448, projection: 'perspective3d', signal: 'component', paletteMode: 'truecolor', maxSimultaneousColors: -1, paletteBlockSize: 0, spritesPerScanline: -1, tileSnap: 0, alphaBlend: true, rasterScroll: false, affinePlane: false, depthBuffer: true, affineTexture: false, vertexQuantize: 0, dynamicLight: true, environmentMap: true, textureFilter: 'linear', animationHz: 60 },
     audio: { channels: 48, synth: 'streaming', sampleRate: 48000, reverb: true, positional: true },
     input: { directional: 'analog', allowDiagonal: true, analogAxes: 4, pressureSensitive: true, rumble: true },
   },

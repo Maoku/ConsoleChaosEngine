@@ -81,6 +81,7 @@ export interface LightCommand {
   intensity: number;
   radius: number;
   kind?: 'point' | 'directional' | 'ambient';
+  direction?: Vec3;
   generations?: readonly GenerationId[];
 }
 
@@ -105,6 +106,8 @@ export interface MaterialCommand {
   topColorTexture?: string;
   normalTexture?: string;
   emissiveTexture?: string;
+  environmentTexture?: string;
+  environmentStrength?: number;
   filter?: 'nearest' | 'linear';
   blendMode?: 'opaque' | 'alpha' | 'additive';
   uvMode?: 'perspective' | 'affine';
@@ -118,6 +121,29 @@ export interface MaterialCommand {
   floatAmplitude?: number;
   uvScrollY?: number;
   generations?: readonly GenerationId[];
+}
+
+/** Internal-resolution pixels, measured from the top-left of the scene target. */
+export type SurfaceRect = readonly [left: number, top: number, width: number, height: number];
+
+export interface RasterSurfaceCommand {
+  id: string;
+  generations?: readonly GenerationId[];
+  texture: string;
+  screenRect: SurfaceRect;
+  /** Per row: source center U, source width, source V, brightness. */
+  scanlines: Float32Array;
+}
+
+export interface AffineSurfaceCommand {
+  id: string;
+  generations?: readonly GenerationId[];
+  texture: string;
+  screenRect: SurfaceRect;
+  uvOrigin: Vec2;
+  uvStepX: Vec2;
+  uvStepY: Vec2;
+  wrap?: 'repeat' | 'clamp';
 }
 
 export interface OverlayCommand {
@@ -140,6 +166,8 @@ export interface RenderFrame {
   readonly backgrounds: BackgroundCommand[];
   readonly overlays: OverlayCommand[];
   readonly materials: MaterialCommand[];
+  readonly rasterSurfaces: RasterSurfaceCommand[];
+  readonly affineSurfaces: AffineSurfaceCommand[];
   reset(): void;
 }
 
@@ -161,6 +189,8 @@ export function createRenderFrame(): RenderFrame {
     backgrounds: [],
     overlays: [],
     materials: [],
+    rasterSurfaces: [],
+    affineSurfaces: [],
     reset(): void {
       frame.timeSeconds = 0;
       frame.camera = { ...DEFAULT_CAMERA };
@@ -171,7 +201,29 @@ export function createRenderFrame(): RenderFrame {
       frame.backgrounds.length = 0;
       frame.overlays.length = 0;
       frame.materials.length = 0;
+      frame.rasterSurfaces.length = 0;
+      frame.affineSurfaces.length = 0;
     },
   };
   return frame;
+}
+
+/**
+ * Stable command serializer. Empty additive command arrays are omitted so
+ * existing consumers retain byte-identical snapshots until they use a surface.
+ */
+export function renderFrameSnapshot(frame: RenderFrame): object {
+  return {
+    timeSeconds: frame.timeSeconds,
+    camera: frame.camera,
+    meshes: frame.meshes,
+    skinnedMeshes: frame.skinnedMeshes,
+    sprites: frame.sprites,
+    lights: frame.lights,
+    backgrounds: frame.backgrounds,
+    overlays: frame.overlays,
+    materials: frame.materials,
+    ...(frame.rasterSurfaces.length > 0 ? { rasterSurfaces: frame.rasterSurfaces } : {}),
+    ...(frame.affineSurfaces.length > 0 ? { affineSurfaces: frame.affineSurfaces } : {}),
+  };
 }

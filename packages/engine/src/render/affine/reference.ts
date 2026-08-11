@@ -1,4 +1,4 @@
-import type { Vec2 } from '../frame';
+import type { AffineSurfaceCommand, Vec2 } from '../frame';
 
 export interface AffineUvTransform {
   uvOrigin: Vec2;
@@ -7,6 +7,20 @@ export interface AffineUvTransform {
 }
 
 export type SurfaceWrap = 'repeat' | 'clamp';
+
+export function validateAffineSurface(command: AffineSurfaceCommand, resolution?: Vec2): void {
+  const values = [...command.screenRect, ...command.uvOrigin, ...command.uvStepX, ...command.uvStepY];
+  if (values.some((value) => !Number.isFinite(value))) {
+    throw new Error(`Affine surface ${command.id} values must be finite`);
+  }
+  const [left, top, width, height] = command.screenRect;
+  if (left < 0 || top < 0 || width <= 0 || height <= 0) {
+    throw new Error('Affine surface screenRect must have a non-negative origin and positive size');
+  }
+  if (resolution && (left + width > resolution[0] || top + height > resolution[1])) {
+    throw new Error(`Affine surface ${command.id} lies outside the generation target`);
+  }
+}
 
 function wrapCoordinate(value: number, wrap: SurfaceWrap): number {
   if (wrap === 'repeat') return value - Math.floor(value);
