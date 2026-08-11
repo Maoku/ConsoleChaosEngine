@@ -41,8 +41,11 @@ export function createConsoleChaosRenderManifest(level: LevelFile): RenderAssetM
     const url = `assets/models/${name}.gltf`;
     modelByUrl.set(url, { url, ...(sortedModels.has(name) ? { polygonSort: true } : {}) });
   }
+  modelByUrl.set('assets/models/player.gltf', { url: 'assets/models/player.gltf' });
 
   const geometryByKey = new Map<string, GeometryCommand>();
+  const unitBox: GeometryCommand = { kind: 'box' };
+  geometryByKey.set(geometryCommandKey(unitBox), unitBox);
   for (const entity of level.entities) {
     const material = materialFor(entity.type, entity.id);
     if (material.collisionOnly || material.model) continue;
@@ -55,6 +58,8 @@ export function createConsoleChaosRenderManifest(level: LevelFile): RenderAssetM
   }
   const plane: GeometryCommand = { kind: 'quad', halfSize: [24, 24], uvRepeat: [24, 24] };
   geometryByKey.set(geometryCommandKey(plane), plane);
+  const debugPlane: GeometryCommand = { kind: 'quad', halfSize: [1, 1], uvRepeat: [16, 16] };
+  geometryByKey.set(geometryCommandKey(debugPlane), debugPlane);
 
   return {
     textures: [...textureUrls].map((url) => ({ url, flipY: true, wrap: 'repeat' as const })),

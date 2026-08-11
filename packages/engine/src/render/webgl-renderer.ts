@@ -510,7 +510,7 @@ async function createGpuBackend(
     mat4.identity(modelMatrix);
     mat4.translate(modelMatrix, modelMatrix, [x, y + floating, z]);
     if (mesh.transform.rotationY) mat4.rotateY(modelMatrix, modelMatrix, mesh.transform.rotationY);
-    if (mesh.asset && mesh.transform.scale) mat4.scale(modelMatrix, modelMatrix, mesh.transform.scale);
+    if (mesh.transform.scale) mat4.scale(modelMatrix, modelMatrix, mesh.transform.scale);
     if (mesh.geometry.kind === 'quad') {
       mat4.scale(modelMatrix, modelMatrix, [mesh.geometry.halfSize[0], 1, mesh.geometry.halfSize[1]]);
     }

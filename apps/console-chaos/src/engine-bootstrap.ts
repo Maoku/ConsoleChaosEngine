@@ -9,12 +9,19 @@ import {
   installAudioUnlock,
   observeCanvasResize,
   type AudioService,
+  type CrtQuality,
+  type GameModule,
 } from '@console-chaos/engine';
 import { createConsoleChaosModule } from './app';
 import type { ConsoleAudioPresenter } from './audio/presenter';
 import { songOf } from './audio/songs';
 import { bgmStatusText, createBgmControl } from './debug/bgm_control';
 import { createNoticeHud } from './debug/notice_hud';
+import {
+  createConsoleDebugModule,
+  initialGenerationForScene,
+  isConsoleDebugScene,
+} from './debug/scenes';
 import { createPlaytestLog, saveStoredRecords, storedRecords, type PlaytestLog } from './debug/playtest_log';
 import { createPlaytestHud } from './debug/playtest_hud';
 import { loadLevel } from './level/loader';
@@ -47,15 +54,22 @@ function fitCanvasToStage(): void {
 const params = new URLSearchParams(location.search);
 const levelId = params.get('level') ?? 'area1';
 const requestedScene = params.get('scene') ?? 'mini';
+const debugScene = isConsoleDebugScene(requestedScene) ? requestedScene : null;
+const isMini = debugScene === null;
 const level = await loadLevel(`${import.meta.env.BASE_URL}assets/levels/${levelId}.json`);
 const display = createDisplaySettings();
+const crtQualities: readonly CrtQuality[] = ['full', 'light', 'off'];
+let crtQualityIndex = 0;
+const cycleCrtQuality = (): void => {
+  crtQualityIndex = (crtQualityIndex + 1) % crtQualities.length;
+};
 const assets = createAssetManager();
 const unit = (color: readonly [number, number, number]): [number, number, number] =>
   [color[0] / 255, color[1] / 255, color[2] / 255];
 const renderer = await createGenerationWebGlRenderer(canvas, {
   assets,
   manifest: createConsoleChaosRenderManifest(level),
-  quality: () => 'full',
+  quality: () => crtQualities[crtQualityIndex]!,
   crtOverride: () => display.crtOverride(),
   transitionColors: {
     core: unit(KEY_COLORS.white),
@@ -66,26 +80,30 @@ const renderer = await createGenerationWebGlRenderer(canvas, {
 const input = createKeyboardGamepadSource();
 const initialSong = songOf(params.get('bgm'));
 let audio: AudioService = createNullAudioService(initialSong.score.bpm);
-try {
-  audio = createGenerationAudioService(new AudioContext({ latencyHint: 'interactive' }), initialSong.score);
-} catch {
-  // Automated browsers and restricted WebViews can run the complete game without Web Audio.
+if (isMini) {
+  try {
+    audio = createGenerationAudioService(new AudioContext({ latencyHint: 'interactive' }), initialSong.score);
+  } catch {
+    // Automated browsers and restricted WebViews can run the complete game without Web Audio.
+  }
 }
 
 const resize = observeCanvasResize(canvas, () => renderer.resize());
 const unlock = installAudioUnlock(document, () => audio.unlock());
-const playtestHud = createPlaytestHud();
+const playtestHud = isMini ? createPlaytestHud() : null;
 fitCanvasToStage();
 const notice = createNoticeHud();
 let session: Session | null = null;
 let audioPresenter: ConsoleAudioPresenter | null = null;
 let hud: Hud | null = null;
 let playtest: PlaytestLog | null = null;
-const bgm = createBgmControl({
-  audio: () => audioPresenter,
-  songId: initialSong.id,
-  onChange: (status) => notice.show(bgmStatusText(status)),
-});
+const bgm = isMini
+  ? createBgmControl({
+      audio: () => audioPresenter,
+      songId: initialSong.id,
+      onChange: (status) => notice.show(bgmStatusText(status)),
+    })
+  : null;
 
 const host = createGameHost({
   loopHost: createBrowserLoopHost(),
@@ -93,32 +111,35 @@ const host = createGameHost({
   input,
   audio,
   assets,
-  initialGeneration: 'PS1',
+  initialGeneration: initialGenerationForScene(debugScene ?? 'mini'),
   seed: 0x436861,
 });
 
-await host.start(createConsoleChaosModule(level, {
-  initialSong: initialSong.score,
-  onCreate(created, presenter) {
-    session = created;
-    audioPresenter = presenter;
-    bgm.sync();
-    hud = createHud(canvas);
-    playtest = createPlaytestLog(created, levelId);
-  },
-  onFixedUpdate(current) {
-    hud?.update(hudModelFromSession(current));
-    playtest?.update();
-  },
-  onDispose(current) {
-    if (session === current) session = null;
-    audioPresenter = null;
-    playtest?.keep();
-    hud?.dispose();
-    hud = null;
-    playtest = null;
-  },
-}));
+const module: GameModule = debugScene
+  ? createConsoleDebugModule(debugScene, { cycleQuality: cycleCrtQuality })
+  : createConsoleChaosModule(level, {
+      initialSong: initialSong.score,
+      onCreate(created, presenter) {
+        session = created;
+        audioPresenter = presenter;
+        bgm?.sync();
+        hud = createHud(canvas);
+        playtest = createPlaytestLog(created, levelId);
+      },
+      onFixedUpdate(current) {
+        hud?.update(hudModelFromSession(current));
+        playtest?.update();
+      },
+      onDispose(current) {
+        if (session === current) session = null;
+        audioPresenter = null;
+        playtest?.keep();
+        hud?.dispose();
+        hud = null;
+        playtest = null;
+      },
+    });
+await host.start(module);
 
 const displayKeys: Record<string, keyof DisplayOptions> = { n: 'moire', f: 'flatten' };
 const windowResize = (): void => {
@@ -129,8 +150,8 @@ window.addEventListener('resize', windowResize);
 const keydown = (event: KeyboardEvent): void => {
   const key = event.key.toLowerCase();
   if (key === 'h') session?.requestHint();
-  if (key === 'b') bgm.nextSong();
-  if (key === 'm') bgm.toggleMute();
+  if (key === 'b') bgm?.nextSong();
+  if (key === 'm') bgm?.toggleMute();
   if (key === 'p') playtest?.save();
   if (key === 'r') {
     playtest?.keep();
@@ -151,7 +172,7 @@ const pagehide = (): void => {
   resize.dispose();
   unlock.dispose();
   notice.dispose();
-  playtestHud.dispose();
+  playtestHud?.dispose();
   host.dispose();
 };
 window.addEventListener('pagehide', pagehide, { once: true });

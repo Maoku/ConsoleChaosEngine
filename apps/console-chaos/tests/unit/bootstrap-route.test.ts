@@ -15,7 +15,9 @@ describe('production bootstrap migration truth gate', () => {
 
   it('gives GameHost ownership of production startup and teardown', () => {
     expect(engineBootstrap).toContain('createGameHost({');
-    expect(engineBootstrap).toContain('await host.start(createConsoleChaosModule');
+    expect(engineBootstrap).toContain('createConsoleChaosModule(level');
+    expect(engineBootstrap).toContain('createConsoleDebugModule(debugScene');
+    expect(engineBootstrap).toContain('await host.start(module)');
     expect(engineBootstrap).toContain('host.dispose();');
     expect(engineBootstrap).not.toContain("from './main'");
   });
