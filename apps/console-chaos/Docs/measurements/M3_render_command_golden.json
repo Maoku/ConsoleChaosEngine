@@ -1,0 +1,79 @@
+{
+  "generation:FC": {
+    "generation": "FC",
+    "renderGenerations": ["FC"],
+    "transitionBlend": 1,
+    "hash": "9d5341419c39f05265825fa6ecdd516b32d7e26c692edbc23ece0fc571628d2b",
+    "commands": { "meshes": 976, "visibleMeshes": 964, "skinnedMeshes": 2, "visibleSkinnedMeshes": 2, "sprites": 2, "visibleSprites": 2, "lights": 1, "backgrounds": 9, "materials": 976, "overlays": 0 }
+  },
+  "generation:SFC": {
+    "generation": "SFC",
+    "renderGenerations": ["SFC"],
+    "transitionBlend": 1,
+    "hash": "b052983364bbbbba8a8905e5ee00772fb2eddad9f18d3ff7802dc426396bd313",
+    "commands": { "meshes": 980, "visibleMeshes": 976, "skinnedMeshes": 2, "visibleSkinnedMeshes": 2, "sprites": 2, "visibleSprites": 2, "lights": 1, "backgrounds": 9, "materials": 980, "overlays": 0 }
+  },
+  "generation:PS1": {
+    "generation": "PS1",
+    "renderGenerations": ["PS1"],
+    "transitionBlend": 1,
+    "hash": "e82e9269f60d5146c3ff6d02abf2dc358bee56120d14e86300498d081392b83a",
+    "commands": { "meshes": 976, "visibleMeshes": 972, "skinnedMeshes": 2, "visibleSkinnedMeshes": 2, "sprites": 2, "visibleSprites": 2, "lights": 1, "backgrounds": 9, "materials": 976, "overlays": 0 }
+  },
+  "generation:PS2": {
+    "generation": "PS2",
+    "renderGenerations": ["PS2"],
+    "transitionBlend": 1,
+    "hash": "bbe1763f9e4a1cc92966575fe6517f75593dcbfe8886e71a8d4df3ab9e7e3f80",
+    "commands": { "meshes": 976, "visibleMeshes": 972, "skinnedMeshes": 2, "visibleSkinnedMeshes": 2, "sprites": 2, "visibleSprites": 2, "lights": 1, "backgrounds": 9, "materials": 976, "overlays": 0 }
+  },
+  "puzzle:F-1": {
+    "generation": "FC",
+    "renderGenerations": ["FC"],
+    "transitionBlend": 1,
+    "hash": "ce60f98d7d035764194138ca4fb34477fdafb55023d45c2d19949ee1c1209079",
+    "commands": { "meshes": 976, "visibleMeshes": 964, "skinnedMeshes": 2, "visibleSkinnedMeshes": 2, "sprites": 2, "visibleSprites": 2, "lights": 1, "backgrounds": 9, "materials": 976, "overlays": 0 }
+  },
+  "puzzle:F-2": {
+    "generation": "FC",
+    "renderGenerations": ["FC"],
+    "transitionBlend": 1,
+    "hash": "893b621de05771706075ef0934126e01cb38b7feb623f6d738bc6022782ac0e0",
+    "commands": { "meshes": 976, "visibleMeshes": 960, "skinnedMeshes": 2, "visibleSkinnedMeshes": 2, "sprites": 2, "visibleSprites": 2, "lights": 1, "backgrounds": 9, "materials": 976, "overlays": 0 }
+  },
+  "puzzle:S-1": {
+    "generation": "SFC",
+    "renderGenerations": ["SFC"],
+    "transitionBlend": 1,
+    "hash": "580bd4fcabc61fafc1d19b561c42d7090e84048510e973e298c86f03d75060f2",
+    "commands": { "meshes": 980, "visibleMeshes": 976, "skinnedMeshes": 2, "visibleSkinnedMeshes": 2, "sprites": 2, "visibleSprites": 2, "lights": 1, "backgrounds": 9, "materials": 980, "overlays": 0 }
+  },
+  "puzzle:P1-1": {
+    "generation": "PS1",
+    "renderGenerations": ["PS1"],
+    "transitionBlend": 1,
+    "hash": "beb071e79c0df55af9f20c04dd9a4b3d20dbffe19aaee4c4338181e2d0218d7e",
+    "commands": { "meshes": 976, "visibleMeshes": 972, "skinnedMeshes": 2, "visibleSkinnedMeshes": 2, "sprites": 2, "visibleSprites": 2, "lights": 1, "backgrounds": 9, "materials": 976, "overlays": 0 }
+  },
+  "puzzle:P1-2": {
+    "generation": "PS1",
+    "renderGenerations": ["PS1"],
+    "transitionBlend": 1,
+    "hash": "7d15f80e80389c31cbeb7e011ca9fd7b4eb6d86300e1a4be7bdab46489f51a42",
+    "commands": { "meshes": 976, "visibleMeshes": 972, "skinnedMeshes": 2, "visibleSkinnedMeshes": 2, "sprites": 2, "visibleSprites": 2, "lights": 1, "backgrounds": 9, "materials": 976, "overlays": 0 }
+  },
+  "puzzle:P2-1": {
+    "generation": "PS2",
+    "renderGenerations": ["PS2"],
+    "transitionBlend": 1,
+    "hash": "1edf0e3c671d386eb1981f9b3a9c32bcf70f5abfc852e4c27bc39824af3e78d5",
+    "commands": { "meshes": 976, "visibleMeshes": 972, "skinnedMeshes": 2, "visibleSkinnedMeshes": 2, "sprites": 2, "visibleSprites": 2, "lights": 1, "backgrounds": 9, "materials": 976, "overlays": 0 }
+  },
+  "transition:PS1-PS2@50%": {
+    "generation": "PS2",
+    "renderGenerations": ["PS1", "PS2"],
+    "transitionBlend": 0.5,
+    "hash": "f6311a24369024c98da56c5170b0bf2f596c03022660ed73a90041d0e4b175cf",
+    "commands": { "meshes": 976, "visibleMeshes": 972, "skinnedMeshes": 2, "visibleSkinnedMeshes": 2, "sprites": 2, "visibleSprites": 2, "lights": 1, "backgrounds": 9, "materials": 976, "overlays": 0 }
+  }
+}
