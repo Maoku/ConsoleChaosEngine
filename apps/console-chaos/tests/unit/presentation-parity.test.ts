@@ -61,6 +61,8 @@ describe('Console presentation parity commands', () => {
     expect(frame.backgrounds.filter((background) => background.generations?.includes('PS1'))).toHaveLength(2);
     expect(frame.sprites.map((sprite) => sprite.generations?.[0])).toEqual(['FC', 'SFC']);
     expect(frame.skinnedMeshes.map((mesh) => mesh.generations?.[0])).toEqual(['PS1', 'PS2']);
+    expect(frame.skinnedMeshes.find((mesh) => mesh.id === 'player:PS1')?.orderTableIndex).toBe(9);
+    expect(frame.skinnedMeshes.find((mesh) => mesh.id === 'player:PS2')?.orderTableIndex).toBeUndefined();
     host.dispose();
   });
 

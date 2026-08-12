@@ -301,6 +301,7 @@ export function createConsoleChaosPresentation(level: LevelFile): ConsoleChaosPr
         } else {
           const halfTurn = visual.front === '+Z' ? Math.PI : 0;
           const clipRef = visual.clips[clip];
+          const usesOrderingTable = HARDWARE_GENERATION_PROFILES[generation].video.translucency.kind === 'fixed-rate';
           frame.skinnedMeshes.push({
             id: `player:${generation}`,
             generations: [generation],
@@ -314,6 +315,10 @@ export function createConsoleChaosPresentation(level: LevelFile): ConsoleChaosPr
             frontAxis: visual.front,
             tint: '#ffffff',
             tintFactor: [1, 1, 1, 1],
+            // PS1にはdepth bufferがなく、広い床を中心点だけでOTへ入れると、
+            // 床の奥側へ移動したプレイヤーを床全体が後描きして覆ってしまう。
+            // 旧rendererと同じ「opaque worldの後、translucent worldの前」に固定する。
+            ...(usesOrderingTable ? { orderTableIndex: 9 as const } : {}),
           });
         }
       }
