@@ -1,4 +1,6 @@
 import type { GenerationId } from '../generation/profiles';
+import type { HardwareBlendCommand } from './blend';
+import type { OrderingCommand } from './ordering-table';
 
 export type Vec2 = readonly [number, number];
 export type Vec3 = readonly [number, number, number];
@@ -26,7 +28,7 @@ export type GeometryCommand =
   | { kind: 'polygon'; points: readonly Vec2[] }
   | { kind: 'polyline'; points: readonly Vec2[]; width: number; closed?: boolean };
 
-export interface MeshCommand {
+export interface MeshCommand extends OrderingCommand {
   id: string;
   geometry: GeometryCommand;
   transform: TransformCommand;
@@ -43,7 +45,7 @@ export interface MeshCommand {
   generations?: readonly GenerationId[];
 }
 
-export interface SkinnedMeshCommand {
+export interface SkinnedMeshCommand extends OrderingCommand {
   id: string;
   model: string;
   clip: string;
@@ -58,7 +60,7 @@ export interface SkinnedMeshCommand {
   generations?: readonly GenerationId[];
 }
 
-export interface SpriteCommand {
+export interface SpriteCommand extends OrderingCommand {
   id: string;
   /**
    * Draw in generation-target pixels instead of world space. In this mode
@@ -76,6 +78,9 @@ export interface SpriteCommand {
   cell?: number;
   flipX?: boolean;
   alphaCutoff?: number;
+  hardwareBlend?: HardwareBlendCommand;
+  billboard?: 'cylindrical' | 'spherical' | 'none';
+  depthWrite?: boolean;
   visible?: boolean;
   generations?: readonly GenerationId[];
 }
@@ -116,6 +121,7 @@ export interface MaterialCommand {
   environmentStrength?: number;
   filter?: 'nearest' | 'linear';
   blendMode?: 'opaque' | 'alpha' | 'additive';
+  hardwareBlend?: HardwareBlendCommand;
   uvMode?: 'perspective' | 'affine';
   castShadow?: boolean;
   receiveShadow?: boolean;

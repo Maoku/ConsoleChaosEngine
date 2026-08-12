@@ -51,6 +51,8 @@ export * from './input/device';
 export * from './physics/aabb';
 export * from './platform/web';
 export * from './render/frame';
+export * from './render/blend';
+export * from './render/ordering-table';
 export * from './render/affine/reference';
 export * from './render/environment/mapping';
 export * from './render/raster/validate';
