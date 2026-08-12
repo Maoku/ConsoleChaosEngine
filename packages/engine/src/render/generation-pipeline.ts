@@ -98,7 +98,7 @@ export function createGenerationPipeline(ctx: GLContext, options: GenerationPipe
       filter: profile.video.textureFilter,
       depth: profile.video.depthBuffer,
     });
-    const needsSpritePlane = profile.video.paletteMode === 'fixed54' || profile.video.paletteMode === 'rgb555';
+    const needsSpritePlane = profile.video.spriteComposition === 'separate-plane';
     sprites[id] = needsSpritePlane
       ? createFramebuffer(ctx, {
           width: profile.video.internalWidth,

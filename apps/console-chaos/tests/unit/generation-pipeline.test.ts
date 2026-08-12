@@ -31,7 +31,7 @@ describe('engine generation WebGL pipeline', () => {
     }
   });
 
-  it('allocates composition planes exactly for quantized generations', () => {
+  it('allocates composition planes exactly for separate-plane profiles', () => {
     const { pipeline } = setup();
     expect(pipeline.spriteTarget('FC')).not.toBeNull();
     expect(pipeline.spriteTarget('SFC')).not.toBeNull();

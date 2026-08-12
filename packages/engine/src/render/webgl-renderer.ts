@@ -16,6 +16,7 @@ import {
 } from '../generation/profiles';
 import { createCamera } from './camera';
 import { createAffineSurfacePass } from './affine/pass';
+import { spriteDepthWrite, writeSpriteModelMatrix } from './billboard';
 import {
   assertHardwareBlendGenerations,
   createResolvedHardwareBlend,
@@ -465,8 +466,8 @@ async function createGpuBackend(
     });
   }
 
-  const distances: number[] = [];
-  const order: number[] = [];
+  const distances = new Float32Array(DRAW_PACKET_CAPACITY);
+  const order = new Uint32Array(DRAW_PACKET_CAPACITY);
   const orderingTable = createOrderingTableWorkspace<DrawPacket>();
   const drawPackets = createDrawPacketWorkspace(DRAW_PACKET_CAPACITY);
   const occupiedOrderingSlots = new Uint8Array(12);
@@ -663,6 +664,7 @@ async function createGpuBackend(
   function collectMeshes(active: RenderFrame, profile: HardwareGenerationProfile, translucent: boolean): number {
     let count = 0;
     for (let index = 0; index < active.meshes.length; index++) {
+      if (index >= order.length) throw new RangeError(`Draw order capacity ${order.length} exceeded`);
       const mesh = active.meshes[index]!;
       if (mesh.visible === false || !applies(mesh, profile.id)) continue;
       if (mesh.wireframe) continue;
@@ -809,7 +811,36 @@ async function createGpuBackend(
         farDepth: camera.far,
       }));
     }
-    for (const list of orderingTable.lists) stableSortDrawPackets(list);
+    for (const command of active.sprites) {
+      if (command.visible === false || !applies(command, 'PS1')) continue;
+      assertHardwareBlendGenerations(command.generations, command.hardwareBlend);
+      const blend = resolveHardwareBlend('PS1', command.hardwareBlend, undefined, resolvedBlend);
+      if (!blend.visible) continue;
+      const packet = drawPackets.take('sprite', command);
+      packet.viewDepth = command.screenSpace ? 0 : viewDepth(command.position);
+      packet.translucent = blend.translucent;
+      registerGen3Packet(packet, defaultOrderingTableIndex({
+        ...(command.orderTableIndex !== undefined ? { explicit: command.orderTableIndex } : {}),
+        kind: command.screenSpace ? 'screen-space' : 'world',
+        translucent: packet.translucent,
+        viewDepth: packet.viewDepth,
+        nearDepth: camera.near,
+        farDepth: camera.far,
+      }));
+    }
+    for (let slot = 0; slot <= 9; slot++) stableSortDrawPackets(orderingTable.lists[slot]!);
+  }
+
+  function packetBlend(profile: HardwareGenerationProfile, packet: DrawPacket) {
+    if (packet.kind === 'sprite') {
+      return resolveHardwareBlend(
+        profile.id,
+        (packet.command as SpriteCommand).hardwareBlend,
+        undefined,
+        resolvedBlend,
+      );
+    }
+    return materialBlend(profile, packet.material);
   }
 
   function drawGen3Packets(profile: HardwareGenerationProfile, active: RenderFrame): void {
@@ -823,18 +854,21 @@ async function createGpuBackend(
         drawMesh(packet.command as MeshCommand, profile, active, [wireframeMesh]);
         return;
       }
-      const blend = materialBlend(profile, packet.material);
+      const blend = packetBlend(profile, packet);
       state.apply({
         depthTest: false,
         depthWrite: false,
         blend: packet.translucent ? blend.state : BLEND_NONE,
         cull: 'back',
       });
-      fog[3] = packet.translucent ? 0 : fogDensity;
+      const screenSpace = packet.kind === 'sprite' && (packet.command as SpriteCommand).screenSpace;
+      fog[3] = packet.translucent || screenSpace ? 0 : fogDensity;
       if (packet.kind === 'mesh') {
         drawMesh(packet.command as MeshCommand, profile, active, undefined, packet.polygonSlot);
       } else if (packet.kind === 'skinned-mesh') {
         drawSkinned(packet.command as SkinnedMeshCommand, profile);
+      } else if (packet.kind === 'sprite') {
+        drawSprite(packet.command as SpriteCommand, profile);
       }
     });
     fog[3] = fogDensity;
@@ -967,14 +1001,10 @@ async function createGpuBackend(
     const sheet = command.texture ? atlases.get(command.texture) : undefined;
     if (!sheet) throw new Error(`Sprite atlas is not preloaded: ${command.texture ?? command.id}`);
     const cell = Math.min(Math.max(command.cell ?? 0, 0), sheet.cells.length - 1);
-    mat4.identity(modelMatrix);
-    mat4.translate(modelMatrix, modelMatrix, command.position);
-    if (command.rotation) mat4.rotateZ(modelMatrix, modelMatrix, command.rotation);
-    mat4.scale(modelMatrix, modelMatrix, [
-      (command.flipX ? -1 : 1) * command.size[0] / 2,
-      command.size[1] / 2,
-      1,
-    ]);
+    const billboard = profile.video.spriteComposition === 'scene' && !command.screenSpace
+      ? command.billboard ?? 'cylindrical'
+      : 'none';
+    writeSpriteModelMatrix(modelMatrix, command, camera.position, camera.up, billboard);
     state.apply({ cull: 'none' });
     sceneProgram.use();
     sceneProgram.setUniforms({
@@ -1053,6 +1083,81 @@ async function createGpuBackend(
     });
   }
 
+  function collectSceneSprites(
+    active: RenderFrame,
+    profile: HardwareGenerationProfile,
+    screenSpace: boolean,
+    translucent: boolean,
+  ): number {
+    let count = 0;
+    for (let index = 0; index < active.sprites.length; index++) {
+      if (index >= order.length) throw new RangeError(`Draw order capacity ${order.length} exceeded`);
+      const command = active.sprites[index]!;
+      if (command.visible === false || !applies(command, profile.id) || Boolean(command.screenSpace) !== screenSpace) continue;
+      assertHardwareBlendGenerations(command.generations, command.hardwareBlend);
+      const blend = resolveHardwareBlend(profile.id, command.hardwareBlend, undefined, resolvedBlend);
+      if (!blend.visible || blend.translucent !== translucent) continue;
+      distances[index] = screenSpace ? 0 : viewDepth(command.position);
+      order[count++] = index;
+    }
+    if (!screenSpace && translucent) {
+      for (let index = 1; index < count; index++) {
+        const spriteIndex = order[index]!;
+        const depth = distances[spriteIndex]!;
+        let insertion = index;
+        while (insertion > 0 && distances[order[insertion - 1]!]! < depth) {
+          order[insertion] = order[insertion - 1]!;
+          insertion--;
+        }
+        order[insertion] = spriteIndex;
+      }
+    }
+    return count;
+  }
+
+  function drawGen4WorldSprites(
+    profile: HardwareGenerationProfile,
+    active: RenderFrame,
+    translucent: boolean,
+    fogDensity: number,
+  ): void {
+    const count = collectSceneSprites(active, profile, false, translucent);
+    for (let index = 0; index < count; index++) {
+      const command = active.sprites[order[index]!]!;
+      const blend = resolveHardwareBlend(profile.id, command.hardwareBlend, undefined, resolvedBlend);
+      state.apply({
+        depthTest: true,
+        depthWrite: spriteDepthWrite(command, translucent),
+        blend: translucent ? blend.state : BLEND_NONE,
+        cull: 'none',
+      });
+      fog[3] = fogDensity;
+      drawSprite(command, profile);
+    }
+  }
+
+  function drawGen4Sprites(profile: HardwareGenerationProfile, active: RenderFrame): void {
+    const fogDensity = fog[3];
+    drawGen4WorldSprites(profile, active, false, fogDensity);
+    drawGen4WorldSprites(profile, active, true, fogDensity);
+    fog[3] = 0;
+    for (const command of active.sprites) {
+      if (command.visible === false || !applies(command, profile.id) || !command.screenSpace) continue;
+      assertHardwareBlendGenerations(command.generations, command.hardwareBlend);
+      const blend = resolveHardwareBlend(profile.id, command.hardwareBlend, undefined, resolvedBlend);
+      if (!blend.visible) continue;
+      state.apply({
+        depthTest: false,
+        depthWrite: false,
+        blend: blend.translucent ? blend.state : BLEND_NONE,
+        cull: 'none',
+      });
+      drawSprite(command, profile);
+    }
+    fog[3] = fogDensity;
+    state.apply({ depthTest: true, depthWrite: true, blend: BLEND_NONE, cull: 'back' });
+  }
+
   function drawScene(profile: HardwareGenerationProfile): void {
     const active = frame;
     if (!active) return;
@@ -1126,6 +1231,7 @@ async function createGpuBackend(
       }
       state.apply({ depthTest: false, depthWrite: false, blend: BLEND_NONE, cull: 'back' });
     }
+    if (profile.id === 'PS2') drawGen4Sprites(profile, active);
     const wireframes = active.meshes.filter((mesh) => mesh.wireframe && mesh.visible !== false && applies(mesh, profile.id));
     if (wireframes.length > 0) {
       state.apply({ depthTest: false, depthWrite: false, blend: BLEND_ALPHA, cull: 'none' });

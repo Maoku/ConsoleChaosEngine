@@ -52,6 +52,7 @@ export * from './physics/aabb';
 export * from './platform/web';
 export * from './render/frame';
 export * from './render/blend';
+export * from './render/billboard';
 export * from './render/ordering-table';
 export * from './render/affine/reference';
 export * from './render/environment/mapping';
