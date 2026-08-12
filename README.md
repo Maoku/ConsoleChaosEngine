@@ -39,7 +39,8 @@ npm run verify:distribution
 
 生成先は `artifacts/` です。エンジン本体の導入・最小構成・公開APIは
 [`packages/engine/README.md`](packages/engine/README.md)、配布とリリースの詳細は
-[`Docs/DISTRIBUTION.md`](Docs/DISTRIBUTION.md) を参照してください。
+[`Docs/DISTRIBUTION.md`](Docs/DISTRIBUTION.md)、変更点は
+[`packages/engine/RELEASE_NOTES.md`](packages/engine/RELEASE_NOTES.md) を参照してください。
 
 参照元 `../Opus5ConsoleChaos` は読み取り専用です。基準 commit と531ファイルの SHA-256 は
 `Docs/REFERENCE_SNAPSHOT.json` に記録しています。

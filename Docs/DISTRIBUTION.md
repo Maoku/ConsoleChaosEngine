@@ -6,11 +6,12 @@
 
 | ファイル                                 | 用途                                                   |
 | ---------------------------------------- | ------------------------------------------------------ |
-| `console-chaos-engine-0.1.0.tgz`         | ランタイム、レンダリング、入力、音声、アセット、型定義 |
-| `console-chaos-engine-testkit-0.1.0.tgz` | 任意導入の決定論的テストダブルと型定義                 |
+| `console-chaos-engine-0.2.0.tgz`         | ランタイム、レンダリング、入力、音声、アセット、型定義、リリースノート |
+| `console-chaos-engine-testkit-0.2.0.tgz` | 任意導入の決定論的テストダブルと型定義                                 |
 | `SHA256SUMS`                             | 配布後の完全性確認                                     |
 
-tarballにはビルド済みESM、TypeScript型定義、パッケージREADMEだけが入ります。
+tarballにはビルド済みESM、TypeScript型定義、パッケージREADMEが入り、エンジン本体には
+`RELEASE_NOTES.md` も同梱されます。
 アプリ、テスト、開発ツール、元のアセットは入りません。エンジンの唯一の実行時依存は
 `gl-matrix` で、npmが導入時に解決します。
 
@@ -45,14 +46,14 @@ shasum -a 256 -c SHA256SUMS
 tarballを直接渡す場合:
 
 ```sh
-npm install /absolute/path/console-chaos-engine-0.1.0.tgz
+npm install /absolute/path/console-chaos-engine-0.2.0.tgz
 ```
 
 テストキットも使う場合は、エンジン本体と同時に導入します。
 
 ```sh
-npm install /absolute/path/console-chaos-engine-0.1.0.tgz
-npm install -D /absolute/path/console-chaos-engine-testkit-0.1.0.tgz
+npm install /absolute/path/console-chaos-engine-0.2.0.tgz
+npm install -D /absolute/path/console-chaos-engine-testkit-0.2.0.tgz
 ```
 
 `package.json` に `file:` でtarballを記録する運用も可能です。チーム内で共有する場合は、
@@ -61,7 +62,7 @@ tarballを各プロジェクトから安定して参照できるアーティフ�
 ```json
 {
   "dependencies": {
-    "@console-chaos/engine": "file:vendor/console-chaos-engine-0.1.0.tgz"
+    "@console-chaos/engine": "file:vendor/console-chaos-engine-0.2.0.tgz"
   }
 }
 ```
@@ -75,8 +76,8 @@ tarballを各プロジェクトから安定して参照できるアーティフ�
 組織のprivate registryへ公開する例:
 
 ```sh
-npm publish artifacts/console-chaos-engine-0.1.0.tgz --registry https://registry.example.com
-npm publish artifacts/console-chaos-engine-testkit-0.1.0.tgz --registry https://registry.example.com
+npm publish artifacts/console-chaos-engine-0.2.0.tgz --registry https://registry.example.com
+npm publish artifacts/console-chaos-engine-testkit-0.2.0.tgz --registry https://registry.example.com
 ```
 
 public npmへ出す場合は、ライセンスとscope設定を完了した後で `--access public` を明示します。
@@ -90,8 +91,10 @@ Semantic Versioningを使います。公開APIに互換性のない変更はmajo
 - `packages/engine/package.json` の `version`
 - `packages/engine/src/index.ts` の `ENGINE_VERSION`
 - `packages/engine-testkit/package.json` の `version` と `peerDependencies`
+- `apps/*/package.json` のworkspace内依存バージョン
 - `package-lock.json`
 - ドキュメント内のtarball名
+- `packages/engine/RELEASE_NOTES.md`
 
 リリース候補ではまず `npm run verify` でワークスペース全体を検証し、続けて
 `npm run verify:distribution` でconsumer境界を検証してください。

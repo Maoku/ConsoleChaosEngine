@@ -15,9 +15,9 @@
     "check:retro": "tsx tools/check-retro-images.ts"
   },
   "dependencies": {
-    "@console-chaos/engine": "0.1.0"
+    "@console-chaos/engine": "0.2.0"
   },
   "devDependencies": {
-    "@console-chaos/engine-testkit": "0.1.0"
+    "@console-chaos/engine-testkit": "0.2.0"
   }
 }

@@ -1,6 +1,6 @@
 {
   "name": "@console-chaos/engine-testkit",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Deterministic browser-free test doubles for @console-chaos/engine.",
   "type": "module",
   "sideEffects": false,
@@ -30,6 +30,6 @@
     "prepack": "npm run build"
   },
   "peerDependencies": {
-    "@console-chaos/engine": "^0.1.0"
+    "@console-chaos/engine": "^0.2.0"
   }
 }

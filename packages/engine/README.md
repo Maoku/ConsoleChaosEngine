@@ -17,7 +17,7 @@ Console Chaos Engineの公開npmパッケージです。固定ティックのゲ
 同じマシンで生成したtarballを使う場合:
 
 ```sh
-npm install /path/to/ConsoleChaosEngine/artifacts/console-chaos-engine-0.1.0.tgz
+npm install /path/to/ConsoleChaosEngine/artifacts/console-chaos-engine-0.2.0.tgz
 ```
 
 レジストリへ公開済みの場合:
