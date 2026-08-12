@@ -1,0 +1,46 @@
+{
+  "capturedAt": "2026-08-12T13:02:00+09:00",
+  "environment": {
+    "os": "macOS 26.5.2 (25F84)",
+    "architecture": "arm64",
+    "node": "v26.0.0"
+  },
+  "command": "npm run bench:sort -w @console-chaos/console-chaos -- --json",
+  "budgetMs": 2,
+  "safetyFactor": 0.7,
+  "naive": [
+    { "triangles": 500, "ms": 0.078458, "p95": 0.244375 },
+    { "triangles": 1000, "ms": 0.149791, "p95": 0.285916 },
+    { "triangles": 2000, "ms": 0.327708, "p95": 0.865959 },
+    { "triangles": 4000, "ms": 0.782916, "p95": 1.595875 },
+    { "triangles": 8000, "ms": 1.841, "p95": 3.588583 },
+    { "triangles": 16000, "ms": 4.207084, "p95": 6.2845 },
+    { "triangles": 20000, "ms": 5.20625, "p95": 7.407875 },
+    { "triangles": 32000, "ms": 9.838708, "p95": 11.995833 }
+  ],
+  "radix": [
+    { "triangles": 500, "ms": 0.008625, "p95": 0.067292 },
+    { "triangles": 1000, "ms": 0.0395, "p95": 0.134291 },
+    { "triangles": 2000, "ms": 0.021667, "p95": 0.076209 },
+    { "triangles": 4000, "ms": 0.0395, "p95": 0.223334 },
+    { "triangles": 8000, "ms": 0.0965, "p95": 0.113375 },
+    { "triangles": 16000, "ms": 0.208084, "p95": 0.637041 },
+    { "triangles": 20000, "ms": 0.229083, "p95": 0.622042 },
+    { "triangles": 32000, "ms": 0.3905, "p95": 1.166709 }
+  ],
+  "ot12": [
+    { "triangles": 500, "ms": 0.010875, "p95": 0.032625 },
+    { "triangles": 1000, "ms": 0.026292, "p95": 0.031708 },
+    { "triangles": 2000, "ms": 0.018417, "p95": 0.018708 },
+    { "triangles": 4000, "ms": 0.036416, "p95": 0.116542 },
+    { "triangles": 8000, "ms": 0.0715, "p95": 0.370666 },
+    { "triangles": 16000, "ms": 0.174708, "p95": 0.296291 },
+    { "triangles": 20000, "ms": 0.18725, "p95": 0.598458 },
+    { "triangles": 32000, "ms": 0.301375, "p95": 0.904041 }
+  ],
+  "budgets": {
+    "naive": { "estimatedTriangles": 8538, "safeTriangles": 5977 },
+    "radix": { "estimatedTriangles": 163892, "safeTriangles": 114724 },
+    "ot12": { "estimatedTriangles": 212360, "safeTriangles": 148652 }
+  }
+}

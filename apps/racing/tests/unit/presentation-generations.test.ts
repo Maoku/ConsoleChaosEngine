@@ -88,6 +88,10 @@ describe('FC and SFC racing presentation', () => {
     expect(frame.sprites.filter((sprite) => sprite.generations?.includes('SFC'))).toHaveLength(2);
     expect(frame.sprites.every((sprite) => sprite.screenSpace)).toBe(true);
     expect(frame.meshes.every((mesh) => mesh.generations?.includes('PS1') || mesh.generations?.includes('PS2'))).toBe(true);
+    expect(frame.meshes.filter((mesh) => mesh.id.startsWith('PS1-checkpoint-')).every((mesh) => mesh.orderTableIndex === 1)).toBe(true);
+    expect(frame.meshes.filter((mesh) => mesh.id.startsWith('PS1-') && !mesh.id.includes('track') && !mesh.id.includes('checkpoint')).every((mesh) => (
+      mesh.polygonSortRange?.[0] === 2 && mesh.polygonSortRange[1] === 7
+    ))).toBe(true);
     expect(frame.overlays).toHaveLength(0);
   });
 });

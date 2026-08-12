@@ -1,4 +1,4 @@
-import type { GenerationId, RenderFrame, Vec2 } from '@console-chaos/engine';
+import { HARDWARE_GENERATION_PROFILES, type GenerationId, type RenderFrame, type Vec2 } from '@console-chaos/engine';
 import { racingTheme } from '../config/themes';
 import type { RaceState } from '../gameplay/race';
 import { createGen1RasterPresenter, type Gen1RasterPresenter } from './gen1-raster';
@@ -82,6 +82,9 @@ function buildThreeDimensionalCourse(frame: RenderFrame, state: RaceState, gener
       color: index === state.player.laps.nextCheckpoint ? theme.checkpoint : '#ffffff',
       material: `racing-solid-${generation}`,
       layer: 2,
+      ...(HARDWARE_GENERATION_PROFILES[generation].video.translucency.kind === 'fixed-rate'
+        ? { orderTableIndex: 1 as const }
+        : {}),
     });
   });
 }

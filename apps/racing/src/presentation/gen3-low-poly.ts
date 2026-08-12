@@ -19,6 +19,7 @@ function pushCar(frame: RenderFrame, racer: RacerState, player: boolean): void {
     color: player ? '#ffffff' : '#5f708c',
     material: GEN3_CAR_MATERIAL,
     layer: 10,
+    polygonSortRange: [2, 7],
   });
 }
 

@@ -81,13 +81,25 @@ hold、pressure semantics を適用する。focus loss 時は browser input sour
   FCの走査線tableとSFCのUV affine transformをappから受け取る。Engineはroad/raceなどの意味を解釈しない。
 - `SpriteCommand.screenSpace`: 省略時は従来どおりworld plane。`true`では`position.x/y`と`size`を
   generation target pixelとして描く。raster/affine surface上のHUDではないgame spriteに使用できる。
+- `SpriteCommand.billboard/depthWrite`: scene spriteのworld向きを`cylindrical / spherical / none`から選び、
+  depth buffer世代でdepth書込みを制御する。FC/SFCは`profile.video.spriteComposition === 'separate-plane'`のため
+  従来のsprite FBOへ、PS1/PS2は`scene`のためmeshと同じscene passへ入る。
+- `HardwareBlendCommand`: `hardwareBlend`をmaterialまたはspriteへ指定する。familyはSFCの
+  `gen2-color-math`、PS1の`gen3-semitransparency`、PS2の`gen4-gs`、世代非依存fallbackの`portable`。
+  `generations` maskと世代固有familyが矛盾したcommandはfail-fastする。旧`blendMode`は互換入力として残るが、
+  新規commandでは`hardwareBlend`を使う。
+- PS1 ordering table: `orderTableIndex`は0..11の固定slot、`polygonSortRange`はtriangle分割先の昇順範囲。
+  既定slotはopaque world 1..8、半透明9、screen-space sprite 10、debug 11。同一slotではcommand/triangleの
+  登録順を保持し、rendererは毎frameの`Array.sort()`や作業配列allocationを行わない。
 - `LightCommand`: ambient/directional/pointをgeneration mask付きで指定する。directionalは`direction`を使う。
   commandがない場合は従来の固定lightへfallbackする。
 - `MaterialCommand.environmentTexture/environmentStrength`: equirectangular 2D reflectionを指定する。
   `profile.video.environmentMap`がfalseならrendererがstrengthを0にする。
 - `createGenerationWebGlRenderer()`: production renderer。4世代のFBO/postfx targetを起動時に確保し、
-  通常1世代、transition 中だけ旧/新2世代を描画・合成する。描画順は
-  background → screen surface → mesh → sprite → palette/CRT → transition compose。Console/Racingの語彙は持たない。
+  通常1世代、transition 中だけ旧/新2世代を描画・合成する。FC/SFCは
+  background → screen surface → mesh → separate sprite plane、PS1はbackground → OT12 scene、PS2は
+  background → depth scene → late screen spriteとして描き、最後にpalette/CRT → transition composeする。
+  Console/Racingの語彙は持たない。
 - `createGenerationCanvasRenderer()`: testkitや軽量fallback向けのgeneric command renderer。
 - `AssetManager`: pending load と参照数を key ごとに共有する。text/binary/image/glTF/GPU resource を扱い、
   最後の `release()` で解放する。`restoreGpuResources()` は context 再構築時に active GPU handle を差し替える。

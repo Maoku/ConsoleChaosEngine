@@ -8,7 +8,8 @@ import {
 import { createManualLoopHost, createRecordingRenderer } from '@console-chaos/engine-testkit';
 import { createNeutralConsoleChaosActions } from '@/config/actions';
 import { createSession } from '@/gameplay/session';
-import { createConsoleChaosPresentation } from '@/presentation/frame';
+import { createConsoleChaosPresentation, hardwareBlendForMaterial } from '@/presentation/frame';
+import { MATERIALS } from '@/render/material';
 import { loadLevelFile } from './replay/harness';
 
 const level = loadLevelFile('area1');
@@ -61,6 +62,20 @@ describe('Console presentation parity commands', () => {
     expect(frame.sprites.map((sprite) => sprite.generations?.[0])).toEqual(['FC', 'SFC']);
     expect(frame.skinnedMeshes.map((mesh) => mesh.generations?.[0])).toEqual(['PS1', 'PS2']);
     host.dispose();
+  });
+
+  it('maps translucent content to each generation hardware family', () => {
+    const material = MATERIALS.translucent!;
+    expect(hardwareBlendForMaterial(material, 'FC')).toBeUndefined();
+    expect(hardwareBlendForMaterial(material, 'SFC')).toEqual({
+      family: 'gen2-color-math', operation: 'add', half: true, operand: 'subscreen',
+    });
+    expect(hardwareBlendForMaterial(material, 'PS1')).toEqual({
+      family: 'gen3-semitransparency', mode: 'average',
+    });
+    expect(hardwareBlendForMaterial(material, 'PS2')).toEqual({
+      family: 'gen4-gs', preset: 'source-over',
+    });
   });
 
   it('uses live body positions and preserves the three legacy visibility reasons', () => {

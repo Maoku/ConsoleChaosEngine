@@ -2,13 +2,14 @@ import {
   GENERATION_IDS,
   type GameModule,
   type GenerationId,
+  type HardwareBlendCommand,
   type HardwareGenerationProfile,
   type RenderFrame,
 } from '@console-chaos/engine';
 import { createConsoleChaosActionMap } from '@/config/actions';
 import { CONSOLE_CHAOS_GENERATION_THEMES } from '@/config/generation';
 
-export const DEBUG_SCENES = ['ps1', 'fc', 'switch', 'character', 'player'] as const;
+export const DEBUG_SCENES = ['ps1', 'fc', 'switch', 'character', 'player', 'blend'] as const;
 export type ConsoleDebugScene = typeof DEBUG_SCENES[number];
 
 export function isConsoleDebugScene(value: string): value is ConsoleDebugScene {
@@ -16,7 +17,7 @@ export function isConsoleDebugScene(value: string): value is ConsoleDebugScene {
 }
 
 export function initialGenerationForScene(scene: string): GenerationId {
-  return scene === 'mini' || scene === 'ps1' ? 'PS1' : 'FC';
+  return scene === 'mini' || scene === 'ps1' || scene === 'blend' ? 'PS1' : 'FC';
 }
 
 export interface ConsoleDebugModuleOptions {
@@ -71,6 +72,99 @@ function pushTestFloor(frame: RenderFrame, generation: GenerationId, panel: bool
   }
 }
 
+function debugHardwareBlend(hardware: HardwareGenerationProfile): HardwareBlendCommand | undefined {
+  switch (hardware.video.translucency.kind) {
+    case 'none':
+      return undefined;
+    case 'color-math':
+      return { family: 'gen2-color-math', operation: 'add', half: true, operand: 'subscreen' };
+    case 'fixed-rate':
+      return { family: 'gen3-semitransparency', mode: 'average' };
+    case 'gs-alpha':
+      return { family: 'gen4-gs', preset: 'source-over' };
+  }
+}
+
+function pushBlendScene(frame: RenderFrame, hardware: HardwareGenerationProfile, time: number): void {
+  const generation = hardware.id;
+  const hardwareBlend = debugHardwareBlend(hardware);
+  const usesOrderingTable = hardware.video.translucency.kind === 'fixed-rate';
+  frame.camera = {
+    projection: hardware.video.projection === 'ortho2d' ? 'orthographic' : 'perspective',
+    position: [0, 2.4, 7],
+    target: [0, 1.1, -5],
+    zoom: 8,
+    orthoHeight: 8,
+    fovDegrees: 55,
+  };
+  frame.backgrounds.push({ color: '#101a35', secondaryColor: '#412c65' });
+  frame.materials.push({
+    id: 'debug-blend-backdrop',
+    generations: [generation],
+    colorFactor: [0.15, 0.45, 0.95, 1],
+    ambient: 1,
+    diffuse: 0,
+  });
+  frame.materials.push({
+    id: 'debug-blend-panel',
+    generations: [generation],
+    colorFactor: [1, 0.28, 0.08, 0.66],
+    ...(hardwareBlend ? { hardwareBlend } : {}),
+    ambient: 1,
+    diffuse: 0,
+  });
+  frame.meshes.push({
+    id: `debug-blend-backdrop:${generation}`,
+    generations: [generation],
+    geometry: { kind: 'box' },
+    transform: { position: [0, 1.1, -5.6], scale: [5.4, 3.8, 0.3] },
+    color: '#ffffff',
+    material: 'debug-blend-backdrop',
+    ...(usesOrderingTable ? { orderTableIndex: 2 as const } : {}),
+  });
+  frame.meshes.push({
+    id: `debug-blend-panel:${generation}`,
+    generations: [generation],
+    geometry: { kind: 'box' },
+    transform: { position: [Math.sin(time) * 0.45, 1.1, -4.8], rotationY: time * 0.3, scale: [3, 2.4, 0.3] },
+    color: '#ffffff',
+    material: 'debug-blend-panel',
+    ...(usesOrderingTable ? { orderTableIndex: 9 as const } : {}),
+  });
+
+  const spriteBlend = hardwareBlend;
+  frame.sprites.push({
+    id: `debug-world-sprite:${generation}`,
+    generations: [generation],
+    position: [-1.25, 1.1, -4.25],
+    size: [1.9, 1.9],
+    color: '#ffffff',
+    texture: 'assets/sprites/hero_gen2.png',
+    atlas: 'hero_gen2.png',
+    cell: 12,
+    alphaCutoff: 0.5,
+    ...(spriteBlend ? { hardwareBlend: spriteBlend } : {}),
+    billboard: hardware.video.depthBuffer ? 'spherical' : 'cylindrical',
+    depthWrite: hardware.video.depthBuffer,
+    ...(usesOrderingTable ? { orderTableIndex: 10 as const } : {}),
+  });
+  frame.sprites.push({
+    id: `debug-screen-sprite:${generation}`,
+    generations: [generation],
+    screenSpace: true,
+    position: [hardware.video.internalWidth - 28, 28, 0],
+    size: [44, 44],
+    color: '#ffffff',
+    texture: 'assets/sprites/hero_gen2.png',
+    atlas: 'hero_gen2.png',
+    cell: 13,
+    alphaCutoff: 0.5,
+    ...(spriteBlend ? { hardwareBlend: spriteBlend } : {}),
+    depthWrite: false,
+    ...(usesOrderingTable ? { orderTableIndex: 11 as const } : {}),
+  });
+}
+
 function buildScene(
   frame: RenderFrame,
   scene: ConsoleDebugScene,
@@ -82,6 +176,10 @@ function buildScene(
   const generation = hardware.id;
   frame.timeSeconds = time;
   frame.materials.push({ id: 'debug-solid', ambient: 0.65, diffuse: 0.35 });
+  if (scene === 'blend') {
+    pushBlendScene(frame, hardware, time);
+    return;
+  }
   if (scene === 'ps1' || scene === 'switch') {
     frame.camera = {
       projection: 'perspective',

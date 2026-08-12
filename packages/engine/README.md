@@ -118,7 +118,8 @@ window.addEventListener(
 | palette block    | 16px               | 8px               | なし                            | なし                                  |
 | sprite/scanline  | 8                  | 32                | 制限なし                        | 制限なし                              |
 | 座標snap         | 8px tile           | 1px               | なし                            | なし                                  |
-| alpha blend      | なし               | あり              | あり                            | あり                                  |
+| translucency     | なし               | RGB555 color math | 4固定係数 mode・OT slot 12      | GS alpha preset                       |
+| sprite composition | separate plane  | separate plane    | scene（world/screenをOTへ統合） | scene（depth対応）                    |
 | 特殊描画         | raster scroll      | affine plane      | affine texture・vertex quantize | depth・dynamic light・environment map |
 | depth buffer     | なし               | なし              | なし                            | あり                                  |
 | texture filter   | nearest            | nearest           | nearest                         | linear                                |
@@ -129,7 +130,7 @@ window.addEventListener(
 
 `createGenerationWebGlRenderer()` が内部解像度、palette/RGB555、CRT、surface pass、depth、
 texture補間、頂点量子化、lighting、animation sample rateを自動適用します。一方、
-`maxSimultaneousColors`、`paletteBlockSize`、`spritesPerScanline`、`tileSnap`、`alphaBlend` はasset制作、
+`maxSimultaneousColors`、`paletteBlockSize`、`spritesPerScanline`、`tileSnap`、`translucency` はasset制作、
 gameplay、検証ツールでも参照する能力契約です。例えば走査線sprite制限は `applyScanlineLimit()` を使い、
 その結果を描画と当たり判定へ反映します。`createCanvasCommandRenderer()` は軽量fallbackであり、これらの
 世代表現を完全には再現しません。
@@ -138,7 +139,7 @@ gameplay、検証ツールでも参照する能力契約です。例えば走査
 
 最も強い2D制約を持つ世代です。sceneは256×224で描画され、master paletteから固定54色へ量子化されます。
 1つの場面で使える色は25色、paletteの選択単位は16pxです。spriteは1走査線あたり8個に制限でき、
-座標は8px tileへ揃える想定です。alpha blendは使いません。
+座標は8px tileへ揃える想定です。半透明合成は使いません。
 
 疑似3Dや曲面道路は `RasterSurfaceCommand` のscanline tableで表現します。各走査線のsource位置、幅、
 明るさを変え、`rasterScroll` passで水平スクロールや遠近を作ります。textureはnearest filter、skinned
@@ -153,8 +154,9 @@ animationは6 Hzに量子化されるため、輪郭の明確なpixel artと少�
 ### 第2世代: `SFC`
 
 同じ256×224の2Dを基礎にしつつ、色と疑似3Dの能力を広げた世代です。色はRGB555へ量子化され、
-同時256色、8px palette block、1走査線32 sprite、alpha blendを利用できます。入力は8方向D-padに
-なり、斜め移動も許可されます。
+同時256色、8px palette block、1走査線32 spriteを利用できます。半透明は汎用alphaではなく、RGB555へ
+量子化したmain/sub screenの加算・減算・half結果というcolor mathです。入力は8方向D-padになり、
+斜め移動も許可されます。
 
 地面、道路、床は `AffineSurfaceCommand` のUV originとX/Y stepで1枚のtextureを変形する
 `affinePlane` passが中心です。これは3D meshではなくscreen-spaceの疑似3Dなので、spriteと組み合わせる
@@ -172,10 +174,11 @@ noise 0.025となり、RFより鮮明ですが色境界には意図的なにじ�
 頂点をprofile値2でscreen-space量子化して輪郭の揺れを作ります。perspective-correct補間を弱める
 `affineTexture` により、視点移動時にtextureが歪む表現を加えます。
 
-depth bufferは使わず、rendererがmeshを奥から手前へsortして描画します。`polygonSort` を有効にした
-model/materialでは、mesh内部のtriangle indexもcameraからの奥行きで並べ替えます。dynamic point lightと
-environment mapは無効なため、material色、texture、ambient/directional成分を中心に画面を設計します。
-animationは30 Hzです。
+depth bufferは使わず、rendererは固定12 slotのordering tableを0→11の順に走査します。既定ではopaque worldを
+slot 1..8、半透明を9、screen-space spriteを10、debugを11へ登録し、同じslot内の登録順を安定保持します。
+`orderTableIndex` で固定slot、`polygonSortRange` でtriangle単位の安定O(n+12) view-space分割範囲を指定できます。
+world/screen spriteも同じtableへ入るため、meshとの順序を明示できます。dynamic point lightとenvironment mapは
+無効なため、material色、texture、ambient/directional成分を中心に画面を設計します。animationは30 Hzです。
 
 映像信号はS-Videoです。full CRT品質ではscanline 0.22、色にじみ 0.25、curvature 0.6、noise 0.012で、
 輝度と色の分離により前2世代より輪郭が明確になります。
@@ -187,7 +190,8 @@ animationは30 Hzです。
 
 640×448のperspective 3Dで、4世代の中で最も連続的で高密度な表現です。depth bufferを有効化し、
 ambient・directional・point light、projected shadow、environment mapによる反射を利用できます。
-textureはlinear filter、animationは60 Hzです。頂点量子化とaffine textureは適用しません。
+world spriteはspherical/cylindrical billboardとdepth writeを選択でき、screen-space spriteはscene末尾へ
+合成されます。textureはlinear filter、animationは60 Hzです。頂点量子化とaffine textureは適用しません。
 
 映像信号はcomponentです。full CRT品質でもscanline 0.14、色にじみ 0.08、curvature 0.35、noise 0.004に
 抑え、軽い走査線と周辺減光だけを残した鮮明な画面にします。

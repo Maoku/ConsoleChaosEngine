@@ -48,7 +48,7 @@ export interface Material {
    * 半透明合成を持たない第1世代でも成立する
    */
   alphaCutoff: number;
-  /** 半透明で描く（S-1）。加算合成を持たない世代では**描かれない** */
+  /** 半透明で描く（S-1）。世代固有の色演算を持たない第1世代では**描かれない** */
   translucent: boolean;
   /** 落ち影を作る（P2-1 の柱）。動的ライトを持つ世代でのみ効く */
   castShadow: boolean;

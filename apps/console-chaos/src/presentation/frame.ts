@@ -5,6 +5,7 @@ import {
   applyScanlineLimit,
   type GameContext,
   type GenerationId,
+  type HardwareBlendCommand,
   type RenderFrame,
   type SpriteDrawItem,
 } from '@console-chaos/engine';
@@ -89,8 +90,26 @@ function visibleEntity(
   const engineEntity = session.entities.get(entity.id);
   const culled = engineEntity !== undefined && session.culled.has(engineEntity);
   const notMaterialized = material.hideWhenPassable && !body.solid;
-  const noBlend = material.translucent && !session.profile.hardware.video.alphaBlend;
+  const noBlend = material.translucent && session.profile.hardware.video.translucency.kind === 'none';
   return !culled && !notMaterialized && !noBlend;
+}
+
+export function hardwareBlendForMaterial(
+  material: Material,
+  generation: GenerationId,
+): HardwareBlendCommand | undefined {
+  if (!material.translucent) return undefined;
+  const translucency = HARDWARE_GENERATION_PROFILES[generation].video.translucency;
+  switch (translucency.kind) {
+    case 'none':
+      return undefined;
+    case 'color-math':
+      return { family: 'gen2-color-math', operation: 'add', half: true, operand: 'subscreen' };
+    case 'fixed-rate':
+      return { family: 'gen3-semitransparency', mode: 'average' };
+    case 'gs-alpha':
+      return { family: 'gen4-gs', preset: 'source-over' };
+  }
 }
 
 function pushMaterial(
@@ -103,6 +122,7 @@ function pushMaterial(
   const theme = CONSOLE_CHAOS_GENERATION_THEMES[generation];
   const id = `material:${entityId}:${generation}`;
   const texture = (file: string): string => `assets/textures/${theme.art.textureSet}/${file}`;
+  const hardwareBlend = hardwareBlendForMaterial(material, generation);
   frame.materials.push({
     id,
     generations: [generation],
@@ -110,7 +130,7 @@ function pushMaterial(
     baseColorTexture: texture(material.texture),
     topColorTexture: texture(material.topTexture ?? material.texture),
     filter: hardware.video.textureFilter,
-    blendMode: material.translucent ? 'additive' : 'opaque',
+    ...(hardwareBlend ? { hardwareBlend } : {}),
     uvMode: hardware.video.affineTexture ? 'affine' : 'perspective',
     castShadow: material.castShadow,
     uvScale: material.uvScale,
