@@ -9,10 +9,18 @@ import {
   type GltfPrimitive,
 } from '../assets/gltf';
 import type { GenerationController } from '../generation/controller';
-import type { GenerationId, HardwareGenerationProfile } from '../generation/profiles';
+import {
+  HARDWARE_GENERATION_PROFILES,
+  type GenerationId,
+  type HardwareGenerationProfile,
+} from '../generation/profiles';
 import { createCamera } from './camera';
 import { createAffineSurfacePass } from './affine/pass';
-import { hardwareBlendForCommand } from './blend';
+import {
+  assertHardwareBlendGenerations,
+  createResolvedHardwareBlend,
+  resolveHardwareBlend,
+} from './blend';
 import {
   createDrawPacketWorkspace,
   stableSortDrawPackets,
@@ -30,6 +38,8 @@ import type {
 } from './frame';
 import { billboardMesh, boxMesh, quadMesh } from './geometry';
 import {
+  BLEND_ALPHA,
+  BLEND_NONE,
   createBuffer,
   createGLContext,
   createProgram,
@@ -80,6 +90,8 @@ const NO_POINT_LIGHT: [number, number, number, number] = [0, 0, 0, 0];
 const NO_FOG: [number, number, number, number] = [0, 0, 0, 0];
 const NO_UV_SCROLL: [number, number] = [0, 0];
 const NO_LAYER: [number, number, number, number] = [0, 0, 0, 0];
+const NO_BLEND_COLOR: [number, number, number, number] = [0, 0, 0, 0];
+const DEFAULT_BLEND_CONTROL: [number, number] = [0, 1];
 const SHADOW_STRENGTH = 0.72;
 const FLOAT_RATE = 1;
 const DRAW_PACKET_CAPACITY = 8192;
@@ -458,6 +470,8 @@ async function createGpuBackend(
   const orderingTable = createOrderingTableWorkspace<DrawPacket>();
   const drawPackets = createDrawPacketWorkspace(DRAW_PACKET_CAPACITY);
   const occupiedOrderingSlots = new Uint8Array(12);
+  const resolvedBlend = createResolvedHardwareBlend();
+  const blendControl: [number, number] = [0, 1];
   const pointLight: [number, number, number, number] = [0, 0, 0, 0];
   const pointLightColor: [number, number, number] = [1, 1, 1];
   const directionalLight: [number, number, number] = [0.4, 1, 0.6];
@@ -531,7 +545,7 @@ async function createGpuBackend(
           layer.placement?.height ?? 1,
         ]
       : NO_LAYER;
-    state.apply({ depthTest: false, depthWrite: false, blend: 'none', cull: 'none' });
+    state.apply({ depthTest: false, depthWrite: false, blend: BLEND_NONE, cull: 'none' });
     backgroundProgram.use();
     gl.bindVertexArray(null);
     backgroundProgram.setUniforms({
@@ -548,7 +562,7 @@ async function createGpuBackend(
     state.apply({
       depthTest: profile.video.depthBuffer,
       depthWrite: profile.video.depthBuffer,
-      blend: 'none',
+      blend: BLEND_NONE,
       cull: 'back',
     });
   }
@@ -593,6 +607,10 @@ async function createGpuBackend(
     polygonSlot?: OrderingTableIndex,
   ): void {
     const material = materialFor(mesh);
+    const blend = resolveHardwareBlend(profile.id, material.hardwareBlend, material.blendMode, resolvedBlend);
+    if (!blend.visible) return;
+    blendControl[0] = blend.premultiplyColor ? 1 : 0;
+    blendControl[1] = blend.outputOpacity;
     const environment = material.environmentTexture ? textures.get(material.environmentTexture) : undefined;
     transformFor(mesh, material, active);
     sceneProgram.use();
@@ -619,6 +637,8 @@ async function createGpuBackend(
       uFog: fog,
       uUvScroll: [0, (material.uvScrollY ?? 0) * (options.motionAmount?.() ?? 1) * active.timeSeconds],
       uAlphaCutoff: material.alphaCutoff ?? 0,
+      uBlendColorOverride: blend.colorOverride,
+      uBlendControl: blendControl,
     });
     const shouldSort = material.polygonSort && !profile.video.depthBuffer && profile.video.projection === 'perspective3d';
     for (const part of parts ?? meshParts(mesh)) {
@@ -648,7 +668,8 @@ async function createGpuBackend(
       if (mesh.wireframe) continue;
       if ((mesh.layer ?? 0) < 0) continue;
       const material = materialFor(mesh);
-      if ((material.blendMode === 'additive' || material.blendMode === 'alpha') !== translucent) continue;
+      const blend = resolveHardwareBlend(profile.id, material.hardwareBlend, material.blendMode, resolvedBlend);
+      if (!blend.visible || blend.translucent !== translucent) continue;
       const dx = mesh.transform.position[0] - camera.position[0]!;
       const dy = mesh.transform.position[1] - camera.position[1]!;
       const dz = mesh.transform.position[2] - camera.position[2]!;
@@ -679,8 +700,8 @@ async function createGpuBackend(
     );
   }
 
-  function materialIsTranslucent(material: MaterialCommand | undefined): boolean {
-    return hardwareBlendForCommand(material?.hardwareBlend, material?.blendMode) !== undefined;
+  function materialBlend(profile: HardwareGenerationProfile, material: MaterialCommand | undefined) {
+    return resolveHardwareBlend(profile.id, material?.hardwareBlend, material?.blendMode, resolvedBlend);
   }
 
   function prepareMeshOrdering(
@@ -727,7 +748,9 @@ async function createGpuBackend(
     for (const mesh of active.meshes) {
       if (mesh.visible === false || !applies(mesh, 'PS1')) continue;
       const material = materialFor(mesh);
-      const translucent = materialIsTranslucent(material);
+      const blend = materialBlend(HARDWARE_GENERATION_PROFILES.PS1, material);
+      if (!blend.visible) continue;
+      const translucent = blend.translucent;
       const depth = viewDepth(mesh.transform.position);
       if (mesh.wireframe) {
         const packet = drawPackets.take('mesh', mesh);
@@ -771,10 +794,12 @@ async function createGpuBackend(
     for (const command of active.skinnedMeshes) {
       if (command.visible === false || !applies(command, 'PS1')) continue;
       const material = command.material ? materialById.get(command.material) : undefined;
+      const blend = materialBlend(HARDWARE_GENERATION_PROFILES.PS1, material);
+      if (!blend.visible) continue;
       const packet = drawPackets.take('skinned-mesh', command);
       packet.material = material;
       packet.viewDepth = viewDepth(command.transform.position);
-      packet.translucent = materialIsTranslucent(material);
+      packet.translucent = blend.translucent;
       registerGen3Packet(packet, defaultOrderingTableIndex({
         ...(command.orderTableIndex !== undefined ? { explicit: command.orderTableIndex } : {}),
         kind: 'world',
@@ -789,21 +814,23 @@ async function createGpuBackend(
 
   function drawGen3Packets(profile: HardwareGenerationProfile, active: RenderFrame): void {
     collectGen3Packets(active);
-    let translucent = false;
     const fogDensity = fog[3];
     visitOrderingTable(orderingTable, (packet) => {
       if (!packet.command) return;
       if (packet.debug) {
-        state.apply({ depthTest: false, depthWrite: false, blend: 'alpha', cull: 'none' });
+        state.apply({ depthTest: false, depthWrite: false, blend: BLEND_ALPHA, cull: 'none' });
         fog[3] = 0;
         drawMesh(packet.command as MeshCommand, profile, active, [wireframeMesh]);
         return;
       }
-      if (packet.translucent !== translucent) {
-        translucent = packet.translucent;
-        state.apply({ depthTest: false, depthWrite: false, blend: translucent ? 'add' : 'none', cull: 'back' });
-        fog[3] = translucent ? 0 : fogDensity;
-      }
+      const blend = materialBlend(profile, packet.material);
+      state.apply({
+        depthTest: false,
+        depthWrite: false,
+        blend: packet.translucent ? blend.state : BLEND_NONE,
+        cull: 'back',
+      });
+      fog[3] = packet.translucent ? 0 : fogDensity;
       if (packet.kind === 'mesh') {
         drawMesh(packet.command as MeshCommand, profile, active, undefined, packet.polygonSlot);
       } else if (packet.kind === 'skinned-mesh') {
@@ -811,7 +838,7 @@ async function createGpuBackend(
       }
     });
     fog[3] = fogDensity;
-    state.apply({ depthTest: false, depthWrite: false, blend: 'none', cull: 'back' });
+    state.apply({ depthTest: false, depthWrite: false, blend: BLEND_NONE, cull: 'back' });
   }
 
   function pointShadow(
@@ -833,7 +860,7 @@ async function createGpuBackend(
 
   function drawShadows(profile: HardwareGenerationProfile, active: RenderFrame): void {
     if (pointLight[3] <= 0) return;
-    state.apply({ blend: 'alpha', depthWrite: false });
+    state.apply({ blend: BLEND_ALPHA, depthWrite: false });
     for (const mesh of active.meshes) {
       if (mesh.visible === false || !applies(mesh, profile.id) || !mesh.castShadow || mesh.groundY === undefined) continue;
       const half = mesh.transform.scale
@@ -872,10 +899,12 @@ async function createGpuBackend(
         uFog: NO_FOG,
         uUvScroll: NO_UV_SCROLL,
         uAlphaCutoff: 0,
+        uBlendColorOverride: NO_BLEND_COLOR,
+        uBlendControl: DEFAULT_BLEND_CONTROL,
       });
       drawShape(shadowMesh);
     }
-    state.apply({ blend: 'none', depthWrite: profile.video.depthBuffer });
+    state.apply({ blend: BLEND_NONE, depthWrite: profile.video.depthBuffer });
   }
 
   function drawSkinned(command: SkinnedMeshCommand, profile: HardwareGenerationProfile): void {
@@ -894,6 +923,11 @@ async function createGpuBackend(
     if (command.transform.scale) mat4.scale(modelMatrix, modelMatrix, command.transform.scale);
     skinProgram.use();
     const tint = command.tintFactor ?? colorFactor(command.tint);
+    const material = command.material ? materialById.get(command.material) : undefined;
+    const blend = materialBlend(profile, material);
+    if (!blend.visible) return;
+    blendControl[0] = blend.premultiplyColor ? 1 : 0;
+    blendControl[1] = blend.outputOpacity;
     rig.parts.forEach((part, index) => {
       const base = rig.colors[index] ?? [1, 1, 1, 1];
       skinProgram.setUniforms({
@@ -918,12 +952,18 @@ async function createGpuBackend(
         uFog: fog,
         uUvScroll: NO_UV_SCROLL,
         uAlphaCutoff: 0,
+        uBlendColorOverride: blend.colorOverride,
+        uBlendControl: blendControl,
       });
       drawShape(part);
     });
   }
 
   function drawSprite(command: SpriteCommand, profile: HardwareGenerationProfile): void {
+    const blend = resolveHardwareBlend(profile.id, command.hardwareBlend, undefined, resolvedBlend);
+    if (!blend.visible) return;
+    blendControl[0] = blend.premultiplyColor ? 1 : 0;
+    blendControl[1] = blend.outputOpacity;
     const sheet = command.texture ? atlases.get(command.texture) : undefined;
     if (!sheet) throw new Error(`Sprite atlas is not preloaded: ${command.texture ?? command.id}`);
     const cell = Math.min(Math.max(command.cell ?? 0, 0), sheet.cells.length - 1);
@@ -958,6 +998,8 @@ async function createGpuBackend(
       uFog: fog,
       uUvScroll: NO_UV_SCROLL,
       uAlphaCutoff: command.alphaCutoff ?? 0,
+      uBlendColorOverride: blend.colorOverride,
+      uBlendControl: blendControl,
     });
     drawShape(sheet.cells[cell]!);
     state.apply({ cull: 'back' });
@@ -1006,7 +1048,7 @@ async function createGpuBackend(
     state.apply({
       depthTest: profile.video.depthBuffer,
       depthWrite: profile.video.depthBuffer,
-      blend: 'none',
+      blend: BLEND_NONE,
       cull: 'back',
     });
   }
@@ -1016,7 +1058,10 @@ async function createGpuBackend(
     if (!active) return;
     triangleCount = 0;
     materialById.clear();
-    for (const material of active.materials) if (applies(material, profile.id)) materialById.set(material.id, material);
+    for (const material of active.materials) {
+      assertHardwareBlendGenerations(material.generations, material.hardwareBlend);
+      if (applies(material, profile.id)) materialById.set(material.id, material);
+    }
     beginPass(profile, active);
     configureLighting(profile, active);
     drawBackground(profile, active);
@@ -1029,26 +1074,61 @@ async function createGpuBackend(
     for (const mesh of active.meshes) {
       if (mesh.visible === false || !applies(mesh, profile.id) || mesh.wireframe || (mesh.layer ?? 0) >= 0) continue;
       const material = materialFor(mesh);
-      if (material.blendMode !== 'additive' && material.blendMode !== 'alpha') drawMesh(mesh, profile, active);
+      if (!materialBlend(profile, material).translucent) drawMesh(mesh, profile, active);
     }
     const opaque = collectMeshes(active, profile, false);
     for (let slot = 0; slot < opaque; slot++) drawMesh(active.meshes[order[slot]!]!, profile, active);
     drawShadows(profile, active);
     for (const command of active.skinnedMeshes) {
-      if (command.visible !== false && applies(command, profile.id)) drawSkinned(command, profile);
+      if (command.visible === false || !applies(command, profile.id)) continue;
+      const material = command.material ? materialById.get(command.material) : undefined;
+      const blend = materialBlend(profile, material);
+      if (!blend.visible || blend.translucent) continue;
+      drawSkinned(command, profile);
     }
     const translucent = collectMeshes(active, profile, true);
     if (translucent > 0) {
-      state.apply({ blend: 'add', depthWrite: false });
       const density = fog[3];
       fog[3] = 0;
-      for (let slot = 0; slot < translucent; slot++) drawMesh(active.meshes[order[slot]!]!, profile, active);
+      for (let slot = 0; slot < translucent; slot++) {
+        const mesh = active.meshes[order[slot]!]!;
+        const material = materialFor(mesh);
+        const blend = materialBlend(profile, material);
+        state.apply({ blend: blend.state, depthWrite: false });
+        drawMesh(mesh, profile, active);
+      }
       fog[3] = density;
-      state.apply({ blend: 'none', depthWrite: profile.video.depthBuffer });
+      state.apply({ blend: BLEND_NONE, depthWrite: profile.video.depthBuffer });
+    }
+    for (const command of active.skinnedMeshes) {
+      if (command.visible === false || !applies(command, profile.id)) continue;
+      const material = command.material ? materialById.get(command.material) : undefined;
+      const blend = materialBlend(profile, material);
+      if (!blend.visible || !blend.translucent) continue;
+      state.apply({ blend: blend.state, depthWrite: false });
+      const density = fog[3];
+      fog[3] = 0;
+      drawSkinned(command, profile);
+      fog[3] = density;
+    }
+    state.apply({ blend: BLEND_NONE, depthWrite: profile.video.depthBuffer });
+    if (profile.id === 'SFC') {
+      for (const command of active.sprites) {
+        if (command.visible === false || !applies(command, profile.id)) continue;
+        assertHardwareBlendGenerations(command.generations, command.hardwareBlend);
+        const blend = resolveHardwareBlend(profile.id, command.hardwareBlend, undefined, resolvedBlend);
+        if (!blend.visible || !blend.translucent) continue;
+        state.apply({ depthTest: false, depthWrite: false, blend: blend.state, cull: 'none' });
+        const density = fog[3];
+        fog[3] = 0;
+        drawSprite(command, profile);
+        fog[3] = density;
+      }
+      state.apply({ depthTest: false, depthWrite: false, blend: BLEND_NONE, cull: 'back' });
     }
     const wireframes = active.meshes.filter((mesh) => mesh.wireframe && mesh.visible !== false && applies(mesh, profile.id));
     if (wireframes.length > 0) {
-      state.apply({ depthTest: false, depthWrite: false, blend: 'alpha', cull: 'none' });
+      state.apply({ depthTest: false, depthWrite: false, blend: BLEND_ALPHA, cull: 'none' });
       const density = fog[3];
       fog[3] = 0;
       for (const mesh of wireframes) drawMesh(mesh, profile, active, [wireframeMesh]);
@@ -1056,7 +1136,7 @@ async function createGpuBackend(
       state.apply({
         depthTest: profile.video.depthBuffer,
         depthWrite: profile.video.depthBuffer,
-        blend: 'none',
+        blend: BLEND_NONE,
         cull: 'back',
       });
     }
@@ -1068,7 +1148,11 @@ async function createGpuBackend(
     beginPass(profile, active);
     configureLighting(profile, active);
     for (const command of active.sprites) {
-      if (command.visible !== false && applies(command, profile.id)) drawSprite(command, profile);
+      if (command.visible === false || !applies(command, profile.id)) continue;
+      assertHardwareBlendGenerations(command.generations, command.hardwareBlend);
+      const blend = resolveHardwareBlend(profile.id, command.hardwareBlend, undefined, resolvedBlend);
+      if (!blend.visible || blend.translucent) continue;
+      drawSprite(command, profile);
     }
   }
 

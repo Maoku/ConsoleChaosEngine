@@ -1,4 +1,5 @@
 import {
+  BLEND_NONE,
   bindScreen,
   createFramebuffer,
   createStateCache,
@@ -157,7 +158,7 @@ export function createGenerationPipeline(ctx: GLContext, options: GenerationPipe
     state.apply({
       depthTest: profile.video.depthBuffer,
       depthWrite: profile.video.depthBuffer,
-      blend: 'none',
+      blend: BLEND_NONE,
       cull: 'back',
     });
     state.clear(0, 0, 0, 1, profile.video.depthBuffer);
@@ -165,7 +166,7 @@ export function createGenerationPipeline(ctx: GLContext, options: GenerationPipe
     const plane = sprites[id];
     if (plane) {
       plane.bind();
-      state.apply({ depthTest: false, depthWrite: false, blend: 'none', cull: 'back' });
+      state.apply({ depthTest: false, depthWrite: false, blend: BLEND_NONE, cull: 'back' });
       state.clear(0, 0, 0, 0, false);
       drawSprites?.(profile);
     }

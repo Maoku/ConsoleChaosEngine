@@ -12,6 +12,7 @@
  *      → 画面
  */
 import {
+  BLEND_NONE,
   bindScreen,
   createFramebuffer,
   createProgram,
@@ -99,7 +100,7 @@ export function createPostChain(
     if (active.length === 0) return;
 
     // ポストプロセスは常に深度もカリングも使わない
-    state.apply({ depthTest: false, depthWrite: false, blend: 'none', cull: 'none' });
+    state.apply({ depthTest: false, depthWrite: false, blend: BLEND_NONE, cull: 'none' });
 
     let source = input;
     let sourceWidth = input.width;

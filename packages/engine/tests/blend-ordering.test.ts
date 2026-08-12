@@ -8,10 +8,12 @@ import {
   blendGen3Semitransparency,
   blendGen4Gs,
   createOrderingTableWorkspace,
+  createResolvedHardwareBlend,
   createRenderFrame,
   defaultOrderingTableIndex,
   generationSupportsHardwareBlend,
   orderingTableIndexForDepth,
+  resolveHardwareBlend,
   renderFrameSnapshot,
   visitOrderingTable,
 } from '../src';
@@ -90,6 +92,41 @@ describe('CPU blend references', () => {
       family: 'gen2-color-math', operation: 'add', half: false,
     })).toThrow(/PS1/);
     expect(generationSupportsHardwareBlend('FC', { family: 'portable', operation: 'alpha' })).toBe(false);
+  });
+
+  it('resolves generation blend commands to separate fixed-function states without allocating output', () => {
+    const output = createResolvedHardwareBlend();
+    expect(resolveHardwareBlend('FC', { family: 'portable', operation: 'alpha' }, undefined, output)).toMatchObject({
+      visible: false,
+      translucent: false,
+    });
+    const average = resolveHardwareBlend('PS1', {
+      family: 'gen3-semitransparency', mode: 'average',
+    }, undefined, output);
+    expect(average).toBe(output);
+    expect(average.state).toMatchObject({
+      enabled: true,
+      equationRgb: 'add',
+      sourceRgb: 'constant-alpha',
+      destinationRgb: 'constant-alpha',
+      constantColor: [0, 0, 0, 0.5],
+    });
+    const subtract = resolveHardwareBlend('SFC', {
+      family: 'gen2-color-math', operation: 'subtract', half: true,
+    }, undefined, output);
+    expect(subtract.state).toMatchObject({
+      equationRgb: 'reverse-subtract',
+      sourceRgb: 'constant-alpha',
+      destinationRgb: 'constant-alpha',
+    });
+    const multiply = resolveHardwareBlend('PS2', {
+      family: 'gen4-gs', preset: 'multiply', opacity: 0.75,
+    }, undefined, output);
+    expect(multiply).toMatchObject({ premultiplyColor: true, outputOpacity: 0.75 });
+    expect(multiply.state).toMatchObject({
+      sourceRgb: 'destination-color',
+      destinationRgb: 'one-minus-source-alpha',
+    });
   });
 });
 

@@ -23,6 +23,8 @@ uniform vec3 uCameraPosition;
 uniform float uEnvironmentStrength;
 uniform float uAlphaCutoff;
 uniform vec4 uFog;
+uniform vec4 uBlendColorOverride;
+uniform vec2 uBlendControl;
 
 out vec4 fragColor;
 
@@ -65,7 +67,10 @@ void main() {
   if (uFog.w > 0.0) {
     color = mix(color, uFog.rgb, clamp(1.0 - exp(-vDepth * uFog.w), 0.0, 1.0));
   }
-  fragColor = vec4(color, base.a);
+  color = mix(color, uBlendColorOverride.rgb, uBlendColorOverride.a);
+  float blendAlpha = base.a * uBlendControl.y;
+  color *= mix(1.0, blendAlpha, uBlendControl.x);
+  fragColor = vec4(color, blendAlpha);
 }
 `;
 

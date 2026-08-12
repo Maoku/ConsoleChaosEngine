@@ -17,5 +17,13 @@ export type { Texture, TextureOptions, TextureFilter, TextureWrap, TextureFormat
 export { createFramebuffer, bindScreen } from './framebuffer';
 export type { Framebuffer, FramebufferOptions } from './framebuffer';
 
-export { createStateCache, DEFAULT_STATE } from './state';
-export type { StateCache, RenderState } from './state';
+export {
+  BLEND_ADD,
+  BLEND_ALPHA,
+  BLEND_NONE,
+  BLEND_SUBTRACT,
+  createBlendState,
+  createStateCache,
+  DEFAULT_STATE,
+} from './state';
+export type { BlendEquation, BlendFactor, BlendState, StateCache, RenderState } from './state';

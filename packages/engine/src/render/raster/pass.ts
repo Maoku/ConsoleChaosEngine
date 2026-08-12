@@ -1,5 +1,5 @@
 import type { RasterSurfaceCommand, Vec2 } from '../frame';
-import { createProgram, createTexture, type GLContext, type Program, type StateCache, type Texture } from '../gl/index';
+import { BLEND_NONE, createProgram, createTexture, type GLContext, type Program, type StateCache, type Texture } from '../gl/index';
 import { createRasterLookupEncoder, validateRasterSurface } from './validate';
 import { RASTER_SURFACE_FRAGMENT, RASTER_SURFACE_VERTEX } from './shader';
 
@@ -21,7 +21,7 @@ export function createRasterSurfacePass(ctx: GLContext, state: StateCache): Rast
     draw(command, source, resolution): void {
       const rows = validateRasterSurface(command, resolution);
       lookup.upload(encoder.encode(command.scanlines), 1, rows);
-      state.apply({ depthTest: false, depthWrite: false, blend: 'none', cull: 'none' });
+      state.apply({ depthTest: false, depthWrite: false, blend: BLEND_NONE, cull: 'none' });
       program.use();
       gl.bindVertexArray(null);
       program.setUniforms({

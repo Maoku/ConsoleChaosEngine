@@ -1,4 +1,5 @@
 import type { GenerationId } from '../generation/profiles';
+import { createBlendState, type BlendState } from './gl/state';
 
 export type PortableBlendOperation = 'alpha' | 'add' | 'subtract' | 'multiply';
 export type Gen3SemitransparencyMode = 'average' | 'add' | 'subtract' | 'quarter-add';
@@ -30,6 +31,177 @@ export type HardwareBlendCommand =
 export type LegacyBlendMode = 'opaque' | 'alpha' | 'additive';
 export type RgbColor = readonly [number, number, number];
 export type RgbaColor = readonly [number, number, number, number];
+
+export interface ResolvedHardwareBlend {
+  visible: boolean;
+  translucent: boolean;
+  readonly state: BlendState;
+  readonly colorOverride: [number, number, number, number];
+  premultiplyColor: boolean;
+  outputOpacity: number;
+}
+
+export function createResolvedHardwareBlend(): ResolvedHardwareBlend {
+  return {
+    visible: true,
+    translucent: false,
+    state: createBlendState(),
+    colorOverride: [0, 0, 0, 0],
+    premultiplyColor: false,
+    outputOpacity: 1,
+  };
+}
+
+function resetResolved(out: ResolvedHardwareBlend): void {
+  out.visible = true;
+  out.translucent = false;
+  out.premultiplyColor = false;
+  out.outputOpacity = 1;
+  out.colorOverride[0] = 0;
+  out.colorOverride[1] = 0;
+  out.colorOverride[2] = 0;
+  out.colorOverride[3] = 0;
+  const state = out.state;
+  state.enabled = false;
+  state.equationRgb = 'add';
+  state.equationAlpha = 'add';
+  state.sourceRgb = 'one';
+  state.destinationRgb = 'zero';
+  state.sourceAlpha = 'one';
+  state.destinationAlpha = 'zero';
+  const constant = state.constantColor as [number, number, number, number];
+  constant[0] = 0;
+  constant[1] = 0;
+  constant[2] = 0;
+  constant[3] = 0;
+}
+
+function enableBlend(out: ResolvedHardwareBlend): BlendState {
+  out.translucent = true;
+  out.state.enabled = true;
+  out.state.destinationAlpha = 'one-minus-source-alpha';
+  return out.state;
+}
+
+function setConstant(out: ResolvedHardwareBlend, color: readonly [number, number, number, number]): void {
+  const constant = out.state.constantColor as [number, number, number, number];
+  for (let index = 0; index < 4; index++) constant[index] = clamp01(color[index] ?? 0);
+}
+
+function resolvePortable(
+  generation: GenerationId,
+  command: Extract<HardwareBlendCommand, { family: 'portable' }>,
+  out: ResolvedHardwareBlend,
+): void {
+  const state = enableBlend(out);
+  const opacity = clamp01(command.opacity ?? 1);
+  out.outputOpacity = opacity;
+  if (command.operation === 'multiply') {
+    out.premultiplyColor = true;
+    state.sourceRgb = 'destination-color';
+    state.destinationRgb = 'one-minus-source-alpha';
+    return;
+  }
+  if (command.operation === 'subtract') {
+    state.equationRgb = 'reverse-subtract';
+    state.sourceRgb = 'source-alpha';
+    state.destinationRgb = 'one';
+    return;
+  }
+  if (command.operation === 'add') {
+    state.sourceRgb = 'source-alpha';
+    state.destinationRgb = 'one';
+    return;
+  }
+  if (generation === 'SFC') {
+    setConstant(out, [0, 0, 0, 0.5]);
+    state.sourceRgb = 'constant-alpha';
+    state.destinationRgb = 'constant-alpha';
+  } else if (generation === 'PS1') {
+    setConstant(out, [0, 0, 0, 0.5]);
+    state.sourceRgb = 'constant-alpha';
+    state.destinationRgb = 'constant-alpha';
+  } else {
+    state.sourceRgb = 'source-alpha';
+    state.destinationRgb = 'one-minus-source-alpha';
+  }
+}
+
+export function resolveHardwareBlend(
+  generation: GenerationId,
+  hardwareBlend?: HardwareBlendCommand,
+  blendMode?: LegacyBlendMode,
+  out: ResolvedHardwareBlend = createResolvedHardwareBlend(),
+): ResolvedHardwareBlend {
+  resetResolved(out);
+  const command = hardwareBlendForCommand(hardwareBlend, blendMode);
+  if (!command) return out;
+  if (!generationSupportsHardwareBlend(generation, command)) {
+    out.visible = false;
+    return out;
+  }
+  if (command.family === 'portable') {
+    resolvePortable(generation, command, out);
+    return out;
+  }
+
+  const state = enableBlend(out);
+  if (command.family === 'gen2-color-math') {
+    const amount = command.half ? 0.5 : 1;
+    setConstant(out, [
+      command.fixedColor?.[0] ?? 0,
+      command.fixedColor?.[1] ?? 0,
+      command.fixedColor?.[2] ?? 0,
+      amount,
+    ]);
+    state.equationRgb = command.operation === 'subtract' ? 'reverse-subtract' : 'add';
+    state.sourceRgb = command.half ? 'constant-alpha' : 'one';
+    state.destinationRgb = command.half ? 'constant-alpha' : 'one';
+    if (command.operand === 'fixed' || command.fixedColor !== undefined) {
+      if (!command.fixedColor) throw new Error('Gen2 fixed color blending requires fixedColor');
+      out.colorOverride[0] = clamp01(command.fixedColor[0]);
+      out.colorOverride[1] = clamp01(command.fixedColor[1]);
+      out.colorOverride[2] = clamp01(command.fixedColor[2]);
+      out.colorOverride[3] = 1;
+    }
+    return out;
+  }
+  if (command.family === 'gen3-semitransparency') {
+    if (command.mode === 'average' || command.mode === 'quarter-add') {
+      const amount = command.mode === 'average' ? 0.5 : 0.25;
+      setConstant(out, [0, 0, 0, amount]);
+      state.sourceRgb = 'constant-alpha';
+      state.destinationRgb = command.mode === 'average' ? 'constant-alpha' : 'one';
+    } else {
+      state.sourceRgb = 'one';
+      state.destinationRgb = 'one';
+      if (command.mode === 'subtract') state.equationRgb = 'reverse-subtract';
+    }
+    return out;
+  }
+
+  const opacity = clamp01(command.opacity ?? (command.preset === 'fixed-alpha' ? 0.5 : 1));
+  if (command.preset === 'source-over') {
+    out.outputOpacity = opacity;
+    state.sourceRgb = 'source-alpha';
+    state.destinationRgb = 'one-minus-source-alpha';
+  } else if (command.preset === 'fixed-alpha') {
+    setConstant(out, [0, 0, 0, opacity]);
+    state.sourceRgb = 'constant-alpha';
+    state.destinationRgb = 'one-minus-constant-alpha';
+  } else if (command.preset === 'multiply') {
+    out.outputOpacity = opacity;
+    out.premultiplyColor = true;
+    state.sourceRgb = 'destination-color';
+    state.destinationRgb = 'one-minus-source-alpha';
+  } else {
+    out.outputOpacity = opacity;
+    state.sourceRgb = 'source-alpha';
+    state.destinationRgb = 'one';
+    if (command.preset === 'subtract') state.equationRgb = 'reverse-subtract';
+  }
+  return out;
+}
 
 const clamp01 = (value: number): number => Math.min(1, Math.max(0, value));
 const rgb = (red: number, green: number, blue: number): RgbColor =>

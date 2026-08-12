@@ -1,5 +1,5 @@
 import type { AffineSurfaceCommand, Vec2 } from '../frame';
-import { createProgram, type GLContext, type Program, type StateCache, type Texture } from '../gl/index';
+import { BLEND_NONE, createProgram, type GLContext, type Program, type StateCache, type Texture } from '../gl/index';
 import { validateAffineSurface } from './reference';
 import { AFFINE_SURFACE_FRAGMENT, AFFINE_SURFACE_VERTEX } from './shader';
 
@@ -14,7 +14,7 @@ export function createAffineSurfacePass(ctx: GLContext, state: StateCache): Affi
   return {
     draw(command, source, resolution): void {
       validateAffineSurface(command, resolution);
-      state.apply({ depthTest: false, depthWrite: false, blend: 'none', cull: 'none' });
+      state.apply({ depthTest: false, depthWrite: false, blend: BLEND_NONE, cull: 'none' });
       program.use();
       gl.bindVertexArray(null);
       program.setUniforms({
