@@ -12,6 +12,12 @@ import type { GenerationController } from '../generation/controller';
 import type { GenerationId, HardwareGenerationProfile } from '../generation/profiles';
 import { createCamera } from './camera';
 import { createAffineSurfacePass } from './affine/pass';
+import { hardwareBlendForCommand } from './blend';
+import {
+  createDrawPacketWorkspace,
+  stableSortDrawPackets,
+  type DrawPacket,
+} from './draw-packet';
 import type {
   BackgroundCommand,
   GeometryCommand,
@@ -43,6 +49,12 @@ import {
 } from './gl/index';
 import { createGenerationPipeline } from './generation-pipeline';
 import { nearestMasterIndex } from './master-palette';
+import {
+  createOrderingTableWorkspace,
+  defaultOrderingTableIndex,
+  visitOrderingTable,
+  type OrderingTableIndex,
+} from './ordering-table';
 import { resolveFrameLighting } from './lighting';
 import type { CrtPreset, CrtQuality } from './postfx/presets';
 import ps1Fragment from './shaders/ps1_forward';
@@ -50,7 +62,15 @@ import ps1Vertex from './shaders/ps1_vertex';
 import skinnedVertex from './shaders/skinned_test.vert';
 import backdropFragment from './shaders/backdrop.frag';
 import backdropVertex from './shaders/backdrop.vert';
-import { createSortWorkspace, sortTrianglesByDepth, type TriangleSortWorkspace } from './sort';
+import {
+  createOrderingPartitionWorkspace,
+  createSortWorkspace,
+  partitionTrianglesByViewDepth,
+  sortTrianglesByDepth,
+  type IndexArray,
+  type TriangleOrderingPartitionWorkspace,
+  type TriangleSortWorkspace,
+} from './sort';
 import { createRasterSurfacePass } from './raster/pass';
 import type { FrameRenderer } from './renderer';
 
@@ -62,6 +82,7 @@ const NO_UV_SCROLL: [number, number] = [0, 0];
 const NO_LAYER: [number, number, number, number] = [0, 0, 0, 0];
 const SHADOW_STRENGTH = 0.72;
 const FLOAT_RATE = 1;
+const DRAW_PACKET_CAPACITY = 8192;
 
 export interface RenderTextureAsset {
   url: string;
@@ -116,9 +137,10 @@ interface Shape {
   local?: { matrix: mat4; inverse: mat4 };
   sortable?: {
     positions: Float32Array;
-    indices: Uint16Array;
-    out: Uint16Array;
+    indices: IndexArray;
+    out: IndexArray;
     workspace: TriangleSortWorkspace;
+    ordering: TriangleOrderingPartitionWorkspace;
   };
 }
 
@@ -236,6 +258,7 @@ async function createGpuBackend(
   const modelMatrix = mat4.create();
   const spriteProjection = mat4.create();
   const partMatrix = mat4.create();
+  const modelViewMatrix = mat4.create();
   const localCamera = new Float32Array(3);
   const materialById = new Map<string, MaterialCommand>();
   const textures = new Map<string, Texture>();
@@ -302,12 +325,15 @@ async function createGpuBackend(
     );
     disposables.push(...buffers, ibo, vao);
     const shape: Shape = { vao, count: primitive.indices.length, triangles: primitive.indices.length / 3 };
-    if (sortable && primitive.indices instanceof Uint16Array) {
+    if (sortable) {
       shape.sortable = {
         positions: primitive.positions,
         indices: primitive.indices,
-        out: new Uint16Array(primitive.indices.length),
+        out: primitive.indices instanceof Uint32Array
+          ? new Uint32Array(primitive.indices.length)
+          : new Uint16Array(primitive.indices.length),
         workspace: createSortWorkspace(primitive.indices.length / 3),
+        ordering: createOrderingPartitionWorkspace(primitive.indices.length / 3),
       };
     }
     return shape;
@@ -429,6 +455,9 @@ async function createGpuBackend(
 
   const distances: number[] = [];
   const order: number[] = [];
+  const orderingTable = createOrderingTableWorkspace<DrawPacket>();
+  const drawPackets = createDrawPacketWorkspace(DRAW_PACKET_CAPACITY);
+  const occupiedOrderingSlots = new Uint8Array(12);
   const pointLight: [number, number, number, number] = [0, 0, 0, 0];
   const pointLightColor: [number, number, number] = [1, 1, 1];
   const directionalLight: [number, number, number] = [0.4, 1, 0.6];
@@ -449,10 +478,9 @@ async function createGpuBackend(
     return found ?? fallback!;
   }
 
-  function drawShape(shape: Shape): void {
-    shape.vao.bind();
-    gl.drawElements(shape.mode === 'lines' ? gl.LINES : gl.TRIANGLES, shape.count, shape.vao.indexType, 0);
-    triangleCount += shape.triangles;
+  function drawShape(shape: Shape, firstIndex = 0, count = shape.count): void {
+    shape.vao.drawElements(shape.mode === 'lines' ? gl.LINES : gl.TRIANGLES, count, firstIndex);
+    triangleCount += shape.mode === 'lines' ? 0 : count / 3;
   }
 
   function ambientOf(material: MaterialCommand): [number, number, number] {
@@ -557,7 +585,13 @@ async function createGpuBackend(
     }
   }
 
-  function drawMesh(mesh: MeshCommand, profile: HardwareGenerationProfile, active: RenderFrame, parts?: readonly Shape[]): void {
+  function drawMesh(
+    mesh: MeshCommand,
+    profile: HardwareGenerationProfile,
+    active: RenderFrame,
+    parts?: readonly Shape[],
+    polygonSlot?: OrderingTableIndex,
+  ): void {
     const material = materialFor(mesh);
     const environment = material.environmentTexture ? textures.get(material.environmentTexture) : undefined;
     transformFor(mesh, material, active);
@@ -591,10 +625,13 @@ async function createGpuBackend(
       if (part.local) mat4.multiply(partMatrix, modelMatrix, part.local.matrix);
       sceneProgram.setUniforms({ uModel: (part.local ? partMatrix : modelMatrix) as Float32Array });
       if (shouldSort && part.sortable) {
-        const scale = mesh.transform.scale ?? [1, 1, 1];
-        for (let axis = 0; axis < 3; axis++) {
-          localCamera[axis] = (camera.position[axis]! - mesh.transform.position[axis]!) / scale[axis]!;
+        if (profile.id === 'PS1' && polygonSlot !== undefined) {
+          const range = part.sortable.ordering.ranges[polygonSlot]!;
+          if (range.count > 0) drawShape(part, range.firstIndex, range.count);
+          continue;
         }
+        const scale = mesh.transform.scale ?? [1, 1, 1];
+        for (let axis = 0; axis < 3; axis++) localCamera[axis] = (camera.position[axis]! - mesh.transform.position[axis]!) / scale[axis]!;
         if (part.local) vec3.transformMat4(localCamera, localCamera, part.local.inverse);
         sortTrianglesByDepth(part.sortable.positions, part.sortable.indices, localCamera, part.sortable.out, part.sortable.workspace);
         part.vao.updateIndices(part.sortable.out);
@@ -619,10 +656,162 @@ async function createGpuBackend(
       order[count++] = index;
     }
     if (translucent || !profile.video.depthBuffer) {
-      const sorted = order.slice(0, count).sort((a, b) => distances[b]! - distances[a]!);
-      for (let index = 0; index < count; index++) order[index] = sorted[index]!;
+      for (let index = 1; index < count; index++) {
+        const meshIndex = order[index]!;
+        const distance = distances[meshIndex]!;
+        let insertion = index;
+        while (insertion > 0 && distances[order[insertion - 1]!]! < distance) {
+          order[insertion] = order[insertion - 1]!;
+          insertion--;
+        }
+        order[insertion] = meshIndex;
+      }
     }
     return count;
+  }
+
+  function viewDepth(position: Vec3): number {
+    return -(
+      camera.view[2]! * position[0]
+      + camera.view[6]! * position[1]
+      + camera.view[10]! * position[2]
+      + camera.view[14]!
+    );
+  }
+
+  function materialIsTranslucent(material: MaterialCommand | undefined): boolean {
+    return hardwareBlendForCommand(material?.hardwareBlend, material?.blendMode) !== undefined;
+  }
+
+  function prepareMeshOrdering(
+    mesh: MeshCommand,
+    material: MaterialCommand,
+    active: RenderFrame,
+    range: readonly [OrderingTableIndex, OrderingTableIndex],
+  ): boolean {
+    occupiedOrderingSlots.fill(0);
+    transformFor(mesh, material, active);
+    let prepared = false;
+    for (const part of meshParts(mesh)) {
+      if (!part.sortable) continue;
+      const localToWorld = part.local
+        ? mat4.multiply(partMatrix, modelMatrix, part.local.matrix)
+        : modelMatrix;
+      mat4.multiply(modelViewMatrix, camera.view, localToWorld);
+      const ranges = partitionTrianglesByViewDepth(
+        part.sortable.positions,
+        part.sortable.indices,
+        modelViewMatrix,
+        camera.near,
+        camera.far,
+        range,
+        part.sortable.out,
+        part.sortable.ordering,
+      );
+      part.vao.updateIndices(part.sortable.out);
+      for (let slot = range[0]; slot <= range[1]; slot++) {
+        if (ranges[slot]!.count > 0) occupiedOrderingSlots[slot] = 1;
+      }
+      prepared = true;
+    }
+    return prepared;
+  }
+
+  function registerGen3Packet(packet: DrawPacket, index: OrderingTableIndex): void {
+    orderingTable.lists[index]!.push(packet);
+  }
+
+  function collectGen3Packets(active: RenderFrame): void {
+    drawPackets.reset();
+    orderingTable.reset();
+    for (const mesh of active.meshes) {
+      if (mesh.visible === false || !applies(mesh, 'PS1')) continue;
+      const material = materialFor(mesh);
+      const translucent = materialIsTranslucent(material);
+      const depth = viewDepth(mesh.transform.position);
+      if (mesh.wireframe) {
+        const packet = drawPackets.take('mesh', mesh);
+        packet.material = material;
+        packet.viewDepth = depth;
+        packet.debug = true;
+        registerGen3Packet(packet, mesh.orderTableIndex ?? 11);
+        continue;
+      }
+      if (material.polygonSort) {
+        const fixedIndex = mesh.orderTableIndex;
+        const range = fixedIndex !== undefined
+          ? [fixedIndex, fixedIndex] as const
+          : mesh.polygonSortRange ?? (translucent ? [9, 9] as const : [1, 8] as const);
+        if (prepareMeshOrdering(mesh, material, active, range)) {
+          for (let slot = range[0]; slot <= range[1]; slot++) {
+            if (occupiedOrderingSlots[slot] === 0) continue;
+            const packet = drawPackets.take('mesh', mesh);
+            packet.material = material;
+            packet.viewDepth = depth;
+            packet.translucent = translucent;
+            packet.polygonSlot = slot as OrderingTableIndex;
+            registerGen3Packet(packet, slot as OrderingTableIndex);
+          }
+          continue;
+        }
+      }
+      const packet = drawPackets.take('mesh', mesh);
+      packet.material = material;
+      packet.viewDepth = depth;
+      packet.translucent = translucent;
+      registerGen3Packet(packet, defaultOrderingTableIndex({
+        ...(mesh.orderTableIndex !== undefined ? { explicit: mesh.orderTableIndex } : {}),
+        kind: 'world',
+        translucent,
+        viewDepth: depth,
+        nearDepth: camera.near,
+        farDepth: camera.far,
+      }));
+    }
+    for (const command of active.skinnedMeshes) {
+      if (command.visible === false || !applies(command, 'PS1')) continue;
+      const material = command.material ? materialById.get(command.material) : undefined;
+      const packet = drawPackets.take('skinned-mesh', command);
+      packet.material = material;
+      packet.viewDepth = viewDepth(command.transform.position);
+      packet.translucent = materialIsTranslucent(material);
+      registerGen3Packet(packet, defaultOrderingTableIndex({
+        ...(command.orderTableIndex !== undefined ? { explicit: command.orderTableIndex } : {}),
+        kind: 'world',
+        translucent: packet.translucent,
+        viewDepth: packet.viewDepth,
+        nearDepth: camera.near,
+        farDepth: camera.far,
+      }));
+    }
+    for (const list of orderingTable.lists) stableSortDrawPackets(list);
+  }
+
+  function drawGen3Packets(profile: HardwareGenerationProfile, active: RenderFrame): void {
+    collectGen3Packets(active);
+    let translucent = false;
+    const fogDensity = fog[3];
+    visitOrderingTable(orderingTable, (packet) => {
+      if (!packet.command) return;
+      if (packet.debug) {
+        state.apply({ depthTest: false, depthWrite: false, blend: 'alpha', cull: 'none' });
+        fog[3] = 0;
+        drawMesh(packet.command as MeshCommand, profile, active, [wireframeMesh]);
+        return;
+      }
+      if (packet.translucent !== translucent) {
+        translucent = packet.translucent;
+        state.apply({ depthTest: false, depthWrite: false, blend: translucent ? 'add' : 'none', cull: 'back' });
+        fog[3] = translucent ? 0 : fogDensity;
+      }
+      if (packet.kind === 'mesh') {
+        drawMesh(packet.command as MeshCommand, profile, active, undefined, packet.polygonSlot);
+      } else if (packet.kind === 'skinned-mesh') {
+        drawSkinned(packet.command as SkinnedMeshCommand, profile);
+      }
+    });
+    fog[3] = fogDensity;
+    state.apply({ depthTest: false, depthWrite: false, blend: 'none', cull: 'back' });
   }
 
   function pointShadow(
@@ -833,6 +1022,10 @@ async function createGpuBackend(
     drawBackground(profile, active);
     drawSurfaces(profile, active);
     sceneProgram.use();
+    if (profile.id === 'PS1') {
+      drawGen3Packets(profile, active);
+      return;
+    }
     for (const mesh of active.meshes) {
       if (mesh.visible === false || !applies(mesh, profile.id) || mesh.wireframe || (mesh.layer ?? 0) >= 0) continue;
       const material = materialFor(mesh);

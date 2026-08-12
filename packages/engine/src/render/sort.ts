@@ -15,6 +15,105 @@
 
 export type IndexArray = Uint16Array | Uint32Array;
 
+export interface OrderingPartitionRange {
+  /** Offset into the index buffer, measured in indices rather than bytes. */
+  firstIndex: number;
+  count: number;
+}
+
+export interface TriangleOrderingPartitionWorkspace {
+  readonly capacity: number;
+  readonly depths: Float32Array;
+  readonly slots: Uint8Array;
+  readonly counts: Uint32Array;
+  readonly offsets: Uint32Array;
+  readonly cursors: Uint32Array;
+  readonly ranges: readonly OrderingPartitionRange[];
+}
+
+export function createOrderingPartitionWorkspace(capacity: number): TriangleOrderingPartitionWorkspace {
+  return {
+    capacity,
+    depths: new Float32Array(capacity),
+    slots: new Uint8Array(capacity),
+    counts: new Uint32Array(12),
+    offsets: new Uint32Array(13),
+    cursors: new Uint32Array(12),
+    ranges: Array.from({ length: 12 }, () => ({ firstIndex: 0, count: 0 })),
+  };
+}
+
+/**
+ * Stable O(n + 12) partition by triangle-centroid view depth.
+ * The matrix is local-to-view in gl-matrix/WebGL column-major layout.
+ */
+export function partitionTrianglesByViewDepth(
+  positions: Float32Array,
+  indices: IndexArray,
+  localToView: ArrayLike<number>,
+  nearDepth: number,
+  farDepth: number,
+  range: readonly [number, number],
+  out: IndexArray,
+  workspace: TriangleOrderingPartitionWorkspace,
+): readonly OrderingPartitionRange[] {
+  const triangles = indices.length / 3;
+  if (!Number.isInteger(triangles) || triangles > workspace.capacity || out.length < indices.length) {
+    throw new RangeError(`Ordering partition capacity ${workspace.capacity} cannot hold ${triangles} triangles`);
+  }
+  const start = range[0] ?? -1;
+  const end = range[1] ?? -1;
+  if (!Number.isInteger(start) || !Number.isInteger(end) || start < 0 || end > 11 || start > end) {
+    throw new RangeError(`Ordering partition range must be ascending within 0..11; received ${start}..${end}`);
+  }
+
+  const { counts, cursors, depths, offsets, ranges, slots } = workspace;
+  counts.fill(0);
+  const depthSpan = farDepth - nearDepth;
+  const slotSpan = end - start;
+  for (let triangle = 0; triangle < triangles; triangle++) {
+    const i0 = (indices[triangle * 3] ?? 0) * 3;
+    const i1 = (indices[triangle * 3 + 1] ?? 0) * 3;
+    const i2 = (indices[triangle * 3 + 2] ?? 0) * 3;
+    const x = ((positions[i0] ?? 0) + (positions[i1] ?? 0) + (positions[i2] ?? 0)) / 3;
+    const y = ((positions[i0 + 1] ?? 0) + (positions[i1 + 1] ?? 0) + (positions[i2 + 1] ?? 0)) / 3;
+    const z = ((positions[i0 + 2] ?? 0) + (positions[i1 + 2] ?? 0) + (positions[i2 + 2] ?? 0)) / 3;
+    const viewZ = (localToView[2] ?? 0) * x
+      + (localToView[6] ?? 0) * y
+      + (localToView[10] ?? 1) * z
+      + (localToView[14] ?? 0);
+    const depth = -viewZ;
+    const normalized = depthSpan > 0
+      ? Math.min(1, Math.max(0, (depth - nearDepth) / depthSpan))
+      : 0;
+    const slot = end - Math.round(normalized * slotSpan);
+    depths[triangle] = depth;
+    slots[triangle] = slot;
+    counts[slot]!++;
+  }
+
+  let triangleOffset = 0;
+  for (let slot = 0; slot < 12; slot++) {
+    offsets[slot] = triangleOffset;
+    cursors[slot] = triangleOffset;
+    const entry = ranges[slot]!;
+    entry.firstIndex = triangleOffset * 3;
+    entry.count = (counts[slot] ?? 0) * 3;
+    triangleOffset += counts[slot] ?? 0;
+  }
+  offsets[12] = triangleOffset;
+
+  for (let triangle = 0; triangle < triangles; triangle++) {
+    const source = triangle * 3;
+    const slot = slots[triangle] ?? 0;
+    const destination = cursors[slot]!++ * 3;
+    out[destination] = indices[source] ?? 0;
+    out[destination + 1] = indices[source + 1] ?? 0;
+    out[destination + 2] = indices[source + 2] ?? 0;
+  }
+  return ranges;
+}
+
 /** 距離キーの量子化ビット数。16bit = 65,536 段階あれば同一距離の誤判定は実用上起きない */
 const KEY_BITS = 16;
 const KEY_MAX = (1 << KEY_BITS) - 1;

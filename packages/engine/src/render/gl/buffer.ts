@@ -33,6 +33,8 @@ export interface VertexArray {
   bind(): void;
   /** PS1 のソート結果を毎フレームアップロードする（§5.4.3） */
   updateIndices(data: Uint16Array | Uint32Array): void;
+  /** Draw an index-buffer range. firstIndex is measured in indices, not bytes. */
+  drawElements(mode: number, count: number, firstIndex?: number): void;
   dispose(): void;
 }
 
@@ -122,6 +124,12 @@ export function createVertexArray(
       // 以後どの世代でもその床が描かれなくなっていた（当たり判定だけが残る）
       gl.bindVertexArray(handle);
       indexBuffer.update(data);
+    },
+    drawElements(mode: number, count: number, firstIndex = 0): void {
+      if (!indexBuffer) throw new Error('インデックスバッファを持たない VAO に drawElements した');
+      gl.bindVertexArray(handle);
+      const bytesPerIndex = indexType === gl.UNSIGNED_INT ? 4 : 2;
+      gl.drawElements(mode, count, indexType, firstIndex * bytesPerIndex);
     },
     dispose(): void {
       gl.deleteVertexArray(handle);
