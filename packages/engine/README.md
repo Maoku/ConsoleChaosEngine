@@ -88,8 +88,8 @@ window.addEventListener(
 ```
 
 テクスチャ、glTF、世代別ポストエフェクトを使う場合は `createGenerationWebGlRenderer` を選択します。
-このレンダラーには `AssetManager` と `RenderAssetManifest` が必要です。実運用例は
-`apps/racing/src/bootstrap.ts` にあります。
+このレンダラーには `AssetManager` と `RenderAssetManifest` が必要です。公開契約の詳細は
+[`Docs/ENGINE_API.md`](../../Docs/ENGINE_API.md) を参照してください。
 
 ## 4世代のコンソール表現
 

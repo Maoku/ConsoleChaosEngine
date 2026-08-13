@@ -11,11 +11,11 @@
 
 ## 1. 背景と結論
 
-現行 workspace には、独立した `@console-chaos/engine`、`GameHost`、`GameModule`、Racing アプリ、境界検査が存在する。
+現行 workspace には、独立した `@console-chaos/engine`、`GameHost`、`GameModule`、境界検査が存在する。
 しかし Console Chaos の実ブラウザ経路は `bootstrap.ts` から旧 `main.ts` を読み込み、app 内の loop、generation、input、render、audio を組み立てている。
 `createConsoleChaosModule()` は本番 bootstrap から使用されておらず、engine API を利用する最小アダプタとして並存しているだけである。
 
-したがって現在地は「再利用可能な engine と Racing の成立」までは完了しているが、
+したがって現在地は「再利用可能な engine の成立」までは完了しているが、
 「Console Chaos 本編をその engine 上へ完全移行する」作業は未完了である。
 
 本計画の目的は次の一文で定義する。
@@ -150,10 +150,10 @@ flowchart TD
 
 ### 4.2 境界
 
-- engineはpuzzle、checkpoint、player、torch、lap、race、Console固有asset pathを知らない。
+- engineはpuzzle、checkpoint、player、torch、Console固有asset pathを知らない。
 - appはFBO、shader compile、CRT signal処理、palette quantization実装を知らない。
 - appからのengine importは `@console-chaos/engine` 公開entryだけ。
-- Console projection policyをRacingへ自動適用しない。
+- Console projection policyをengineの既定動作にしない。
 - app themeはhardware値を複製しない。
 
 ### 4.3 忠実性
@@ -180,8 +180,6 @@ flowchart TD
 `GameInstance` に任意の `prepareFixedUpdate(frame)` phaseを追加する。
 `GameHost` は device poll、prepare、controller advance、audio update、fixedUpdate の順に一度ずつ呼ぶ。
 prepare phaseはapp actionのsampleとservice requestに限定し、gameplay simulationを進めない。
-Racingもgeneration操作をprepare phaseへ移し、2作品で同じhost順序を利用する。
-
 appからcontrollerの`advance()`を呼ぶことは禁止し、時間を進める所有者はhostだけにする。
 
 現行engine controllerへ、Console本編が旧switcherに依存している次の能力を追加する。
@@ -374,7 +372,7 @@ sessionを直接tickするunit testは純粋gameplay検査に限り、統合再�
 
 | ID | 作業 | 成果物 | 受け入れ条件 |
 |---|---|---|---|
-| M3-01 | engine RenderFrameを必要最小commandへ拡張 | render API v2 | Console/Racing双方のcontract testが通る |
+| M3-01 | engine RenderFrameを必要最小commandへ拡張 | render API v2 | Consoleのcontract testが通る |
 | M3-02 | legacy Frame→RenderFrame比較adapterを作る | temporary adapter | command列/draw statsのgolden一致 |
 | M3-03 | renderer3dをapp内でpass別に分割 | pass modules | 画像、draw order、triangle countが分割前と一致 |
 | M3-04 | postfx、CRT、palette、RGB555、transition shaderをengineへ移す | generation passes | algorithmic golden完全一致 |
@@ -452,8 +450,8 @@ apps/console-chaos/src/render/renderer3d.ts
 |---|---|---|---|
 | M7-01 | boundary/migration/public export検査をCIへ固定 | static gates | intentional violation fixtureが必ず失敗 |
 | M7-02 | perf、memory、context lost計測 | measurement report | §9の予算内 |
-| M7-03 | Console/Racing production E2Eを同一CIで実行 | CI matrix | 両appがengine public APIで合格 |
-| M7-04 | `ENGINE_API.md`を実装APIへ更新 | API docs | Console/Racing双方の最小例が再現可能 |
+| M7-03 | Console production E2EをCIで実行 | CI matrix | appがengine public APIで合格 |
+| M7-04 | `ENGINE_API.md`を実装APIへ更新 | API docs | GameModuleの最小例が再現可能 |
 | M7-05 | `PARITY_MATRIX.md`を新runtime結果へ更新 | final parity | legacy baselineとengine resultが区別される |
 | M7-06 | reference HEAD/clean/snapshotを最終確認 | immutable reference proof | 531file/基準commitが一致 |
 
@@ -507,7 +505,6 @@ profileの「値変更」と「所有場所変更」も同じPRで行わない�
 | Console render golden | 4世代、切替途中、6puzzle、player model/sprite、background、shadow |
 | Console audio golden | 4source、PCM、voice limit、switch前後bar position、SFX |
 | Browser E2E | production bootstrap、keyboard/gamepad、HUD、URL、audio unlock、dispose |
-| Racing regression | unit/replay/E2E/buildを変更前と同じ条件で合格 |
 | Static | imports、legacy file、hardware重複、deep import、game語彙、asset参照 |
 
 ### 8.2 production hostを証明するE2E
@@ -549,12 +546,11 @@ checker自身に違反fixtureを用意し、検出0件になっただけでは�
 lint / typecheck
 engine unit + contract
 Console unit + host replay + render/audio golden
-Racing unit + replay + E2E
 Console production browser E2E
 boundary check
 Console migration check
 level/asset/trademark/reference check
-engine/testkit/Console/Racing production build
+engine/testkit/Console production build
 performance/resource lifecycle checks
 ```
 
@@ -620,7 +616,7 @@ performance/resource lifecycle checks
 - [x] 4世代、切替途中、6puzzleのrender captureがparity合格する。
 - [x] PCM、音楽位相、SFX、voice limitがparity合格する。
 - [x] 既存query URL、HUD、設定、playtest/debug操作が維持される。
-- [x] Console/Racing双方のproduction browser E2Eが合格する。
+- [x] Consoleのproduction browser E2Eが合格する。
 - [x] dispose/context lost/performance/resource予算を満たす。
 - [x] migration checkerが残存0件かつ違反fixtureを検出する。
 - [x] root `npm run verify`が旧runtimeなしで合格する。
@@ -635,7 +631,7 @@ performance/resource lifecycle checks
 
 1. 削除したlegacy fileと互換APIの一覧
 2. engineへ追加・変更したpublic contract
-3. Console/Racingが実際に使用するengine service一覧
+3. Consoleが実際に使用するengine service一覧
 4. state replay、render capture、audio goldenの結果
 5. production E2Eとbundle検査の結果
 6. performance、memory、dispose、context lostの計測結果
@@ -644,4 +640,4 @@ performance/resource lifecycle checks
 
 「全test合格」だけでは完了証跡にならない。
 production bootstrapが新hostを使うこと、legacy runtimeがbundleとsourceから消えていること、
-ConsoleとRacingの2作品が同じengine実装を消費していることを、静的検査と実行時検査の両方で示す。
+Consoleがengine実装を消費していることを、静的検査と実行時検査の両方で示す。

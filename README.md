@@ -5,7 +5,6 @@
 - `packages/engine`: 固定ティック、generation、ActionMap、RenderFrame、audio、assets、physics、scene、web host
 - `packages/engine-testkit`: browser API を使わない deterministic fake
 - `apps/console-chaos`: 参照ゲームの無変更取り込みを基準にした謎解きアクション
-- `apps/racing`: engine 公開 API だけを使う3周のレースゲーム
 
 ## 4世代のコンソール表現
 
@@ -26,7 +25,6 @@ Engineは同じゲーム状態を維持したまま、映像・音声・入力�
 npm install
 npm run verify
 npm run dev -w @console-chaos/console-chaos
-npm run dev -w @console-chaos/racing
 ```
 
 ## 他プロジェクトで使う

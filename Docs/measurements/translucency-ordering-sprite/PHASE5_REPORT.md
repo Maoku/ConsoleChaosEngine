@@ -11,7 +11,6 @@
   - PS2: Gen4 GS / source-over
 - `?scene=blend` に不透明背景、半透明板、world-space sprite、screen-space spriteを持つ最小統合場面を追加した。
   PS1はOT slot 2/9/10/11、PS2はspherical billboardとdepth writeを実際のcommandで使用する。
-- RacingのPS1 checkpointを固定OT slot 1へ、車体triangleを`polygonSortRange: [2, 7]`へ移行した。
 - 公開READMEとAPI文書へ世代別半透明、OT12 slot、sprite routing/billboard/depth writeを追記した。
 - command goldenは件数を維持したまま、新しい明示的hardware blend契約を含むhashへ更新した。
 
@@ -40,10 +39,9 @@ rootの`npm run verify`を実行し、終了コード0を確認した。
 - Engine unit: 11 files / 46 tests
 - Engine testkit: 1 file / 1 test
 - Console Chaos unit/golden/replay: 44 files / 413 tests
-- Racing unit: 8 files / 25 tests
-- Console/Racing E2E: 3 files / 6 tests
-- boundary、strict migration、line budget、level、texture/glTF、Racing image/model、trademark、reference snapshot: pass
-- Engine、testkit、Console、Racing production build: pass
+- Console E2E: pass
+- boundary、strict migration、line budget、level、texture/glTF、trademark、reference snapshot: pass
+- Engine、testkit、Console production build: pass
 - Console bundle legacy exclusion: pass
 
 CPU参照式はGen2 add/subtract/half/fixed、Gen3 4 mode、Gen4 presetを既知値で検証し、fake GLでは

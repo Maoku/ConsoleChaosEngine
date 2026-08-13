@@ -12,10 +12,9 @@
 - Engine: 8 files / 29 tests
 - Engine testkit: 1 file / 1 test
 - Console Chaos: 42 files / 407 tests
-- Racing: 8 files / 25 tests
-- Console/Racing E2E: 3 files / 6 tests
+- Console E2E
 - boundary, migration, budget, level, asset, trademark, and reference checks
-- Engine, testkit, Console Chaos, and Racing production builds
+- Engine, testkit, and Console Chaos production builds
 
 ## Sort benchmark
 

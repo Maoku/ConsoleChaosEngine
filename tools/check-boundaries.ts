@@ -35,9 +35,6 @@ function checkFile(path: string): Violation[] {
     if (file.startsWith('packages/engine/') && (specifier.includes('/apps/') || specifier.startsWith('../../apps/'))) {
       add('engine must not import an app');
     }
-    if (file.startsWith('apps/racing/') && (specifier.startsWith('@console-chaos/console-chaos') || specifier.includes('apps/console-chaos'))) {
-      add('racing must not import Console Chaos');
-    }
     if (file.startsWith('apps/') && /^@console-chaos\/engine\//.test(specifier)) {
       add('apps must use the engine public entry point');
     }

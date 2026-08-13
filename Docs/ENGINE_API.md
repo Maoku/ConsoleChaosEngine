@@ -78,7 +78,7 @@ hold、pressure semantics を適用する。focus loss 時は browser input sour
 
 - `RenderFrame`: camera、mesh、skinned mesh、sprite、light、background、material、overlay、
   `rasterSurfaces`、`affineSurfaces` の平坦な command buffer。surface は内部解像度の左上原点pixel rectを使い、
-  FCの走査線tableとSFCのUV affine transformをappから受け取る。Engineはroad/raceなどの意味を解釈しない。
+  FCの走査線tableとSFCのUV affine transformをappから受け取る。Engineはゲーム固有の意味を解釈しない。
 - `SpriteCommand.screenSpace`: 省略時は従来どおりworld plane。`true`では`position.x/y`と`size`を
   generation target pixelとして描く。raster/affine surface上のHUDではないgame spriteに使用できる。
 - `SpriteCommand.billboard/depthWrite`: scene spriteのworld向きを`cylindrical / spherical / none`から選び、
@@ -99,7 +99,7 @@ hold、pressure semantics を適用する。focus loss 時は browser input sour
   通常1世代、transition 中だけ旧/新2世代を描画・合成する。FC/SFCは
   background → screen surface → mesh → separate sprite plane、PS1はbackground → OT12 scene、PS2は
   background → depth scene → late screen spriteとして描き、最後にpalette/CRT → transition composeする。
-  Console/Racingの語彙は持たない。
+  ゲーム固有の語彙は持たない。
 - `createGenerationCanvasRenderer()`: testkitや軽量fallback向けのgeneric command renderer。
 - `AssetManager`: pending load と参照数を key ごとに共有する。text/binary/image/glTF/GPU resource を扱い、
   最後の `release()` で解放する。`restoreGpuResources()` は context 再構築時に active GPU handle を差し替える。
@@ -113,12 +113,11 @@ hold、pressure semantics を適用する。focus loss 時は browser input sour
 app は `Score` と `PlayRequest` を作り、曲名やSFX IDを engine へ持ち込まない。source 切替後も bar position は
 共通 clock を正本にする。mute中の曲変更と再開tickもtransport上で保持する。
 
-## Console と Racing
+## Console Chaos との接続
 
-Console は `createConsoleChaosModule(level)`、Racing は `RACING_GAME_MODULE` を `host.start()` に渡す。
-両作品とも `prepareFixedUpdate()` で同じ engine ActionMap と GenerationController を使い、
-`buildRenderFrame()` で同じ generic command を作る。Console の puzzle/projection/theme/content と
-Racing の car/lap/race rule は各 app 内に留まる。
+Console Chaos は `createConsoleChaosModule(level)` を `host.start()` に渡す。
+`prepareFixedUpdate()` で engine ActionMap と GenerationController を使い、`buildRenderFrame()` で
+generic command を作る。puzzle/projection/theme/content は app 内に留まる。
 
 ## testkit と検査
 
@@ -127,5 +126,4 @@ recording rendererはsurface数も記録し、recording audioはcompact toneに�
 production browser global を作らず module lifecycle と replay を検査できる。
 
 最終検査は root の `npm run verify`。boundary/migration fixture、resource/context-loss lifecycle、reference snapshot、
-Console bundle source map の legacy exclusion、Console/Racing双方のhost E2E、render/PCM golden、Racingのretro PNGと
-runtime car GLB fingerprint/budget検査、全buildを含む。
+Console bundle source map の legacy exclusion、Console host E2E、render/PCM golden、全buildを含む。

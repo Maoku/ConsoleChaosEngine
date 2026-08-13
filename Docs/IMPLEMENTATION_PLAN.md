@@ -1,8 +1,7 @@
 # Console Chaos Engine — 実装計画書
 
 > 本書は [ENGINE_PLAN.md](ENGINE_PLAN.md) を実装可能な粒度へ具体化する。
-> 対象は、`Opus5ConsoleChaos` の現行ゲームを忠実に維持しながら再利用可能なゲームエンジンへ分離し、
-> そのエンジンだけを利用するレースゲームによって再利用性を証明する作業である。
+> 対象は、`Opus5ConsoleChaos` の現行ゲームを忠実に維持しながら再利用可能なゲームエンジンへ分離する作業である。
 >
 > 初版: 2026-08-11
 >
@@ -16,7 +15,6 @@
 
 1. 4 つのコンソール世代表現を、ゲームジャンルから独立して切り替えられるエンジンを作る。
 2. `Opus5ConsoleChaos` の謎解きアクションゲームを、エンジン利用アプリとして忠実かつ完全に再現する。
-3. 同じエンジンを利用し、Console Chaos 固有コードに依存しないレースゲームを作る。
 
 ### 1.2 プロジェクト全体の Definition of Done
 
@@ -24,13 +22,11 @@
 
 - `Opus5ConsoleChaos` 参照元のコミット、ファイル、アセットを一度も変更していない。
 - エンジンが独立パッケージとしてビルド・テストできる。
-- Console Chaos アプリとレースゲームが、それぞれエンジンの公開 API だけを使って独立ビルドできる。
-- エンジンから両ゲームへの import がなく、レースゲームから Console Chaos への import もない。
+- Console Chaos アプリが、エンジンの公開 API だけを使って独立ビルドできる。
+- エンジンからアプリへの import がない。
 - Console Chaos の単体、ゴールデン、リプレイ、レベル、アセット検査をすべて移植し、合格している。
 - Console Chaos の 4 世代表示、切替、入力、音楽位相、6 種のパズル、チェックポイント、ヒント、HUD が比較基準と一致する。
-- レースゲームで、走行、衝突、ラップ判定、順位または対戦相手、リザルト、リスタートが成立する。
-- レースゲームでも 4 世代を実行中に切り替えられ、映像・入力・音の差が確認できる。
-- 2 ゲームを同じ CI で検証し、境界違反と回帰を機械的に検出できる。
+- CI で境界違反と回帰を機械的に検出できる。
 
 ### 1.3 非目標
 
@@ -42,9 +38,8 @@
 - ネットワーク対戦、アカウント、クラウドセーブ
 - npm 公開や第三者向け SDK の互換性保証
 - `Opus5ConsoleChaos` のゲームデザイン変更、パズル追加、難易度調整
-- レースゲームの複数コース、車両カスタマイズ、高度な車体シミュレーション
 
-エンジンの抽象は「Console Chaos とレースゲームの双方で実際に必要なもの」までに限定する。
+エンジンの抽象は、実装済みの汎用実行契約と Console Chaos が実際に必要とするものまでに限定する。
 
 ---
 
@@ -106,8 +101,7 @@
 2. 公開 API と互換アダプタを先に作る。
 3. モジュールを一つずつエンジン側へ移し、各移動後に Console Chaos の回帰検証を行う。
 4. Console Chaos が公開 API だけで動く状態にする。
-5. レースゲームを公開 API だけで実装し、抽象の不足を確認する。
-6. 2 ゲームで必要になった機能だけをエンジンへ昇格し、互換アダプタを削除する。
+5. 実利用のある汎用機能だけをエンジンへ残し、互換アダプタを削除する。
 
 ---
 
@@ -127,7 +121,6 @@
     REFERENCE_SNAPSHOT.json    # 参照元の基準コミットとファイルハッシュ
     PARITY_MATRIX.md           # 現行ゲームの比較項目と結果
     ENGINE_API.md              # 公開 API と利用例
-    RACING_PROOF.md            # レースゲームによる再利用性の証跡
 
   packages/
     engine/
@@ -166,20 +159,6 @@
       public/assets/
       tests/
 
-    racing/
-      package.json
-      index.html
-      src/
-        app.ts                 # Racing の GameModule
-        bootstrap.ts
-        config/                # actions、世代別 theme
-        content/               # track、vehicle、music、asset catalog
-        gameplay/              # car、AI、lap、race state
-        presentation/          # 車、コース、カメラ、エフェクト
-        ui/                    # lap、time、rank、result
-      public/assets/
-      tests/
-
   tools/
     check-boundaries.ts
     check-reference-snapshot.ts
@@ -190,9 +169,7 @@
 ### 3.1 パッケージ境界
 
 ```text
-apps/console-chaos ─┐
-                    ├──> @console-chaos/engine
-apps/racing ────────┘
+apps/console-chaos ────> @console-chaos/engine
 
 @console-chaos/engine-testkit ──> @console-chaos/engine
 ```
@@ -200,10 +177,9 @@ apps/racing ────────┘
 禁止する依存:
 
 - `packages/engine/**` から `apps/**` への import
-- `apps/racing/**` から `apps/console-chaos/**` への import
 - 各アプリから `@console-chaos/engine/src/**` への deep import
 - エンジンの `core/` から browser API、render、audio、gameplay への依存
-- エンジン内に `puzzle`、`torch`、`hero`、`lap`、`race` など特定ゲームの概念を持ち込むこと
+- エンジン内に `puzzle`、`torch`、`hero` など特定ゲームの概念を持ち込むこと
 
 `package.json` の `exports`、TypeScript project references、ESLint、`tools/check-boundaries.ts` の四重で検査する。
 
@@ -229,7 +205,7 @@ export interface GameInstance {
 ```
 
 `GameContext` が提供するのは `events`、`rng`、`generation`、`input`、`assets`、`audio`、`world` とする。
-レベル、主人公、パズル、車、ラップなどは提供しない。
+レベル、登場物、パズルなどの作品固有コンテンツは提供しない。
 
 `GameHost` の責務:
 
@@ -259,7 +235,7 @@ export interface GameInstance {
 - 表示名
 - カメラリグ
 - ゲームアクションの差
-- 主人公または車両のモデル/スプライト
+- ゲーム内エンティティのモデル/スプライト
 - 背景、マテリアル、テクスチャセット
 - ゲーム固有の SFX/楽曲アレンジ
 
@@ -272,11 +248,9 @@ export interface GameInstance {
 エンジンは「jump」「attack」「accelerate」などの意味を固定しない。
 
 ```ts
-const racingActions = defineActions({
-  steer: 'axis1d',
-  accelerate: 'button',
-  brake: 'button',
-  reset: 'button',
+const gameActions = defineActions({
+  move: 'axis2d',
+  use: 'button',
   switchPrevious: 'button',
   switchNext: 'button',
 });
@@ -288,7 +262,7 @@ const racingActions = defineActions({
 2. `ActionMap<T>`: ゲーム定義の binding
 3. `GenerationInputPolicy`: 4 方向化、デッドゾーン、感圧、微入力などの世代制約
 
-Console Chaos は `move/jump/attack/switch`、レースゲームは `steer/accelerate/brake/reset/switch` を定義する。
+Console Chaos は `move/jump/attack/switch` を定義する。
 入力バッファとコヨーテタイムは、汎用の button buffer としてエンジンへ置き、適用判断はゲーム側で行う。
 
 ### 4.4 描画
@@ -326,7 +300,7 @@ export interface RenderFrame {
 - `generation-pass`: 量子化、スプライト制限、頂点量子化、アフィン UV、三角形ソート
 - `postfx-pass`: CRT と切替合成
 
-パス追加用の任意プラグイン機構は作らない。Console Chaos とレースゲームの両方で必要になるまで固定パス列を維持する。
+パス追加用の任意プラグイン機構は作らない。実利用で必要になるまで固定パス列を維持する。
 
 ### 4.5 物理と投影
 
@@ -335,7 +309,6 @@ export interface RenderFrame {
 重要な方針として、**2D 世代で Z 衝突を潰すルールをエンジン全体へ強制しない**。
 
 - Console Chaos は `CollapsedDepthCollisionPolicy` を選び、現行の 2D/3D パズルを再現する。
-- レースゲームは全世代で 3D のコース衝突を維持し、世代差を表示、カメラ、入力へ適用する。
 
 現行の 2D→3D 吸着、安全座標、チェックポイント復帰は Console Chaos 側に残す。
 これにより、世代表現と特定パズルのルールを混同しない。
@@ -353,7 +326,6 @@ export interface RenderFrame {
 ゲーム固有データは各アプリが検証する。
 
 - Console Chaos: puzzles、checkpoints、spawn、hint metadata
-- Racing: track spline、grid、lap checkpoints、AI line、finish trigger
 
 既存 JSON は一度に変更せず、`ConsoleChaosLevelAdapter` を介して新しい共通 scene へ読み込む。
 
@@ -372,9 +344,9 @@ export interface RenderFrame {
 
 - 曲データ、選曲、トラック構成
 - SFX ID とゲームイベントの対応
-- Console Chaos のパズル音、レースのエンジン音/カウントダウン音
+- Console Chaos のパズル音
 
-切替時に音楽位相がずれないことは、両ゲームで共通の contract test にする。
+切替時に音楽位相がずれないことは contract test にする。
 
 ### 4.8 リソースの所有権
 
@@ -402,7 +374,7 @@ export interface RenderFrame {
 | `src/render/renderer3d.ts` | engine の複数 render pass | 挙動を変えずに分割してから抽出 |
 | `src/render/material.ts`, `key_palette.ts` | Console Chaos config/content | 汎用アルゴリズムだけ engine へ残す |
 | `src/audio/engine.ts`, `clock.ts`, source 群, `voicelimit.ts` | engine audio | score 内容はアプリへ移す |
-| `src/audio/music.ts`, `songs.ts` | Console Chaos content | レースは別の score を持つ |
+| `src/audio/music.ts`, `songs.ts` | Console Chaos content | score 内容を app 所有にする |
 | `src/gameplay/physics.ts` | engine physics + Console Chaos policy | AABB/sweep とゲームルールを分離 |
 | `src/gameplay/projection.ts` | Console Chaos gameplay | 汎用 AABB 型だけ engine を使用 |
 | `src/gameplay/player.ts`, `checkpoint.ts`, `hints.ts`, `puzzles/**` | Console Chaos gameplay | エンジンへ持ち込まない |
@@ -501,37 +473,17 @@ export interface RenderFrame {
 
 **Gate G5:** `ENGINE_PLAN.md` のゴール 1 を満たし、現行ゲームが忠実かつ完全に再現される。
 
-### Phase 6 — レースゲームによる再利用性の証明
-
-レースゲームの最小スコープは「閉じた 1 コース、プレイヤー 1 台、決定的 AI 1 台以上、3 ラップ」とする。
-車両挙動は kinematic model とし、タイヤ/サスペンションの剛体シミュレーションは作らない。
+### Phase 6 — ハードニングと引き渡し
 
 | ID | 作業 | 成果物 | 受け入れ条件 |
 |---|---|---|---|
-| R6-01 | racing package と GameModule を作成 | app skeleton | Console Chaos への import なしで起動 |
-| R6-02 | steering/accelerate/brake/reset/switch bindings を定義 | racing input | keyboard/gamepad、デジタル/アナログ世代差が動作 |
-| R6-03 | 車両 kinematic system とコース衝突を実装 | car gameplay | 固定入力 replay が決定的でコース外復帰できる |
-| R6-04 | checkpoint、lap、rank、countdown、finish state を実装 | race state | 順走のみ lap 加算、3 lap で結果確定 |
-| R6-05 | path-following AI を実装 | AI racer | 同じ seed/input で同じ走行結果になる |
-| R6-06 | 車、コース、カメラを RenderFrame command で描く | racing presentation | engine public render API だけを使用 |
-| R6-07 | 4 世代の racing theme を定義 | visual/audio variants | 各世代で解像度、量子化、depth、CRT、入力、音が変化 |
-| R6-08 | lap/time/rank/result UI と SFX/BGM を実装 | playable race | スタートからリザルト、リスタートまで完走可能 |
-| R6-09 | racing 専用 unit/replay/E2E を追加 | racing tests | headless replay と 4 世代 capture が安定 |
-| R6-10 | 再利用性レポートを作成 | `RACING_PROOF.md` | 使用した engine API、追加 API、境界検査結果を記録 |
+| P6-01 | engine public API を整理し deep import を除去 | package exports | Console app が公開 API だけで build |
+| P6-02 | API と最小利用例を記述 | `ENGINE_API.md` | 新しい GameModule の作成手順を再現可能 |
+| P6-03 | perf/memory/context lost を検証 | measurement report | §8 の予算内、dispose 後の増加なし |
+| P6-04 | CI matrix と root verify を完成 | CI | engine/console/boundaries/assets/build が全合格 |
+| P6-05 | 不要な互換コード、重複 asset、未使用 export を削除 | cleanup | Console app の capture/replay が変化しない |
 
-**Gate G6:** `ENGINE_PLAN.md` のゴール 2 を満たし、レースゲームが Console Chaos 固有コードなしで完成する。
-
-### Phase 7 — ハードニングと引き渡し
-
-| ID | 作業 | 成果物 | 受け入れ条件 |
-|---|---|---|---|
-| P7-01 | engine public API を整理し deep import を除去 | package exports | 両アプリが公開 API だけで build |
-| P7-02 | API と最小利用例を記述 | `ENGINE_API.md` | 新しい GameModule の作成手順を再現可能 |
-| P7-03 | perf/memory/context lost を検証 | measurement report | §8 の予算内、dispose 後の増加なし |
-| P7-04 | CI matrix と root verify を完成 | CI | engine/console/racing/boundaries/assets/build が全合格 |
-| P7-05 | 不要な互換コード、重複 asset、未使用 export を削除 | cleanup | 2 アプリの capture/replay が変化しない |
-
-**Gate G7:** 完了条件をすべて満たし、参照元の SHA と clean 状態が開始時から変わっていない。
+**Gate G6:** 完了条件をすべて満たし、参照元の SHA と clean 状態が開始時から変わっていない。
 
 ---
 
@@ -546,9 +498,7 @@ export interface RenderFrame {
 | Console unit | player、puzzle、projection、hints、level adapter | 現行テストの移植 |
 | Console replay | area1 と各 puzzle replay | state hash の完全一致 |
 | Console golden | palette、material、model、sprite、backdrop、4世代画面 | ピクセル差分 |
-| Racing unit | car、AI、checkpoint、lap、rank | 決定性と境界条件 |
-| Racing replay | 1レース固定入力 | finish state、lap time、position hash |
-| Browser E2E | 2 アプリ | 起動、入力、切替、描画、音声 unlock、リスタート |
+| Browser E2E | Console app | 起動、入力、切替、描画、音声 unlock、リスタート |
 | Static checks | package/import/assets/schema | 境界違反、参照欠落、未知フィールド |
 
 ### 7.2 Console Chaos 忠実性マトリクス
@@ -580,7 +530,6 @@ export interface RenderFrame {
 npm run lint
 npm run test:engine
 npm run test:console
-npm run test:racing
 npm run test:e2e
 npm run check:boundaries
 npm run check:levels
@@ -588,7 +537,6 @@ npm run check:assets
 npm run check:reference
 npm run build:engine
 npm run build:console
-npm run build:racing
 npm run verify
 ```
 
@@ -610,9 +558,8 @@ npm run verify
 | GL wrapper | 現行の薄い設計と行数バジェットを維持 |
 | asset fetch | 同一 URL の重複 fetch なし |
 | memory | app dispose/再起動を 10 回行って GPU/Audio resource が単調増加しない |
-| racing AI | AI 台数に比例するが、最小構成 4 台まで 60 Hz を維持できる設計 |
 
-計測は通常フレーム、世代切替、Console Chaos の最多描画部屋、Racing の全車表示時で行う。
+計測は通常フレーム、世代切替、Console Chaos の最多描画部屋で行う。
 
 ---
 
@@ -620,15 +567,12 @@ npm run verify
 
 | リスク | 兆候 | 対策/撤退条件 |
 |---|---|---|
-| 抽象化しすぎる | engine API が Console/Racing のどちらからも直接使われない | 2 消費者ルール。実利用のない extension point を削除 |
+| 抽象化しすぎる | engine API が app から直接使われない | 実利用のない extension point を削除 |
 | 描画分割で見た目が変わる | golden/capture の差分増加 | 分割と機能変更を別 PR にし、legacy adapter で比較 |
 | `renderer3d.ts` の全面改修が長期化 | 同時に多数の pass が壊れる | 先に同一場所で関数抽出し、1 pass ずつ移す |
-| profile 分割で世代差が欠落 | Console parity は通るが Racing に値が届かない | hardware/theme の contract test と全フィールド網羅検査 |
+| profile 分割で世代差が欠落 | Console parity は通るが一部の能力値が届かない | hardware/theme の contract test と全フィールド網羅検査 |
 | 入力抽象がゲーム固有になる | ActionMap に jump/attack が現れる | action 名を型パラメータ化し、engine は value kind だけを知る |
-| 2D 投影ルールがレースを壊す | 2D 世代でコース衝突が潰れる | collision policy をゲーム選択にし、自動適用しない |
 | アセット所有が曖昧 | 切替や再起動で VRAM が増える | AssetManager の参照カウント、dispose、context-lost test |
-| 現行再現と新作を並行してデバッグ | どちらの変更で壊れたか不明 | G5 完了前は Racing の本実装を始めない |
-| レースゲームのスコープ膨張 | 車体物理や複数コースが先行 | kinematic、1 コース、3 lap、AI 1 台以上に固定 |
 | 参照元を誤って変更 | `git status` に差分 | 即停止し、変更内容を確認。参照元で復旧操作を勝手に行わない |
 
 ---
@@ -648,9 +592,7 @@ npm run verify
 9. `engine-physics-level`: AABB、scene schema、Console adapter
 10. `console-migration`: Console GameModule と UI/debug 接続
 11. `console-parity-gate`: legacy adapter 削除と G5 証跡
-12. `racing-vertical-slice`: 走行、1周、描画
-13. `racing-complete`: AI、3 lap、4 世代、音、UI、テスト
-14. `engine-hardening`: public API、性能、ドキュメント、cleanup
+12. `engine-hardening`: public API、性能、ドキュメント、cleanup
 
 各 PR の必須項目:
 
@@ -674,11 +616,8 @@ npm run verify
 | platform | TypeScript + Vite + WebGL2 + Web Audio |
 | 世代 ID | 移行中は既存 `FC/SFC/PS1/PS2` を維持。表示名とは分離 |
 | Console level JSON | G5 までは形式を変更しない |
-| Racing mode | 閉回路 1 コース、3 lap、player 1 + deterministic AI 1 以上 |
-| Racing physics | fixed-step kinematic vehicle |
-| Racing 2D 世代 | 世界衝突は 3D のまま、表示/カメラ/入力/音へ世代差を適用 |
 | engine 配布 | workspace 内 package。外部 npm 公開は対象外 |
-| browser support | 現行 `Opus5ConsoleChaos` と同等。追加ブラウザは G7 で判断 |
+| browser support | 現行 `Opus5ConsoleChaos` と同等。追加ブラウザは G6 で判断 |
 
 ---
 
@@ -695,6 +634,4 @@ npm run verify
 7. `P2-01`: 最も独立している core から抽出開始
 
 比較基準が揃う前に `profiles.ts` や `renderer3d.ts` の分割へ着手しない。
-また、Console Chaos の G5 完了前に Racing の機能実装へ進まない。
-
 この順序により、ゲームエンジン化そのものが現行ゲームの再現性を損なっていないことを、各段階で証明できる。

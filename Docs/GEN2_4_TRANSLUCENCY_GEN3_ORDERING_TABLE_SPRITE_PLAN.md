@@ -426,7 +426,6 @@ Gen3 では頂点量子化と nearest filter を適用し、Gen4 では linear f
 
 - `apps/console-chaos/src/render/material.ts`
 - `apps/console-chaos/src/presentation/frame.ts`
-- `apps/racing/src/presentation/**`
 - `packages/engine/README.md`
 - `Docs/ENGINE_API.md`
 
@@ -470,7 +469,6 @@ Gen3 では UI sprite がすべての world packet より後に描かれるこ�
 ### 9.3 回帰テスト
 
 - Console Chaos の unit、golden、replay、E2E。
-- Racing の unit、E2E、performance proof。
 - Gen1、Gen2 の sprite plane と量子化結果。
 - 12 方向の世代切替と transition 中の二世代描画。
 - 起動後に framebuffer、shader、ordering workspace を追加確保しないこと。
@@ -525,4 +523,3 @@ Gen3 では UI sprite がすべての world packet より後に描かれるこ�
 - `apps/console-chaos/Docs/measurements/T1-25_translucent.md`
 - `apps/console-chaos/Docs/measurements/T2-10_sprite_plane.md`
 - `apps/console-chaos/Docs/measurements/T2-11_hero_gen2_sprite.md`
-

@@ -31,18 +31,18 @@ legacy固定`Frame`、app所有pipeline/renderer/postfx/quantizer、app所有Aud
 
 engine public sourceはConsoleの曲名、SFX ID、puzzle、level、asset pathをimportしない。appのdeep importもboundary gateで0件。
 
-## 3. 2作品が使用するservice
+## 3. Console Chaos が使用するservice
 
-| service | Console Chaos | Racing |
-|---|---:|---:|
-| GameHost / fixed loop / ECS world / RNG / events | yes | yes |
-| GenerationController / hardware profile | yes | yes |
-| DeviceSnapshot / ActionMap | yes | yes |
-| generic RenderFrame / renderer contract | yes | yes |
-| AssetManager lifecycle | yes | yes |
-| AudioService transport/profile lifecycle | yes | yes |
+| service | Console Chaos |
+|---|---:|
+| GameHost / fixed loop / ECS world / RNG / events | yes |
+| GenerationController / hardware profile | yes |
+| DeviceSnapshot / ActionMap | yes |
+| generic RenderFrame / renderer contract | yes |
+| AssetManager lifecycle | yes |
+| AudioService transport/profile lifecycle | yes |
 
-Consoleのprojection/puzzle/theme/contentとRacingのcar/lap/race ruleはそれぞれのappに留まる。
+Consoleのprojection/puzzle/theme/contentはappに留まる。
 
 ## 4. fidelity golden
 
@@ -59,7 +59,6 @@ Consoleのprojection/puzzle/theme/contentとRacingのcar/lap/race ruleはそれ�
 ## 5. production E2E / bundle
 
 - Console本編moduleでboot、F-1成立、1→2→3→4完了、audio unlock、restart、二重disposeを実行。
-- Racingも同じroot `test:e2e` でpublic engine APIだけを使用して合格。
 - browserで `mini/ps1/fc/switch/character/player`、B/M/C/R、HUDを確認。error/warning 0。
 - bundle gate: 3 chunks / 170,300 bytes。GameHost source必須、legacy source 0、production `__consoleChaos` 0。
 
