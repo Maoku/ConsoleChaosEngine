@@ -56,6 +56,7 @@ import {
   clearGroundAnchor,
   createProjectionState,
   aabbFromCenter,
+  overlaps,
   resolveSwitchTo2D,
   resolveSwitchTo3D,
   type ProjectionState,
@@ -114,6 +115,8 @@ export interface Session {
   readonly sprites: readonly SessionSprite[];
   readonly culled: ReadonlySet<Entity>;
   readonly solved: ReadonlySet<string>;
+  /** レベル内のゴールへ到達したか。到達後は `reset()` まで保持する。 */
+  readonly cleared: boolean;
   /** 段階的ヒントの状態（T1-17）。UI が `message` を読む */
   readonly hints: HintState;
   /** 今取り組んでいるパズル（近くにある未解決のもの）。無ければ null */
@@ -242,6 +245,8 @@ export function createSession(options: SessionOptions): Session {
 
   const puzzles: PuzzleDefinition[] = allPuzzles();
   const solved = new Set<string>();
+  const goals = level.entities.filter((entity) => entity.type === 'goal' && entity.collider !== undefined);
+  let cleared = false;
 
   // ヒントの対象と文面はレベルデータから作る（T1-17。文面に世代を直書きしない）
   const hintTargets: HintTarget[] = level.puzzles.map((placement) => ({
@@ -347,6 +352,17 @@ export function createSession(options: SessionOptions): Session {
       clearGroundAnchor(projection);
     }
 
+    // ゴールは通り抜けるトリガ。移動と復帰が確定した後の位置で判定し、
+    // クリア画面が次の固定更新から世界を止められるよう状態を保持する。
+    const playerBox = aabbFromCenter(player.position, player.halfExtents);
+    for (const goal of goals) {
+      const body = bodyById.get(goal.id);
+      if (body && overlaps(playerBox, aabbFromCenter(body.position, body.halfExtents), projection.mode)) {
+        cleared = true;
+        break;
+      }
+    }
+
     tickIndex++;
   }
 
@@ -366,6 +382,9 @@ export function createSession(options: SessionOptions): Session {
     },
     get solved() {
       return solved;
+    },
+    get cleared() {
+      return cleared;
     },
     hints,
     get activePuzzleId() {
@@ -388,6 +407,7 @@ export function createSession(options: SessionOptions): Session {
       player.grounded = false;
       player.wallDirection = 0;
       solved.clear();
+      cleared = false;
       for (const memory of memories.values()) memory.clear();
       checkpoints.active = [...spawn] as Vec3;
       checkpoints.reached.length = 0;

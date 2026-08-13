@@ -104,4 +104,41 @@ describe('Console Chaos production-host lifecycle', () => {
     expect(host.context.assets.activeCount).toBe(0);
     expect(host.context.world.entityCount).toBe(0);
   });
+
+  it('title and clear overlays can pause simulation without stopping rendering', async () => {
+    const loopHost = createManualLoopHost();
+    const renderer = createRecordingRenderer();
+    let playable = false;
+    let session: Session | null = null;
+    const host = createGameHost({
+      loopHost,
+      renderer,
+      input: createMutableInputSource(),
+      initialGeneration: 'PS1',
+    });
+
+    await host.initialize(createConsoleChaosModule(loadLevelFile('mini'), {
+      onCreate(created) {
+        session = created;
+      },
+      shouldSimulate: () => playable,
+    }));
+    const activeSession = session as unknown as Session;
+
+    host.frame(0);
+    host.frame(17);
+    expect(activeSession.tickIndex).toBe(0);
+    expect(renderer.frames.length).toBeGreaterThan(0);
+
+    playable = true;
+    host.frame(34);
+    expect(activeSession.tickIndex).toBe(1);
+
+    playable = false;
+    host.frame(51);
+    expect(activeSession.tickIndex).toBe(1);
+    expect(renderer.frames.length).toBeGreaterThan(2);
+
+    host.dispose();
+  });
 });

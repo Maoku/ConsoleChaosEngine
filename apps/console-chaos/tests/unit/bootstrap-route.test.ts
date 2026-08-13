@@ -17,6 +17,8 @@ describe('production bootstrap migration truth gate', () => {
     expect(engineBootstrap).toContain('createGameHost({');
     expect(engineBootstrap).toContain('createConsoleChaosModule(level');
     expect(engineBootstrap).toContain('createConsoleDebugModule(debugScene');
+    expect(engineBootstrap).toContain('createPlaytestFlow({');
+    expect(engineBootstrap).toContain('shouldSimulate:');
     expect(engineBootstrap).toContain('await host.start(module)');
     expect(engineBootstrap).toContain('host.dispose();');
     expect(engineBootstrap).not.toContain("from './main'");

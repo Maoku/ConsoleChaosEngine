@@ -18,6 +18,7 @@ import { songOf } from './audio/songs';
 import { bgmStatusText, createBgmControl } from './debug/bgm_control';
 import { createColliderHud } from './debug/collider_hud';
 import { createNoticeHud } from './debug/notice_hud';
+import { createPlaytestFlow, type PlaytestFlow } from './debug/playtest_flow';
 import {
   createConsoleDebugModule,
   initialGenerationForScene,
@@ -101,6 +102,7 @@ let audioPresenter: ConsoleAudioPresenter | null = null;
 let presentation: ConsoleChaosPresentation | null = null;
 let hud: Hud | null = null;
 let playtest: PlaytestLog | null = null;
+let flow: PlaytestFlow | null = null;
 const bgm = isMini
   ? createBgmControl({
       audio: () => audioPresenter,
@@ -130,8 +132,22 @@ const module: GameModule = debugScene
         bgm?.sync();
         hud = createHud(canvas);
         playtest = createPlaytestLog(created, levelId);
+        if (params.get('playtest') !== '0') {
+          flow = createPlaytestFlow({
+            log: playtest,
+            tester: params.get('tester') ?? undefined,
+            isCleared: () => created.cleared,
+            onStart: () => playtest?.reset(),
+            onRestart: () => {
+              created.reset();
+              playtest?.reset();
+            },
+          });
+        }
       },
+      shouldSimulate: () => flow === null || (flow.started && !flow.finished),
       onFixedUpdate(current) {
+        flow?.update();
         hud?.update(hudModelFromSession(current));
         playtest?.update();
       },
@@ -143,6 +159,9 @@ const module: GameModule = debugScene
         audioPresenter = null;
         presentation = null;
         playtest?.keep();
+        playtest?.dispose();
+        flow?.dispose();
+        flow = null;
         hud?.dispose();
         hud = null;
         playtest = null;
@@ -163,6 +182,7 @@ const keydown = (event: KeyboardEvent): void => {
   if (key === 'b') bgm?.nextSong();
   if (key === 'm') bgm?.toggleMute();
   if (key === 'p') playtest?.save();
+  if (event.key === 'Escape') flow?.finish();
   if (key === 'r') {
     playtest?.keep();
     session?.reset();
@@ -195,6 +215,9 @@ if (import.meta.env.DEV) {
     renderer,
     get session() {
       return session;
+    },
+    get flow() {
+      return flow;
     },
   };
 }

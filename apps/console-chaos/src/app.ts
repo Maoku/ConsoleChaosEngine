@@ -22,6 +22,8 @@ import type { Score } from '@console-chaos/engine';
 export interface ConsoleChaosModuleHooks {
   initialSong?: Score;
   onCreate?(session: Session, audio: ConsoleAudioPresenter, presentation: ConsoleChaosPresentation): void;
+  /** false の間は入力・世代切替・ゲーム世界の固定更新を止め、描画だけを続ける。 */
+  shouldSimulate?(session: Session): boolean;
   onFixedUpdate?(session: Session): void;
   onRender?(session: Session, presentation: ConsoleChaosPresentation): void;
   onDispose?(session: Session): void;
@@ -52,8 +54,15 @@ export function createConsoleChaosModule(level: LevelFile, hooks: ConsoleChaosMo
       });
       hooks.onCreate?.(session, audio, presentation);
       let snapshot = createNeutralConsoleChaosActions();
+      let simulate = true;
       return {
         prepareFixedUpdate({ dtMs }): void {
+          simulate = hooks.shouldSimulate?.(session) ?? true;
+          if (!simulate) {
+            actions.reset();
+            snapshot = createNeutralConsoleChaosActions();
+            return;
+          }
           snapshot = actions.sample(context.input.snapshot, context.generation.profile, dtMs);
           if (snapshot.switchPrevious.pressed) context.generation.cycle(-1);
           if (snapshot.switchNext.pressed) context.generation.cycle(1);
@@ -64,6 +73,7 @@ export function createConsoleChaosModule(level: LevelFile, hooks: ConsoleChaosMo
           }
         },
         fixedUpdate(): void {
+          if (!simulate) return;
           session.tick(snapshot);
           presentation.fixedUpdate(session);
           for (const cue of pollCues(cues, session)) audio.playSfx(cue, context.generation.profile);
