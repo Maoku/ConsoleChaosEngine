@@ -4,14 +4,15 @@
 
 `npm run verify:distribution` は次のファイルを `artifacts/` に生成します。
 
-| ファイル                                 | 用途                                                   |
-| ---------------------------------------- | ------------------------------------------------------ |
-| `console-chaos-engine-0.2.0.tgz`         | ランタイム、レンダリング、入力、音声、アセット、型定義、リリースノート |
-| `console-chaos-engine-testkit-0.2.0.tgz` | 任意導入の決定論的テストダブルと型定義                                 |
-| `SHA256SUMS`                             | 配布後の完全性確認                                     |
+| ファイル                                      | 用途                                                                   |
+| --------------------------------------------- | ---------------------------------------------------------------------- |
+| `console-chaos-engine-0.2.0.tgz`              | ランタイム、レンダリング、入力、音声、アセット、型定義、リリースノート |
+| `console-chaos-engine-testkit-0.2.0.tgz`      | 任意導入の決定論的テストダブルと型定義                                 |
+| `console-chaos-asset-pipeline-0.1.0.tgz`      | Node.js用の世代別画像生成API、CLI、型定義、共通素材規則                 |
+| `SHA256SUMS`                                  | 3 tarballの配布後完全性確認                                             |
 
-tarballにはビルド済みESM、TypeScript型定義、パッケージREADMEが入り、エンジン本体には
-`RELEASE_NOTES.md` も同梱されます。
+tarballにはビルド済みESM、TypeScript型定義、パッケージREADMEが入り、Engineとasset pipelineには
+`RELEASE_NOTES.md` も同梱されます。asset pipelineには `ASSET_RULES.md` と設定templateも含まれます。
 アプリ、テスト、開発ツール、元のアセットは入りません。エンジンの唯一の実行時依存は
 `gl-matrix` で、npmが導入時に解決します。
 
@@ -28,11 +29,12 @@ npm run verify:distribution
 
 1. ViteでES2022の単一ESMバンドルを生成する
 2. `tsc` で型定義を生成する
-3. 両パッケージをnpm tarballにする
+3. 3パッケージをnpm tarballにする
 4. 一時的な別プロジェクトへtarballをオフラインでインストールする
-5. Node.jsから公開APIをimportして実行する
-6. `moduleResolution: NodeNext` でconsumerコードを型検査する
-7. SHA-256チェックサムを生成する
+5. Node.jsから3つの公開APIをimportして実行する
+6. asset pipeline CLIで4世代のfixtureをbuild/checkする
+7. `moduleResolution: NodeNext` でconsumerコードを型検査する
+8. SHA-256チェックサムを生成する
 
 完全性を手動確認する場合:
 
@@ -54,6 +56,13 @@ npm install /absolute/path/console-chaos-engine-0.2.0.tgz
 ```sh
 npm install /absolute/path/console-chaos-engine-0.2.0.tgz
 npm install -D /absolute/path/console-chaos-engine-testkit-0.2.0.tgz
+```
+
+世代別素材を生成するprojectでは、Engineとasset pipelineを同時に導入します。
+
+```sh
+npm install /absolute/path/console-chaos-engine-0.2.0.tgz
+npm install -D /absolute/path/console-chaos-asset-pipeline-0.1.0.tgz
 ```
 
 `package.json` に `file:` でtarballを記録する運用も可能です。チーム内で共有する場合は、
@@ -78,6 +87,7 @@ tarballを各プロジェクトから安定して参照できるアーティフ�
 ```sh
 npm publish artifacts/console-chaos-engine-0.2.0.tgz --registry https://registry.example.com
 npm publish artifacts/console-chaos-engine-testkit-0.2.0.tgz --registry https://registry.example.com
+npm publish artifacts/console-chaos-asset-pipeline-0.1.0.tgz --registry https://registry.example.com
 ```
 
 public npmへ出す場合は、ライセンスとscope設定を完了した後で `--access public` を明示します。
@@ -91,6 +101,7 @@ Semantic Versioningを使います。公開APIに互換性のない変更はmajo
 - `packages/engine/package.json` の `version`
 - `packages/engine/src/index.ts` の `ENGINE_VERSION`
 - `packages/engine-testkit/package.json` の `version` と `peerDependencies`
+- `packages/asset-pipeline/package.json` の `version` と `peerDependencies`
 - `apps/*/package.json` のworkspace内依存バージョン
 - `package-lock.json`
 - ドキュメント内のtarball名

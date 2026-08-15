@@ -13,6 +13,9 @@ const engine = JSON.parse(
 const testkit = JSON.parse(
   await readFile(join(root, "packages/engine-testkit/package.json"), "utf8"),
 );
+const assetPipeline = JSON.parse(
+  await readFile(join(root, "packages/asset-pipeline/package.json"), "utf8"),
+);
 const archiveFor = (manifest) =>
   join(
     artifacts,
@@ -52,6 +55,7 @@ try {
     cache,
     archiveFor(engine),
     archiveFor(testkit),
+    archiveFor(assetPipeline),
     join(root, "node_modules/gl-matrix"),
   ]);
 
@@ -60,21 +64,62 @@ try {
     `
 import { ENGINE_VERSION, createRng, createWorld } from '@console-chaos/engine';
 import { createRecordingRenderer } from '@console-chaos/engine-testkit';
+import { ASSET_PIPELINE_VERSION, createImage, encodePng } from '@console-chaos/asset-pipeline';
+import { writeFileSync } from 'node:fs';
 
 if (ENGINE_VERSION !== '${engine.version}') throw new Error('ENGINE_VERSION does not match package version');
+if (ASSET_PIPELINE_VERSION !== '${assetPipeline.version}') throw new Error('Asset pipeline version does not match package version');
 const sample = createRng(7).int(10);
 if (!Number.isInteger(sample) || sample < 0 || sample >= 10) throw new Error('Engine runtime import failed');
 if (createWorld().entities().length !== 0) throw new Error('World did not initialize empty');
 if (createRecordingRenderer().frames.length !== 0) throw new Error('Testkit runtime import failed');
+writeFileSync('source.png', encodePng(createImage(4, 4, [0, 0, 0, 255])));
 `,
   );
   run(process.execPath, ["smoke.mjs"]);
+
+  await writeFile(
+    join(consumer, "art.config.mjs"),
+    `
+import { cloneImage, defineAssetClass, defineAssetPipeline, resample } from '@console-chaos/asset-pipeline';
+
+const fixture = defineAssetClass({
+  id: 'fixture',
+  colorBudget: { FC: 2, SFC: 2, PS1: 2, PS2: null },
+  targetSize: generation => ({ FC: 1, SFC: 2, PS1: 2, PS2: 4 })[generation],
+});
+
+export default defineAssetPipeline({
+  recipe: { tone: { gamma: 1 } },
+  assets: [{
+    id: 'sample',
+    source: 'source.png',
+    assetClass: fixture,
+    outputs: {
+      FC: 'generated/sample-fc.png', SFC: 'generated/sample-sfc.png',
+      PS1: 'generated/sample-ps1.png', PS2: 'generated/sample-ps2.png',
+    },
+  }],
+  build({ source, spec }) {
+    return source.width === spec.width ? cloneImage(source) : resample(source, spec.width, spec.height);
+  },
+});
+`,
+  );
+  const assetCli = join(consumer, "node_modules/@console-chaos/asset-pipeline/dist/cli.js");
+  run(process.execPath, [assetCli, "build", "--config", "art.config.mjs"]);
+  run(process.execPath, [assetCli, "check", "--config", "art.config.mjs"]);
 
   await writeFile(
     join(consumer, "smoke.ts"),
     `
 import { createGameHost, type GameModule, type GenerationId } from '@console-chaos/engine';
 import { createManualLoopHost, createRecordingRenderer } from '@console-chaos/engine-testkit';
+import {
+  defineAssetClass,
+  deriveGenerationAssetSpec,
+  type RgbaImage,
+} from '@console-chaos/asset-pipeline';
 
 const generation: GenerationId = 'PS1';
 const module: GameModule = {
@@ -89,6 +134,16 @@ const host = createGameHost({
   renderer: createRecordingRenderer(),
 });
 void host.initialize(module);
+const image: RgbaImage = { width: 1, height: 1, data: new Uint8Array(4) };
+void image;
+const assetClass = defineAssetClass({
+  id: 'type-smoke',
+  colorBudget: { FC: 2, SFC: 2, PS1: 2, PS2: null },
+  targetSize: () => 1,
+});
+if (assetClass.specFor('FC').internalWidth !== deriveGenerationAssetSpec('FC').internalWidth) {
+  throw new Error('Asset pipeline type/runtime smoke failed');
+}
 `,
   );
   await writeFile(

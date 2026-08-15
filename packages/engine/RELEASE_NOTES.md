@@ -1,5 +1,10 @@
 # @console-chaos/engine リリースノート
 
+## Workspace tooling — 2026-08-16
+
+- Node.js専用の `@console-chaos/asset-pipeline` 0.1.0を独立packageとして追加しました。
+- Engine browser runtimeのdependencyとbundle境界は変更していません。
+
 ## 0.2.0 — 2026-08-12
 
 ### 主な変更

@@ -16,6 +16,10 @@ const packages = [
     workspace: "@console-chaos/engine-testkit",
     manifest: "packages/engine-testkit/package.json",
   },
+  {
+    workspace: "@console-chaos/asset-pipeline",
+    manifest: "packages/asset-pipeline/package.json",
+  },
 ];
 
 await mkdir(artifacts, { recursive: true });

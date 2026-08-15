@@ -29,7 +29,7 @@ function chunk(type: string, payload: Buffer): Buffer {
   return Buffer.concat([length, body, crc]);
 }
 
-export function encodePng(image: RgbaImage): Buffer {
+export function encodePng(image: RgbaImage): Uint8Array {
   assertImage(image);
   const stride = image.width * 4;
   const raw = Buffer.alloc((stride + 1) * image.height);
