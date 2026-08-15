@@ -7,9 +7,12 @@ export default defineConfig({
     sourcemap: true,
     emptyOutDir: true,
     lib: {
-      entry: fileURLToPath(new URL('./src/index.ts', import.meta.url)),
+      entry: {
+        index: fileURLToPath(new URL('./src/index.ts', import.meta.url)),
+        cli: fileURLToPath(new URL('./src/cli.ts', import.meta.url)),
+      },
       formats: ['es'],
-      fileName: 'index',
+      fileName: (_format, entryName) => `${entryName}.js`,
     },
     rollupOptions: {
       external: [/^node:/, '@console-chaos/engine'],

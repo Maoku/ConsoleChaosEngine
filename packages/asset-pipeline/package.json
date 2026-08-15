@@ -7,6 +7,9 @@
   "main": "./dist/index.js",
   "module": "./dist/index.js",
   "types": "./dist/index.d.ts",
+  "bin": {
+    "console-chaos-assets": "./dist/cli.js"
+  },
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
@@ -17,7 +20,8 @@
   "files": [
     "dist",
     "README.md",
-    "ASSET_RULES.md"
+    "ASSET_RULES.md",
+    "templates"
   ],
   "keywords": [
     "asset-pipeline",
@@ -28,7 +32,7 @@
     "node": ">=22"
   },
   "scripts": {
-    "build": "npm run build --workspace @console-chaos/engine && vite build --config vite.config.package.ts && tsc -p tsconfig.build.json --emitDeclarationOnly && node ../../tools/fix-declaration-specifiers.mjs dist",
+    "build": "npm run build --workspace @console-chaos/engine && vite build --config vite.config.package.ts && tsc -p tsconfig.build.json --emitDeclarationOnly && node ../../tools/fix-declaration-specifiers.mjs dist && node scripts/finalize-build.mjs",
     "lint": "tsc --noEmit -p tsconfig.json",
     "test": "vitest run",
     "prepack": "npm run build"
