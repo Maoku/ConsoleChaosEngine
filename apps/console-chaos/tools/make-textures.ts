@@ -28,10 +28,10 @@
  * 検査:
  *   npm run check:assets（`check-textures.ts` が §9.3 と KV-03 の制約を機械的に見る）
  */
-import { mkdirSync, writeFileSync } from 'node:fs';
+import { mkdirSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
-import { encodePng, type RgbaImage } from './png';
+import { writePngIfChanged, type RgbaImage } from './png';
 import { TEXTURE_SETS, TEXTURE_SPECS, type TextureSpec } from './texture_spec';
 import { heartRects } from './glyph_heart';
 import { fcColorOf } from '../src/render/key_palette';
@@ -288,7 +288,7 @@ for (const colors of SET_COLORS) {
     const build = BUILDERS[spec.file];
     // 原画のある 13 枚は `import-textures.ts` の持ち場。ここでは黙って飛ばす
     if (!build) continue;
-    writeFileSync(join(dir, spec.file), encodePng(build(spec, colors).image));
+    writePngIfChanged(join(dir, spec.file), build(spec, colors).image);
   }
   console.log(`書き出した: ${colors.dir}/（${Object.keys(BUILDERS).length} 枚）`);
 }

@@ -24,6 +24,7 @@
     "check:assets": "npm run check:assets -w @console-chaos/console-chaos",
     "check:trademark": "npm run check:trademark -w @console-chaos/console-chaos",
     "check:reference": "tsx tools/check-reference-snapshot.ts",
+    "baseline:assets": "node --import tsx tools/write-asset-pipeline-baseline.ts",
     "build:engine": "npm run build -w @console-chaos/engine",
     "build:testkit": "npm run build -w @console-chaos/engine-testkit",
     "pack:distribution": "node tools/pack-distribution.mjs",

@@ -1,0 +1,690 @@
+{
+  "schemaVersion": 1,
+  "description": "Migration oracle for decoded Console Chaos generation textures.",
+  "generationCommands": [
+    "npm run import:textures -w @console-chaos/console-chaos",
+    "npm run make:textures -w @console-chaos/console-chaos"
+  ],
+  "files": [
+    {
+      "path": "apps/console-chaos/public/assets/textures/gen1/backdrop_far.png",
+      "generation": "gen1",
+      "width": 256,
+      "height": 128,
+      "visibleColorCount": 3,
+      "alphaMode": "binary",
+      "paletteColorCount": 3,
+      "rgbaSha256": "605c8138677ffa5859192147a872681941d25bb59b23fcb91e7c3a56719c58c3"
+    },
+    {
+      "path": "apps/console-chaos/public/assets/textures/gen1/backdrop_near.png",
+      "generation": "gen1",
+      "width": 256,
+      "height": 128,
+      "visibleColorCount": 2,
+      "alphaMode": "binary",
+      "paletteColorCount": 2,
+      "rgbaSha256": "fdbd938d85543fadf5729e9b4932e4129be6690124a5287903b60ecea335052e"
+    },
+    {
+      "path": "apps/console-chaos/public/assets/textures/gen1/cloud_bank.png",
+      "generation": "gen1",
+      "width": 128,
+      "height": 128,
+      "visibleColorCount": 2,
+      "alphaMode": "binary",
+      "paletteColorCount": 2,
+      "rgbaSha256": "68f66dfff69b5768d89cd099d768ec96ba3c256c333177a22a97a38e5c972c7f"
+    },
+    {
+      "path": "apps/console-chaos/public/assets/textures/gen1/enemy_body.png",
+      "generation": "gen1",
+      "width": 64,
+      "height": 64,
+      "visibleColorCount": 3,
+      "alphaMode": "binary",
+      "paletteColorCount": 3,
+      "rgbaSha256": "7e162f35f90ed1b887b041ee7751c10e8d7c87347270b8ca0e534b420efdf9c0"
+    },
+    {
+      "path": "apps/console-chaos/public/assets/textures/gen1/foliage_tuft.png",
+      "generation": "gen1",
+      "width": 64,
+      "height": 64,
+      "visibleColorCount": 2,
+      "alphaMode": "binary",
+      "paletteColorCount": 2,
+      "rgbaSha256": "74b5d6dce43e46554a6a71228ec44b34fbb9c9ceb61cdd487f8565605fb58400"
+    },
+    {
+      "path": "apps/console-chaos/public/assets/textures/gen1/gate_glow.png",
+      "generation": "gen1",
+      "width": 64,
+      "height": 64,
+      "visibleColorCount": 5,
+      "alphaMode": "opaque",
+      "paletteColorCount": 5,
+      "rgbaSha256": "dc2726f3eb8868c06a3e9f52155674f3673f0d363d1ec3e28e685fd4c3d345cd"
+    },
+    {
+      "path": "apps/console-chaos/public/assets/textures/gen1/grass_top.png",
+      "generation": "gen1",
+      "width": 128,
+      "height": 128,
+      "visibleColorCount": 2,
+      "alphaMode": "opaque",
+      "paletteColorCount": 2,
+      "rgbaSha256": "0601dd22145270f0677f79c070956080251164f610a0e7e6737ccc3488cab49d"
+    },
+    {
+      "path": "apps/console-chaos/public/assets/textures/gen1/mark_glyph.png",
+      "generation": "gen1",
+      "width": 64,
+      "height": 64,
+      "visibleColorCount": 3,
+      "alphaMode": "opaque",
+      "paletteColorCount": 3,
+      "rgbaSha256": "bfa4a0b2e3cf57e2a4bd510f5e1983341299b227131c076cd6c725399d092e0b"
+    },
+    {
+      "path": "apps/console-chaos/public/assets/textures/gen1/metal_grate.png",
+      "generation": "gen1",
+      "width": 128,
+      "height": 128,
+      "visibleColorCount": 4,
+      "alphaMode": "opaque",
+      "paletteColorCount": 4,
+      "rgbaSha256": "2246b025c9b40a104226c51edcdc058e475f1bb24f0231fe568b7b6a565f1f7b"
+    },
+    {
+      "path": "apps/console-chaos/public/assets/textures/gen1/pedestal_top.png",
+      "generation": "gen1",
+      "width": 64,
+      "height": 64,
+      "visibleColorCount": 4,
+      "alphaMode": "opaque",
+      "paletteColorCount": 4,
+      "rgbaSha256": "67d293f79e483536df48d7d65059538272ccbbf5fcd788ce8f85985d07b76fa9"
+    },
+    {
+      "path": "apps/console-chaos/public/assets/textures/gen1/shell_plate.png",
+      "generation": "gen1",
+      "width": 128,
+      "height": 128,
+      "visibleColorCount": 4,
+      "alphaMode": "opaque",
+      "paletteColorCount": 4,
+      "rgbaSha256": "57f6fbe103d128855e6cb370d642c2fa76441c76d4dc3471234f1522ebec53cd"
+    },
+    {
+      "path": "apps/console-chaos/public/assets/textures/gen1/stone_floor.png",
+      "generation": "gen1",
+      "width": 128,
+      "height": 128,
+      "visibleColorCount": 2,
+      "alphaMode": "opaque",
+      "paletteColorCount": 2,
+      "rgbaSha256": "1b5e08f737932d8d75be4feebd52a5add83a0b10278767e8a5789b4a1f539163"
+    },
+    {
+      "path": "apps/console-chaos/public/assets/textures/gen1/stone_wall.png",
+      "generation": "gen1",
+      "width": 128,
+      "height": 128,
+      "visibleColorCount": 2,
+      "alphaMode": "opaque",
+      "paletteColorCount": 2,
+      "rgbaSha256": "f300b55320988dc95639953290a1e9c08df313730dc3341133a87c0e56788d8d"
+    },
+    {
+      "path": "apps/console-chaos/public/assets/textures/gen1/tree_pine.png",
+      "generation": "gen1",
+      "width": 128,
+      "height": 128,
+      "visibleColorCount": 2,
+      "alphaMode": "binary",
+      "paletteColorCount": 2,
+      "rgbaSha256": "1935e8d57be2573b5ef92ed2a353ff6761924c1332e9aa7fd1bcfc1a3cc38710"
+    },
+    {
+      "path": "apps/console-chaos/public/assets/textures/gen1/vine_green.png",
+      "generation": "gen1",
+      "width": 128,
+      "height": 64,
+      "visibleColorCount": 2,
+      "alphaMode": "binary",
+      "paletteColorCount": 2,
+      "rgbaSha256": "67ea9aa09e7a23ebfc19d0beb8e42366ec31f6c4535906cd1530c09c2b2acca1"
+    },
+    {
+      "path": "apps/console-chaos/public/assets/textures/gen1/vine_yellow.png",
+      "generation": "gen1",
+      "width": 128,
+      "height": 64,
+      "visibleColorCount": 2,
+      "alphaMode": "binary",
+      "paletteColorCount": 2,
+      "rgbaSha256": "67ea9aa09e7a23ebfc19d0beb8e42366ec31f6c4535906cd1530c09c2b2acca1"
+    },
+    {
+      "path": "apps/console-chaos/public/assets/textures/gen1/water_fall.png",
+      "generation": "gen1",
+      "width": 128,
+      "height": 256,
+      "visibleColorCount": 2,
+      "alphaMode": "binary",
+      "paletteColorCount": 2,
+      "rgbaSha256": "4aa403809cf60056814b0019be02da53e7c0a8542135e54b5a0d19b84710e13c"
+    },
+    {
+      "path": "apps/console-chaos/public/assets/textures/gen2/backdrop_far.png",
+      "generation": "gen2",
+      "width": 256,
+      "height": 128,
+      "visibleColorCount": 9,
+      "alphaMode": "binary",
+      "paletteColorCount": 9,
+      "rgbaSha256": "e623ddf018f5558e638560234b37e93ccd62b984977b4b7f2a410966aa2b69e1"
+    },
+    {
+      "path": "apps/console-chaos/public/assets/textures/gen2/backdrop_near.png",
+      "generation": "gen2",
+      "width": 256,
+      "height": 128,
+      "visibleColorCount": 3,
+      "alphaMode": "binary",
+      "paletteColorCount": 3,
+      "rgbaSha256": "f5a3c8a93440985543dce69b840915dc037635423d5e6aa2f01468a0c8760d60"
+    },
+    {
+      "path": "apps/console-chaos/public/assets/textures/gen2/cloud_bank.png",
+      "generation": "gen2",
+      "width": 128,
+      "height": 128,
+      "visibleColorCount": 3,
+      "alphaMode": "binary",
+      "paletteColorCount": 3,
+      "rgbaSha256": "59cf60f2192e88a9f579ed9d0ca44aea23543779917dc9081e056df8d544c65a"
+    },
+    {
+      "path": "apps/console-chaos/public/assets/textures/gen2/enemy_body.png",
+      "generation": "gen2",
+      "width": 64,
+      "height": 64,
+      "visibleColorCount": 5,
+      "alphaMode": "binary",
+      "paletteColorCount": 5,
+      "rgbaSha256": "41798cdbfb177825c8f3b6e26547e4e292a41accffcf703155eef2d8d9ae009a"
+    },
+    {
+      "path": "apps/console-chaos/public/assets/textures/gen2/foliage_tuft.png",
+      "generation": "gen2",
+      "width": 64,
+      "height": 64,
+      "visibleColorCount": 5,
+      "alphaMode": "binary",
+      "paletteColorCount": 5,
+      "rgbaSha256": "a910c6beddabe9588c505bd7b9c17abf1733aa2901c3b0b867451265aeafe124"
+    },
+    {
+      "path": "apps/console-chaos/public/assets/textures/gen2/gate_glow.png",
+      "generation": "gen2",
+      "width": 64,
+      "height": 64,
+      "visibleColorCount": 5,
+      "alphaMode": "opaque",
+      "paletteColorCount": 5,
+      "rgbaSha256": "0aa8ad8de7cc4efa567b4e537bba20f35c68bb7faf0d9ad6a836eeb5605dcf5c"
+    },
+    {
+      "path": "apps/console-chaos/public/assets/textures/gen2/grass_top.png",
+      "generation": "gen2",
+      "width": 128,
+      "height": 128,
+      "visibleColorCount": 8,
+      "alphaMode": "opaque",
+      "paletteColorCount": 8,
+      "rgbaSha256": "5642d6c3fea82f18aac244ad50ad64310dc38d74b6835c264abd3881036c3222"
+    },
+    {
+      "path": "apps/console-chaos/public/assets/textures/gen2/mark_glyph.png",
+      "generation": "gen2",
+      "width": 64,
+      "height": 64,
+      "visibleColorCount": 3,
+      "alphaMode": "opaque",
+      "paletteColorCount": 3,
+      "rgbaSha256": "67f146f4cf839bbea65f8ca910b3291230c5c79ca516528972b8c2f0892439b2"
+    },
+    {
+      "path": "apps/console-chaos/public/assets/textures/gen2/metal_grate.png",
+      "generation": "gen2",
+      "width": 128,
+      "height": 128,
+      "visibleColorCount": 4,
+      "alphaMode": "opaque",
+      "paletteColorCount": 4,
+      "rgbaSha256": "d4c996bdb49ddb066062124b32b055a6a44f92084c3f7d7bc04d1d21f163e096"
+    },
+    {
+      "path": "apps/console-chaos/public/assets/textures/gen2/pedestal_top.png",
+      "generation": "gen2",
+      "width": 64,
+      "height": 64,
+      "visibleColorCount": 4,
+      "alphaMode": "opaque",
+      "paletteColorCount": 4,
+      "rgbaSha256": "ead4abae91183d225176d818536386cfcae0eb9829ef3706a878453436c02fa8"
+    },
+    {
+      "path": "apps/console-chaos/public/assets/textures/gen2/shell_plate.png",
+      "generation": "gen2",
+      "width": 128,
+      "height": 128,
+      "visibleColorCount": 4,
+      "alphaMode": "opaque",
+      "paletteColorCount": 4,
+      "rgbaSha256": "9d1d730d278d1a462fb7dc199239e9954860af363e4f310d3f9e22dea91a3acc"
+    },
+    {
+      "path": "apps/console-chaos/public/assets/textures/gen2/stone_floor.png",
+      "generation": "gen2",
+      "width": 128,
+      "height": 128,
+      "visibleColorCount": 6,
+      "alphaMode": "opaque",
+      "paletteColorCount": 6,
+      "rgbaSha256": "22fbafcfff2e3d41129e56991ba3c271eb4d8d3f3db6f19df27bd797cb7fcd82"
+    },
+    {
+      "path": "apps/console-chaos/public/assets/textures/gen2/stone_wall.png",
+      "generation": "gen2",
+      "width": 128,
+      "height": 128,
+      "visibleColorCount": 7,
+      "alphaMode": "opaque",
+      "paletteColorCount": 7,
+      "rgbaSha256": "dc89b6c9ee4fd424fc5c0505b806ee9bae492041b575b3bce17e473eedea34e0"
+    },
+    {
+      "path": "apps/console-chaos/public/assets/textures/gen2/tree_pine.png",
+      "generation": "gen2",
+      "width": 128,
+      "height": 128,
+      "visibleColorCount": 3,
+      "alphaMode": "binary",
+      "paletteColorCount": 3,
+      "rgbaSha256": "630f8f33c9d1d59bf4dc76f6492a3d745868b1a5655652f9e7c3365705ef6c2b"
+    },
+    {
+      "path": "apps/console-chaos/public/assets/textures/gen2/vine_green.png",
+      "generation": "gen2",
+      "width": 128,
+      "height": 64,
+      "visibleColorCount": 2,
+      "alphaMode": "binary",
+      "paletteColorCount": 2,
+      "rgbaSha256": "6fbcdd603d257f2b4542dfebefcfd704b2f0eedd30bc6416e67ea30dfff6ef49"
+    },
+    {
+      "path": "apps/console-chaos/public/assets/textures/gen2/vine_yellow.png",
+      "generation": "gen2",
+      "width": 128,
+      "height": 64,
+      "visibleColorCount": 2,
+      "alphaMode": "binary",
+      "paletteColorCount": 2,
+      "rgbaSha256": "50b40edd29a2cf7d35ac0e68dffe52c1c58580dd98a33e248450d7905eb625ee"
+    },
+    {
+      "path": "apps/console-chaos/public/assets/textures/gen2/water_fall.png",
+      "generation": "gen2",
+      "width": 128,
+      "height": 256,
+      "visibleColorCount": 3,
+      "alphaMode": "binary",
+      "paletteColorCount": 3,
+      "rgbaSha256": "7c4cdea664203d042b77a63c72451a763a055c03ecfff4d883c53c9231ec54a4"
+    },
+    {
+      "path": "apps/console-chaos/public/assets/textures/gen3/backdrop_far.png",
+      "generation": "gen3",
+      "width": 256,
+      "height": 128,
+      "visibleColorCount": 9,
+      "alphaMode": "binary",
+      "paletteColorCount": 9,
+      "rgbaSha256": "ae9af3c86837707f72aa0b11929f5a0dd6f0b2920d4cc44d0f4a9cb552174787"
+    },
+    {
+      "path": "apps/console-chaos/public/assets/textures/gen3/backdrop_near.png",
+      "generation": "gen3",
+      "width": 256,
+      "height": 128,
+      "visibleColorCount": 3,
+      "alphaMode": "binary",
+      "paletteColorCount": 3,
+      "rgbaSha256": "22030ed061555b2176a1af37a318b184d2e20aa11bc5b62818dfc6596a9b528e"
+    },
+    {
+      "path": "apps/console-chaos/public/assets/textures/gen3/cloud_bank.png",
+      "generation": "gen3",
+      "width": 128,
+      "height": 128,
+      "visibleColorCount": 3,
+      "alphaMode": "binary",
+      "paletteColorCount": 3,
+      "rgbaSha256": "2c5fd6d8e9c8bc568b26ca5aeab09de49fb30d093a6dc1839b4435822b6e9a19"
+    },
+    {
+      "path": "apps/console-chaos/public/assets/textures/gen3/enemy_body.png",
+      "generation": "gen3",
+      "width": 64,
+      "height": 64,
+      "visibleColorCount": 5,
+      "alphaMode": "binary",
+      "paletteColorCount": 5,
+      "rgbaSha256": "86b32c8ad070a22e2c6d8718118fd6e14577e2fd48908ffa83fda0c4e40cc8e6"
+    },
+    {
+      "path": "apps/console-chaos/public/assets/textures/gen3/foliage_tuft.png",
+      "generation": "gen3",
+      "width": 64,
+      "height": 64,
+      "visibleColorCount": 5,
+      "alphaMode": "binary",
+      "paletteColorCount": 5,
+      "rgbaSha256": "f704ee25722cd672064f32fba5556f9c3b1333d6a7ae1be913b15ed2e128c270"
+    },
+    {
+      "path": "apps/console-chaos/public/assets/textures/gen3/gate_glow.png",
+      "generation": "gen3",
+      "width": 64,
+      "height": 64,
+      "visibleColorCount": 5,
+      "alphaMode": "opaque",
+      "paletteColorCount": 5,
+      "rgbaSha256": "1798a7e0fcec3b2a0b44d99997fea5adadc3473763df7bd8913bb5705c73fa06"
+    },
+    {
+      "path": "apps/console-chaos/public/assets/textures/gen3/grass_top.png",
+      "generation": "gen3",
+      "width": 128,
+      "height": 128,
+      "visibleColorCount": 8,
+      "alphaMode": "opaque",
+      "paletteColorCount": 8,
+      "rgbaSha256": "3a88b80c5deec298b8b45ce15b64b1b2925c1bbc13cfb4ab7f20fb7b3459da6c"
+    },
+    {
+      "path": "apps/console-chaos/public/assets/textures/gen3/mark_glyph.png",
+      "generation": "gen3",
+      "width": 64,
+      "height": 64,
+      "visibleColorCount": 3,
+      "alphaMode": "opaque",
+      "paletteColorCount": 3,
+      "rgbaSha256": "4047a131e5a92bfbaef0953df06ca8d01f34ad6fc20cb3df69b964642d772be5"
+    },
+    {
+      "path": "apps/console-chaos/public/assets/textures/gen3/metal_grate.png",
+      "generation": "gen3",
+      "width": 128,
+      "height": 128,
+      "visibleColorCount": 4,
+      "alphaMode": "opaque",
+      "paletteColorCount": 4,
+      "rgbaSha256": "8fb2cd8e1ceb37bd0aab2e6b2671c36672522dc4c2c8c39e298f4d4759c4acdf"
+    },
+    {
+      "path": "apps/console-chaos/public/assets/textures/gen3/pedestal_top.png",
+      "generation": "gen3",
+      "width": 64,
+      "height": 64,
+      "visibleColorCount": 4,
+      "alphaMode": "opaque",
+      "paletteColorCount": 4,
+      "rgbaSha256": "718e327128ff2025618c86d2e51203c22adb359067839a732952827201c108d8"
+    },
+    {
+      "path": "apps/console-chaos/public/assets/textures/gen3/shell_plate.png",
+      "generation": "gen3",
+      "width": 128,
+      "height": 128,
+      "visibleColorCount": 4,
+      "alphaMode": "opaque",
+      "paletteColorCount": 4,
+      "rgbaSha256": "0a3de8193993ab5fd60988dd524eb5b685950af808b44512b64703d5859a5ba3"
+    },
+    {
+      "path": "apps/console-chaos/public/assets/textures/gen3/stone_floor.png",
+      "generation": "gen3",
+      "width": 128,
+      "height": 128,
+      "visibleColorCount": 6,
+      "alphaMode": "opaque",
+      "paletteColorCount": 6,
+      "rgbaSha256": "08791d3386251c55e06a30abb000024aafae26e95caa24bac0a4915207fa2924"
+    },
+    {
+      "path": "apps/console-chaos/public/assets/textures/gen3/stone_wall.png",
+      "generation": "gen3",
+      "width": 128,
+      "height": 128,
+      "visibleColorCount": 7,
+      "alphaMode": "opaque",
+      "paletteColorCount": 7,
+      "rgbaSha256": "2c4296176781b948aec2caeceae14e1de0085e8ecb71c53180f563bb46571a00"
+    },
+    {
+      "path": "apps/console-chaos/public/assets/textures/gen3/tree_pine.png",
+      "generation": "gen3",
+      "width": 128,
+      "height": 128,
+      "visibleColorCount": 3,
+      "alphaMode": "binary",
+      "paletteColorCount": 3,
+      "rgbaSha256": "ef70e21af8fb1522a997e032d36b3336a0571812a2a17f6b42b93fc3123be7be"
+    },
+    {
+      "path": "apps/console-chaos/public/assets/textures/gen3/vine_green.png",
+      "generation": "gen3",
+      "width": 128,
+      "height": 64,
+      "visibleColorCount": 2,
+      "alphaMode": "binary",
+      "paletteColorCount": 2,
+      "rgbaSha256": "973c5c8eded144b7bfaf680116fe8e7e89e92260713bd49f0bb55f5ffbe2466c"
+    },
+    {
+      "path": "apps/console-chaos/public/assets/textures/gen3/vine_yellow.png",
+      "generation": "gen3",
+      "width": 128,
+      "height": 64,
+      "visibleColorCount": 2,
+      "alphaMode": "binary",
+      "paletteColorCount": 2,
+      "rgbaSha256": "93b591ae2352999bdc754a5d5940801ebeee746d5cdaba4062e6fdd75d3e9f7b"
+    },
+    {
+      "path": "apps/console-chaos/public/assets/textures/gen3/water_fall.png",
+      "generation": "gen3",
+      "width": 128,
+      "height": 256,
+      "visibleColorCount": 3,
+      "alphaMode": "binary",
+      "paletteColorCount": 3,
+      "rgbaSha256": "243441f28b58b1d151206de6fe61e5f8adebc1d527245f9248cdc47b8ed90cb1"
+    },
+    {
+      "path": "apps/console-chaos/public/assets/textures/gen4/backdrop_far.png",
+      "generation": "gen4",
+      "width": 256,
+      "height": 128,
+      "visibleColorCount": 9,
+      "alphaMode": "binary",
+      "paletteColorCount": null,
+      "rgbaSha256": "13124fdb7cbbb3fadb7ad88e8525cdf5fb9659a3416acab589ef368df4f9d1f8"
+    },
+    {
+      "path": "apps/console-chaos/public/assets/textures/gen4/backdrop_near.png",
+      "generation": "gen4",
+      "width": 256,
+      "height": 128,
+      "visibleColorCount": 3,
+      "alphaMode": "binary",
+      "paletteColorCount": null,
+      "rgbaSha256": "b3ffbc2eafd5fe373102d949d2fb9ecb4011c6d498eb68a87b4d2b73dcc5558e"
+    },
+    {
+      "path": "apps/console-chaos/public/assets/textures/gen4/cloud_bank.png",
+      "generation": "gen4",
+      "width": 128,
+      "height": 128,
+      "visibleColorCount": 3,
+      "alphaMode": "binary",
+      "paletteColorCount": null,
+      "rgbaSha256": "fd648cf54e76ba1fd0cd267cabcd827dabd5298bb4d9f37cb68f1da690a0c83d"
+    },
+    {
+      "path": "apps/console-chaos/public/assets/textures/gen4/enemy_body.png",
+      "generation": "gen4",
+      "width": 64,
+      "height": 64,
+      "visibleColorCount": 5,
+      "alphaMode": "binary",
+      "paletteColorCount": null,
+      "rgbaSha256": "c5c12e5426c0179d6e93a9f03ae4f04b976e1a047dcd9ba1ce49599993cb9f9b"
+    },
+    {
+      "path": "apps/console-chaos/public/assets/textures/gen4/foliage_tuft.png",
+      "generation": "gen4",
+      "width": 64,
+      "height": 64,
+      "visibleColorCount": 5,
+      "alphaMode": "binary",
+      "paletteColorCount": null,
+      "rgbaSha256": "24cb654506f820bcd2b7429972ad5ebacd5e5341389c316ce7c69bfbebf95515"
+    },
+    {
+      "path": "apps/console-chaos/public/assets/textures/gen4/gate_glow.png",
+      "generation": "gen4",
+      "width": 64,
+      "height": 64,
+      "visibleColorCount": 5,
+      "alphaMode": "opaque",
+      "paletteColorCount": null,
+      "rgbaSha256": "0255a53a009cc57d4d1c1ff550086dc44852fc66d9aae8551e4a1fe170d83739"
+    },
+    {
+      "path": "apps/console-chaos/public/assets/textures/gen4/grass_top.png",
+      "generation": "gen4",
+      "width": 128,
+      "height": 128,
+      "visibleColorCount": 8,
+      "alphaMode": "opaque",
+      "paletteColorCount": null,
+      "rgbaSha256": "089f60799fea6084f076ef4158723e2a6c96f42c4cbcb9c7a68074cf6bbf1bc2"
+    },
+    {
+      "path": "apps/console-chaos/public/assets/textures/gen4/mark_glyph.png",
+      "generation": "gen4",
+      "width": 64,
+      "height": 64,
+      "visibleColorCount": 3,
+      "alphaMode": "opaque",
+      "paletteColorCount": null,
+      "rgbaSha256": "addc17db5161fb2e34af085fbcbf15f8bc3fe63061d07b32f69896f36b309d37"
+    },
+    {
+      "path": "apps/console-chaos/public/assets/textures/gen4/metal_grate.png",
+      "generation": "gen4",
+      "width": 128,
+      "height": 128,
+      "visibleColorCount": 4,
+      "alphaMode": "opaque",
+      "paletteColorCount": null,
+      "rgbaSha256": "74747c81618c7c0b28c0e29c4d77ea683fced80df3ab9f20bba24ddb29c69f2c"
+    },
+    {
+      "path": "apps/console-chaos/public/assets/textures/gen4/pedestal_top.png",
+      "generation": "gen4",
+      "width": 64,
+      "height": 64,
+      "visibleColorCount": 4,
+      "alphaMode": "opaque",
+      "paletteColorCount": null,
+      "rgbaSha256": "0d10577aba460bcc45ac44f7f075221418661730e29ed48fa25acbc71e456197"
+    },
+    {
+      "path": "apps/console-chaos/public/assets/textures/gen4/shell_plate.png",
+      "generation": "gen4",
+      "width": 128,
+      "height": 128,
+      "visibleColorCount": 4,
+      "alphaMode": "opaque",
+      "paletteColorCount": null,
+      "rgbaSha256": "ae1aa939cada7004dc61723b3cb3e969bfd244b1900fca2f4da1d4bc81774ea7"
+    },
+    {
+      "path": "apps/console-chaos/public/assets/textures/gen4/stone_floor.png",
+      "generation": "gen4",
+      "width": 128,
+      "height": 128,
+      "visibleColorCount": 6,
+      "alphaMode": "opaque",
+      "paletteColorCount": null,
+      "rgbaSha256": "4232a43591f1d1717dd7c54af9e31641b75384a61eb68c9fb40879cf37b10f5d"
+    },
+    {
+      "path": "apps/console-chaos/public/assets/textures/gen4/stone_wall.png",
+      "generation": "gen4",
+      "width": 128,
+      "height": 128,
+      "visibleColorCount": 7,
+      "alphaMode": "opaque",
+      "paletteColorCount": null,
+      "rgbaSha256": "e3df97bffe41929759896337dcb3127cebbfdcf837782f3fcc140c28997a74d8"
+    },
+    {
+      "path": "apps/console-chaos/public/assets/textures/gen4/tree_pine.png",
+      "generation": "gen4",
+      "width": 128,
+      "height": 128,
+      "visibleColorCount": 3,
+      "alphaMode": "binary",
+      "paletteColorCount": null,
+      "rgbaSha256": "35aa360893769d8e5093bfc95f42fc722185d80ce592d3ba3e312a18e61ee970"
+    },
+    {
+      "path": "apps/console-chaos/public/assets/textures/gen4/vine_green.png",
+      "generation": "gen4",
+      "width": 128,
+      "height": 64,
+      "visibleColorCount": 2,
+      "alphaMode": "binary",
+      "paletteColorCount": null,
+      "rgbaSha256": "1c683a1db3928ca7595afee0d02035dde9686d2cc8f4b8a3a2979bae14164fe6"
+    },
+    {
+      "path": "apps/console-chaos/public/assets/textures/gen4/vine_yellow.png",
+      "generation": "gen4",
+      "width": 128,
+      "height": 64,
+      "visibleColorCount": 2,
+      "alphaMode": "binary",
+      "paletteColorCount": null,
+      "rgbaSha256": "063e4dad461b86248edbf3f97e9ae65bf85c4c4fde488eddf11bea8c700d00fe"
+    },
+    {
+      "path": "apps/console-chaos/public/assets/textures/gen4/water_fall.png",
+      "generation": "gen4",
+      "width": 128,
+      "height": 256,
+      "visibleColorCount": 3,
+      "alphaMode": "binary",
+      "paletteColorCount": null,
+      "rgbaSha256": "81b436d8dd1f4e84dec6c2dedf34047fc94764f4f953671002cdcf3bc1acc0ef"
+    }
+  ]
+}

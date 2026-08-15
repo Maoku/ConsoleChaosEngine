@@ -12,6 +12,7 @@
  * 範囲外は黙って無視せず例外にする（asset-rules.md §1 と同じ考え方）。
  */
 import { deflateSync, inflateSync } from 'node:zlib';
+import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 
 export interface RgbaImage {
   width: number;
@@ -67,6 +68,28 @@ export function encodePng(image: RgbaImage): Buffer {
     chunk('IDAT', deflateSync(raw, { level: 9 })),
     chunk('IEND', Buffer.alloc(0)),
   ]);
+}
+
+/**
+ * Decode 後の RGBA が変わったときだけ PNG を更新する。
+ *
+ * zlib の圧縮バイト列は Node.js の版で変わり得る。生成結果が同じなのに
+ * バイナリ差分だけが出ることを避け、画素を移行 oracle として固定する。
+ */
+export function writePngIfChanged(path: string, image: RgbaImage): boolean {
+  if (existsSync(path)) {
+    const current = decodePng(readFileSync(path));
+    if (
+      current.width === image.width &&
+      current.height === image.height &&
+      current.data.length === image.data.length &&
+      current.data.every((value, index) => value === image.data[index])
+    ) {
+      return false;
+    }
+  }
+  writeFileSync(path, encodePng(image));
+  return true;
 }
 
 function paeth(a: number, b: number, c: number): number {

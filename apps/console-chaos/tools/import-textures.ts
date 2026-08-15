@@ -19,10 +19,10 @@
  * 検査:
  *   npm run check:assets
  */
-import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { mkdirSync, readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
-import { decodePng, encodePng, type RgbaImage } from './png';
+import { decodePng, writePngIfChanged, type RgbaImage } from './png';
 import { TEXTURE_SETS, TEXTURE_SPECS, type TextureSpec } from './texture_spec';
 import { heartRects } from './glyph_heart';
 import { FC_PALETTE, type KeyColorName } from '../src/render/key_palette';
@@ -348,7 +348,7 @@ for (const entry of IMPORTS) {
   if (spec.flip) shrunk = flipVertical(shrunk);
   const colors = visibleColorsByLuma(shrunk).length;
   for (const set of TEXTURE_SETS) {
-    writeFileSync(join(OUT_DIR, set.dir, entry.file), encodePng(convert(set.dir, shrunk, entry)));
+    writePngIfChanged(join(OUT_DIR, set.dir, entry.file), convert(set.dir, shrunk, entry));
   }
   console.log(
     `  ${entry.file.padEnd(18)} ${original.width}×${original.height} → ${spec.width}×${spec.height}` +
