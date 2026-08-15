@@ -7,3 +7,4 @@
 - Engine generation profile から素材 spec を導出する `defineAssetClass` を追加しました。
 - deterministic manifest を生成する recipe runner と `console-chaos-assets` build/check CLI を追加しました。
 - Console Chaos の4世代 texture generator を最初の consumer として移行し、68出力の RGBA parity を確認しました。
+- ConsoleChaosNazotoki の背景・立ち絵 generator を consumer として移行し、24出力の RGBA parity を確認しました。

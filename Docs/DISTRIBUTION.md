@@ -36,6 +36,14 @@ npm run verify:distribution
 7. `moduleResolution: NodeNext` でconsumerコードを型検査する
 8. SHA-256チェックサムを生成する
 
+2026-08-16 の検証済み配布物:
+
+| ファイル | SHA-256 |
+| --- | --- |
+| `console-chaos-engine-0.2.0.tgz` | `4ad52605b1b2057ed59a67f20fdbda281169c9ef8f929d848f61cc3155ba1ca2` |
+| `console-chaos-engine-testkit-0.2.0.tgz` | `f45669fb6f8164150e302f1f74c75137a574a0490d818c5020e713b52932d955` |
+| `console-chaos-asset-pipeline-0.1.0.tgz` | `a6c07c8aae5aab5016406980f960c7df7994c7ff7f6cc4677aba9985dd1d136d` |
+
 完全性を手動確認する場合:
 
 ```sh
@@ -114,7 +122,8 @@ Semantic Versioningを使います。公開APIに互換性のない変更はmajo
 
 - パッケージ形式: ESM only
 - JavaScriptターゲット: ES2022
-- 公式import経路: `@console-chaos/engine` と `@console-chaos/engine-testkit`
+- 公式import経路: `@console-chaos/engine`、`@console-chaos/engine-testkit`、
+  `@console-chaos/asset-pipeline`
 - `dist/` 内部へのdeep import: 非対応
 - ブラウザ描画: Canvas 2DまたはWebGL 2
 - テストキット: 同じminor系列のエンジンをpeer dependencyとして要求
