@@ -2,10 +2,10 @@ import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { nearestMasterIndex } from '@console-chaos/engine';
+import { decodePng } from '@console-chaos/asset-pipeline';
 import { CONSOLE_CHAOS_GENERATION_THEMES } from '@/config/generation';
 import { parseLevel } from '@/level/loader';
 import { MATERIALS, materialFor, requiredModels, requiredTextures } from '@/render/material';
-import { decodePng } from '../../tools/png';
 
 const TEXTURE_DIR = 'public/assets/textures';
 const area1 = parseLevel(JSON.parse(readFileSync('public/assets/levels/area1.json', 'utf8')), 'area1.json');

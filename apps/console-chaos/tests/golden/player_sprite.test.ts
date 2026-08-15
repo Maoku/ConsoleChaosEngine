@@ -14,7 +14,7 @@
 import { describe, it, expect } from 'vitest';
 import { readFileSync, existsSync } from 'node:fs';
 import { join } from 'node:path';
-import { decodePng, type RgbaImage } from '../../tools/png';
+import { decodePng, type RgbaImage } from '@console-chaos/asset-pipeline';
 import { spriteCellCount } from '@/render/sprite_sheet';
 import { CONSOLE_CHAOS_GENERATION_THEMES, type PlayerClip, type PlayerSpriteProfile } from '@/config/generation';
 import { GENERATION_IDS } from '../generations';

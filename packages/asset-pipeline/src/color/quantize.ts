@@ -6,6 +6,11 @@ export function rgb555(value: number): number {
   return Math.round((Math.min(255, Math.max(0, Math.round(value))) >> 3) * (255 / 31));
 }
 
+/** Stores the five-bit value in the high bits without expanding it back to the full 0..255 range. */
+export function rgb555HighBits(value: number): number {
+  return Math.min(255, Math.max(0, Math.round(value))) & 0xf8;
+}
+
 export function toRgb555(color: Rgb): Rgb {
   return [rgb555(color[0]), rgb555(color[1]), rgb555(color[2])];
 }

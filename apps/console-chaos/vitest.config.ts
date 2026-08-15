@@ -7,6 +7,7 @@ export default defineConfig({
     alias: {
       '@': fileURLToPath(new URL('./src', import.meta.url)),
       '@console-chaos/engine': engineSourceEntry,
+      '@console-chaos/asset-pipeline': fileURLToPath(new URL('../../packages/asset-pipeline/src/index.ts', import.meta.url)),
     },
   },
   test: {

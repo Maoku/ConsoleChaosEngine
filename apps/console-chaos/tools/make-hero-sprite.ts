@@ -34,10 +34,10 @@
  *    透明画素の色が混ざらないよう、乗算済みアルファで平均してから戻す。
  *    どちらの世代も絵に半透明を持たせないので、アルファは最後に 0 か 255 へ落とす。
  */
-import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { mkdirSync, readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
-import { decodePng, encodePng, type RgbaImage } from './png';
+import { decodePng, writePngIfChanged, type RgbaImage } from '@console-chaos/asset-pipeline';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 const OUT_DIR = join(ROOT, 'public/assets/sprites');
@@ -204,7 +204,7 @@ function buildSheet(sheet: (typeof SHEETS)[number]): void {
     });
   }
 
-  writeFileSync(join(OUT_DIR, sheet.outFile), encodePng(atlas));
+  writePngIfChanged(join(OUT_DIR, sheet.outFile), atlas);
   console.log(`書き出した: public/assets/sprites/${sheet.outFile}（${atlas.width}×${atlas.height}、${TOTAL_FRAMES} コマ）`);
 }
 

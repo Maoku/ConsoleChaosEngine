@@ -1,4 +1,5 @@
 import { type RgbaImage } from '../image/types';
+import { type Rgb } from '../image/types';
 
 export interface ToneOptions {
   readonly gamma?: number;
@@ -33,3 +34,25 @@ export function applyTone(
 }
 
 export const tone = applyTone;
+
+/** Maps visible RGB colors while preserving alpha and normalizing transparent pixels to clear black. */
+export function mapRgb(image: RgbaImage, map: (color: Rgb) => Rgb): RgbaImage {
+  const data = new Uint8Array(image.data.length);
+  const cache = new Map<string, Rgb>();
+  for (let index = 0; index < image.data.length; index += 4) {
+    const alpha = image.data[index + 3] ?? 0;
+    data[index + 3] = alpha;
+    if (alpha === 0) continue;
+    const color: Rgb = [image.data[index] ?? 0, image.data[index + 1] ?? 0, image.data[index + 2] ?? 0];
+    const key = color.join(',');
+    let mapped = cache.get(key);
+    if (!mapped) {
+      mapped = map(color);
+      cache.set(key, mapped);
+    }
+    data[index] = mapped[0];
+    data[index + 1] = mapped[1];
+    data[index + 2] = mapped[2];
+  }
+  return { width: image.width, height: image.height, data };
+}

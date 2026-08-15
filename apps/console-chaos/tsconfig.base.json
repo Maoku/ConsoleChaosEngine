@@ -23,7 +23,8 @@
     "baseUrl": ".",
     "paths": {
       "@/*": ["src/*"],
-      "@console-chaos/engine": ["../../packages/engine/src/index.ts"]
+      "@console-chaos/engine": ["../../packages/engine/src/index.ts"],
+      "@console-chaos/asset-pipeline": ["../../packages/asset-pipeline/src/index.ts"]
     }
   }
 }

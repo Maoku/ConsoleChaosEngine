@@ -22,7 +22,17 @@
 import { mkdirSync, readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
-import { decodePng, writePngIfChanged, type RgbaImage } from './png';
+import {
+  decodePng,
+  flipVertical,
+  luma,
+  mapRgb,
+  rgb555HighBits,
+  shrinkByMode,
+  writePngIfChanged,
+  type Rgb,
+  type RgbaImage,
+} from '@console-chaos/asset-pipeline';
 import { TEXTURE_SETS, TEXTURE_SPECS, type TextureSpec } from './texture_spec';
 import { heartRects } from './glyph_heart';
 import { FC_PALETTE, type KeyColorName } from '../src/render/key_palette';
@@ -30,8 +40,6 @@ import { FC_PALETTE, type KeyColorName } from '../src/render/key_palette';
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 const SOURCE_DIR = join(ROOT, 'Docs/concept/source');
 const OUT_DIR = join(ROOT, 'public/assets/textures');
-
-type Rgba = [number, number, number, number];
 
 /**
  * 取り込む 1 枚。
@@ -99,56 +107,6 @@ const IMPORTS: readonly ImportSpec[] = [
   { file: 'enemy_body.png', source: 'enemy_body', fc: ['mesa', 'sandstone', 'sand'] },
 ];
 
-function luma(r: number, g: number, b: number): number {
-  return 0.299 * r + 0.587 * g + 0.114 * b;
-}
-
-function pixelAt(image: RgbaImage, x: number, y: number): Rgba {
-  const i = (y * image.width + x) * 4;
-  return [image.data[i]!, image.data[i + 1]!, image.data[i + 2]!, image.data[i + 3]!];
-}
-
-/**
- * 縮小（判断 B）。**ブロック内で最も多く出た RGBA をそのまま採る。**
- *
- * 平均を取ると原画に無い中間色が生まれ、色数の上限（12）と同色連続長（4）の両方を壊す。
- * 輪郭のアルファも 0 か 255 のまま残るので、半透明の画素が 1 つも生まれない。
- */
-function shrinkByMode(image: RgbaImage, factor: number): RgbaImage {
-  if (image.width % factor !== 0 || image.height % factor !== 0) {
-    throw new Error(`${image.width}×${image.height} は ${factor} で割り切れない`);
-  }
-  const width = image.width / factor;
-  const height = image.height / factor;
-  const data = new Uint8Array(width * height * 4);
-  for (let y = 0; y < height; y++) {
-    for (let x = 0; x < width; x++) {
-      const counts = new Map<string, { rgba: Rgba; count: number }>();
-      for (let by = 0; by < factor; by++) {
-        for (let bx = 0; bx < factor; bx++) {
-          const rgba = pixelAt(image, x * factor + bx, y * factor + by);
-          // 完全に透明な画素は色を持たない。RGB の違いで票が割れないよう 1 つに畳む
-          const key = rgba[3] === 0 ? 'clear' : rgba.join(',');
-          const entry = counts.get(key);
-          if (entry) entry.count++;
-          else counts.set(key, { rgba: rgba[3] === 0 ? [0, 0, 0, 0] : rgba, count: 1 });
-        }
-      }
-      // 同数で並んだときに順序で揺れないよう、票数が同じなら明度の高いほうを採る
-      let best = { rgba: [0, 0, 0, 0] as Rgba, count: -1 };
-      for (const entry of counts.values()) {
-        if (entry.count > best.count) best = entry;
-        else if (entry.count === best.count && luma(...(entry.rgba.slice(0, 3) as [number, number, number])) > luma(...(best.rgba.slice(0, 3) as [number, number, number]))) {
-          best = entry;
-        }
-      }
-      const i = (y * width + x) * 4;
-      data.set(best.rgba, i);
-    }
-  }
-  return { width, height, data };
-}
-
 /**
  * 中心に紋（ハート）を重ねる（SG-10）。
  *
@@ -211,16 +169,6 @@ function layAlongRope(image: RgbaImage): RgbaImage {
   return { width, height, data };
 }
 
-/** 上下を入れ替える（貼り先の UV に合わせる） */
-function flipVertical(image: RgbaImage): RgbaImage {
-  const stride = image.width * 4;
-  const data = new Uint8Array(image.data.length);
-  for (let y = 0; y < image.height; y++) {
-    data.set(image.data.subarray(y * stride, (y + 1) * stride), (image.height - 1 - y) * stride);
-  }
-  return { width: image.width, height: image.height, data };
-}
-
 /** 見えている画素の色（透明は数えない）。明度の低い順 */
 function visibleColorsByLuma(image: RgbaImage): Array<[number, number, number]> {
   const seen = new Map<string, [number, number, number]>();
@@ -234,32 +182,16 @@ function visibleColorsByLuma(image: RgbaImage): Array<[number, number, number]> 
 
 const clamp = (v: number): number => Math.max(0, Math.min(255, Math.round(v)));
 
-/** 画素ごとの写像を掛ける（アルファは触らない。W-3） */
-function mapColors(image: RgbaImage, map: (rgb: [number, number, number]) => [number, number, number]): RgbaImage {
-  const data = new Uint8Array(image.data.length);
-  const cache = new Map<string, [number, number, number]>();
-  for (let i = 0; i < image.data.length; i += 4) {
-    const alpha = image.data[i + 3]!;
-    data[i + 3] = alpha;
-    if (alpha === 0) continue;
-    const rgb: [number, number, number] = [image.data[i]!, image.data[i + 1]!, image.data[i + 2]!];
-    const key = rgb.join(',');
-    let out = cache.get(key);
-    if (!out) {
-      out = map(rgb);
-      cache.set(key, out);
-    }
-    data.set(out, i);
-  }
-  return { width: image.width, height: image.height, data };
-}
-
 // --- セットごとの変換（判断 C） -------------------------------------------
 
 /** 第2世代：彩度を 1.18 倍し、各チャンネルを RGB555 へ丸める */
-function toGen2(rgb: [number, number, number]): [number, number, number] {
+function toGen2(rgb: Rgb): Rgb {
   const y = luma(...rgb);
-  return rgb.map((c) => clamp(y + (c - y) * 1.18) & 0xf8) as [number, number, number];
+  return [
+    rgb555HighBits(y + (rgb[0] - y) * 1.18),
+    rgb555HighBits(y + (rgb[1] - y) * 1.18),
+    rgb555HighBits(y + (rgb[2] - y) * 1.18),
+  ];
 }
 
 /**
@@ -271,7 +203,7 @@ function toGen2(rgb: [number, number, number]): [number, number, number] {
  */
 const GEN3_ESCAPE_LUMA = 208;
 
-function toGen3(rgb: [number, number, number]): [number, number, number] {
+function toGen3(rgb: Rgb): Rgb {
   const y = luma(...rgb);
   const grayBlue = [y * 0.92, y * 0.97, y * 1.12];
   let mixed = rgb.map((c, i) => clamp((c * 0.6 + grayBlue[i]! * 0.4) * 0.82)) as [number, number, number];
@@ -310,11 +242,11 @@ function gen1Map(image: RgbaImage, keys: readonly KeyColorName[]): Map<string, [
 
 function convert(dir: string, image: RgbaImage, spec: ImportSpec): RgbaImage {
   if (dir === 'gen4') return image;
-  if (dir === 'gen2') return mapColors(image, toGen2);
-  if (dir === 'gen3') return mapColors(image, toGen3);
+  if (dir === 'gen2') return mapRgb(image, toGen2);
+  if (dir === 'gen3') return mapRgb(image, toGen3);
   if (dir === 'gen1') {
     const map = gen1Map(image, spec.fc);
-    return mapColors(image, (rgb) => {
+    return mapRgb(image, (rgb) => {
       const found = map.get(rgb.join(','));
       if (!found) throw new Error(`${spec.file}: rgb(${rgb.join(',')}) が第1世代の写像表に無い`);
       return found;

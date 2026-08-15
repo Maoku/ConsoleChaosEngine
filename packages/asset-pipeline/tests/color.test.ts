@@ -11,8 +11,10 @@ import {
   createImage,
   getPixel,
   medianCut,
+  mapRgb,
   quantizeBinaryAlpha,
   rgb555,
+  rgb555HighBits,
   setPixel,
   validateImage,
   type Rgb,
@@ -27,6 +29,15 @@ describe('tone and quantization', () => {
 
   it('matches RGB555 boundary conversion', () => {
     expect([rgb555(0), rgb555(7), rgb555(8), rgb555(248), rgb555(255)]).toEqual([0, 0, 8, 255, 255]);
+    expect([rgb555HighBits(0), rgb555HighBits(7), rgb555HighBits(8), rgb555HighBits(255)]).toEqual([0, 0, 8, 248]);
+  });
+
+  it('maps visible colors while preserving alpha and clearing transparent RGB', () => {
+    const image = createImage(2, 1);
+    setPixel(image, 0, 0, [1, 2, 3, 0]);
+    setPixel(image, 1, 0, [1, 2, 3, 128]);
+    const mapped = mapRgb(image, ([red, green, blue]) => [red + 1, green + 1, blue + 1]);
+    expect([...mapped.data]).toEqual([0, 0, 0, 0, 2, 3, 4, 128]);
   });
 
   it('builds deterministic median-cut and fixed candidate palettes', () => {

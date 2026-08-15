@@ -1,7 +1,7 @@
 import { createHash } from 'node:crypto';
 import { readdirSync, readFileSync, statSync, writeFileSync } from 'node:fs';
 import { relative, resolve } from 'node:path';
-import { decodePng, type RgbaImage } from '../apps/console-chaos/tools/png';
+import { decodePng, type RgbaImage } from '@console-chaos/asset-pipeline';
 
 const root = resolve(import.meta.dirname, '..');
 const textureRoot = resolve(root, 'apps/console-chaos/public/assets/textures');
@@ -52,9 +52,7 @@ const files = pngFilesBelow(textureRoot).map((path) => {
   };
 });
 
-writeFileSync(
-  output,
-  `${JSON.stringify(
+const formatted = `${JSON.stringify(
     {
       schemaVersion: 1,
       description: 'Migration oracle for decoded Console Chaos generation textures.',
@@ -66,7 +64,13 @@ writeFileSync(
     },
     null,
     2,
-  )}\n`,
-);
+  )}\n`;
 
-console.log(`Wrote ${relative(root, output)} (${files.length} decoded PNG records)`);
+if (process.argv.includes('--check')) {
+  const current = readFileSync(output, 'utf8');
+  if (current !== formatted) throw new Error(`${relative(root, output)} does not match decoded texture outputs`);
+  console.log(`Verified ${relative(root, output)} (${files.length} decoded PNG records)`);
+} else {
+  writeFileSync(output, formatted);
+  console.log(`Wrote ${relative(root, output)} (${files.length} decoded PNG records)`);
+}

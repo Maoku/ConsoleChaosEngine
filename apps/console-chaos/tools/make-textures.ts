@@ -31,7 +31,7 @@
 import { mkdirSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
-import { writePngIfChanged, type RgbaImage } from './png';
+import { writePngIfChanged, type RgbaImage } from '@console-chaos/asset-pipeline';
 import { TEXTURE_SETS, TEXTURE_SPECS, type TextureSpec } from './texture_spec';
 import { heartRects } from './glyph_heart';
 import { fcColorOf } from '../src/render/key_palette';

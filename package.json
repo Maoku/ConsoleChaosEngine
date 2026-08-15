@@ -26,6 +26,7 @@
     "check:trademark": "npm run check:trademark -w @console-chaos/console-chaos",
     "check:reference": "tsx tools/check-reference-snapshot.ts",
     "baseline:assets": "node --import tsx tools/write-asset-pipeline-baseline.ts",
+    "check:asset-parity": "node --import tsx tools/write-asset-pipeline-baseline.ts --check",
     "build:engine": "npm run build -w @console-chaos/engine",
     "build:testkit": "npm run build -w @console-chaos/engine-testkit",
     "build:asset-pipeline": "npm run build -w @console-chaos/asset-pipeline",

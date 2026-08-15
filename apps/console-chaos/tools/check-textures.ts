@@ -15,7 +15,7 @@
 import { readdirSync, readFileSync, existsSync, statSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join, basename } from 'node:path';
-import { decodePng, type RgbaImage } from './png';
+import { analyzeImage, decodePng, type RgbaImage } from '@console-chaos/asset-pipeline';
 import {
   ADJACENT_PAIRS,
   MAX_COLORS,
@@ -258,16 +258,16 @@ function check(set: TextureSet, spec: TextureSpec): void {
   }
 
   // --- 透過 ---
-  let transparent = 0;
-  for (let i = 3; i < image.data.length; i += 4) if (image.data[i]! < 255) transparent++;
-  if (spec.alpha && transparent === 0) errors.push(`${key}: 透過を持つ指定だが、透明な画素が無い`);
-  if (!spec.alpha && transparent > 0) errors.push(`${key}: 透過なしの指定だが、透明な画素がある`);
+  const analysis = analyzeImage(image);
+  const hasTransparency = analysis.alphaMode !== 'opaque';
+  if (spec.alpha && !hasTransparency) errors.push(`${key}: 透過を持つ指定だが、透明な画素が無い`);
+  if (!spec.alpha && hasTransparency) errors.push(`${key}: 透過なしの指定だが、透明な画素がある`);
 
   // --- 色数と淡色の禁止（§9.1） ---
   const colors = [...visibleColors(image).values()];
   const maxColors = spec.maxColors ?? MAX_COLORS;
-  if (colors.length > maxColors) {
-    errors.push(`${key}: 色数 ${colors.length} が上限 ${maxColors} を超えている（§9.1）`);
+  if (analysis.visibleColorCount > maxColors) {
+    errors.push(`${key}: 色数 ${analysis.visibleColorCount} が上限 ${maxColors} を超えている（§9.1）`);
   }
   for (const { rgb } of colors) {
     const saturation = Math.max(...rgb) - Math.min(...rgb);
