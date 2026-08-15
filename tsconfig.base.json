@@ -19,7 +19,8 @@
     "baseUrl": ".",
     "paths": {
       "@console-chaos/engine": ["packages/engine/src/index.ts"],
-      "@console-chaos/engine-testkit": ["packages/engine-testkit/src/index.ts"]
+      "@console-chaos/engine-testkit": ["packages/engine-testkit/src/index.ts"],
+      "@console-chaos/asset-pipeline": ["packages/asset-pipeline/src/index.ts"]
     }
   }
 }

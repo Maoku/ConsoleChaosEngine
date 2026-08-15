@@ -35,6 +35,21 @@ function checkFile(path: string): Violation[] {
     if (file.startsWith('packages/engine/') && (specifier.includes('/apps/') || specifier.startsWith('../../apps/'))) {
       add('engine must not import an app');
     }
+    if (
+      file.startsWith('packages/engine/') &&
+      (specifier === '@console-chaos/asset-pipeline' || specifier.includes('/asset-pipeline/'))
+    ) {
+      add('engine runtime must not depend on the Node.js asset pipeline');
+    }
+    if (file.startsWith('packages/asset-pipeline/') && specifier.includes('/apps/')) {
+      add('asset pipeline must stay game independent');
+    }
+    if (file.startsWith('packages/asset-pipeline/') && /^@console-chaos\/engine\//.test(specifier)) {
+      add('asset pipeline must use the engine public entry point');
+    }
+    if (file.startsWith('apps/') && file.includes('/src/') && specifier === '@console-chaos/asset-pipeline') {
+      add('browser application source must not import the Node.js asset pipeline');
+    }
     if (file.startsWith('apps/') && /^@console-chaos\/engine\//.test(specifier)) {
       add('apps must use the engine public entry point');
     }

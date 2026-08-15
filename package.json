@@ -11,9 +11,10 @@
     "apps/*"
   ],
   "scripts": {
-    "lint": "npm run lint -w @console-chaos/engine && npm run lint -w @console-chaos/engine-testkit && npm run lint -w @console-chaos/console-chaos",
+    "lint": "npm run lint -w @console-chaos/engine && npm run lint -w @console-chaos/engine-testkit && npm run lint -w @console-chaos/asset-pipeline && npm run lint -w @console-chaos/console-chaos",
     "test:engine": "npm run test -w @console-chaos/engine && npm run test -w @console-chaos/engine-testkit",
     "test:console": "npm run test -w @console-chaos/console-chaos",
+    "test:asset-pipeline": "npm run test -w @console-chaos/asset-pipeline",
     "test:e2e:console": "npm run test:e2e -w @console-chaos/console-chaos",
     "test:e2e": "npm run test:e2e:console",
     "check:boundaries": "tsx tools/check-boundaries.ts",
@@ -27,11 +28,12 @@
     "baseline:assets": "node --import tsx tools/write-asset-pipeline-baseline.ts",
     "build:engine": "npm run build -w @console-chaos/engine",
     "build:testkit": "npm run build -w @console-chaos/engine-testkit",
+    "build:asset-pipeline": "npm run build -w @console-chaos/asset-pipeline",
     "pack:distribution": "node tools/pack-distribution.mjs",
     "verify:distribution": "npm run pack:distribution && node tools/verify-distribution.mjs",
     "build:console": "npm run build -w @console-chaos/console-chaos",
     "verify:console-baseline": "npm run verify -w @console-chaos/console-chaos",
-    "verify": "npm run lint && npm run test:engine && npm run test:console && npm run test:e2e && npm run check:boundaries && npm run check:console-migration && npm run check:budget && npm run check:levels && npm run check:assets && npm run check:trademark && npm run check:reference && npm run build:engine && npm run build:testkit && npm run build:console && npm run check:console-bundle"
+    "verify": "npm run lint && npm run test:engine && npm run test:asset-pipeline && npm run test:console && npm run test:e2e && npm run check:boundaries && npm run check:console-migration && npm run check:budget && npm run check:levels && npm run check:assets && npm run check:trademark && npm run check:reference && npm run build:engine && npm run build:testkit && npm run build:asset-pipeline && npm run build:console && npm run check:console-bundle"
   },
   "devDependencies": {
     "@eslint/js": "^9.13.0",

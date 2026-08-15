@@ -1,0 +1,39 @@
+{
+  "name": "@console-chaos/asset-pipeline",
+  "version": "0.1.0",
+  "description": "Deterministic generation-aware image asset tooling for Console Chaos projects.",
+  "type": "module",
+  "sideEffects": false,
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "ASSET_RULES.md"
+  ],
+  "keywords": [
+    "asset-pipeline",
+    "image-processing",
+    "retro"
+  ],
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "build": "vite build --config vite.config.package.ts && tsc -p tsconfig.build.json --emitDeclarationOnly && node ../../tools/fix-declaration-specifiers.mjs dist",
+    "lint": "tsc --noEmit -p tsconfig.json",
+    "test": "vitest run",
+    "prepack": "npm run build"
+  },
+  "peerDependencies": {
+    "@console-chaos/engine": "^0.2.0"
+  }
+}
