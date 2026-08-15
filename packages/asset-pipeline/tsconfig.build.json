@@ -6,7 +6,11 @@
     "outDir": "dist",
     "rootDir": "src",
     "types": ["node"],
-    "noEmit": false
+    "noEmit": false,
+    "baseUrl": ".",
+    "paths": {
+      "@console-chaos/engine": ["../engine/dist/index.d.ts"]
+    }
   },
   "include": ["src"],
   "exclude": ["tests"]

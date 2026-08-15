@@ -28,7 +28,7 @@
     "node": ">=22"
   },
   "scripts": {
-    "build": "vite build --config vite.config.package.ts && tsc -p tsconfig.build.json --emitDeclarationOnly && node ../../tools/fix-declaration-specifiers.mjs dist",
+    "build": "npm run build --workspace @console-chaos/engine && vite build --config vite.config.package.ts && tsc -p tsconfig.build.json --emitDeclarationOnly && node ../../tools/fix-declaration-specifiers.mjs dist",
     "lint": "tsc --noEmit -p tsconfig.json",
     "test": "vitest run",
     "prepack": "npm run build"
