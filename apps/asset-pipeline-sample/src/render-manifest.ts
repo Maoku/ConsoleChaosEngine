@@ -20,13 +20,13 @@ export const TITLE_GENERATION_ASSETS: GenerationVariant<TitleGenerationAssets> =
 
 export function createTitleRenderManifest(): RenderAssetManifest {
   const variants = Object.values(TITLE_GENERATION_ASSETS);
+  const generatedUrls = variants.flatMap((variant) => [variant.logo, variant.character]);
   return {
-    textures: variants.flatMap((variant) => [
-      { url: variant.logo },
-      { url: variant.character },
-    ]),
+    textures: generatedUrls.map((url) => ({ url })),
     models: [],
-    atlases: [],
+    // SpriteCommand uses the Engine's atlas draw path. A 1x1 sheet preserves
+    // the generated bitmap unchanged while keeping the explicit texture URL.
+    atlases: generatedUrls.map((url) => ({ url, columns: 1, rows: 1 })),
     geometries: [],
     fallbackTextures: {
       FC: TITLE_GENERATION_ASSETS.FC.logo,

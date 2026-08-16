@@ -81,7 +81,9 @@ export function writeSpriteModelMatrix(
   const rotatedUpY = -rightY * sine + upY * cosine;
   const rotatedUpZ = -rightZ * sine + upZ * cosine;
   const scaleX = (command.flipX ? -1 : 1) * command.size[0] / 2;
-  const scaleY = command.size[1] / 2;
+  // Screen-space uses a top-left origin and a Y-down projection. Negating the
+  // local up axis keeps atlas v0 (the image top) on the visual top edge.
+  const scaleY = (command.screenSpace ? -1 : 1) * command.size[1] / 2;
   out[0] = rotatedRightX * scaleX;
   out[1] = rotatedRightY * scaleX;
   out[2] = rotatedRightZ * scaleX;

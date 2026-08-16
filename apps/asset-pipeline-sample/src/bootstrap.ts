@@ -20,6 +20,13 @@ export function initialGenerationFromSearch(search: string): GenerationId {
   return GENERATION_IDS.find((generation) => generation === requested) ?? 'FC';
 }
 
+export function captureTimeFromSearch(search: string): number | null {
+  const value = new URLSearchParams(search).get('captureTime');
+  if (value === null || value.trim() === '') return null;
+  const seconds = Number(value);
+  return Number.isFinite(seconds) && seconds >= 0 ? seconds : null;
+}
+
 export function fitCanvasToStage(canvas: HTMLCanvasElement): void {
   const stage = canvas.parentElement;
   if (!stage) return;
@@ -28,6 +35,19 @@ export function fitCanvasToStage(canvas: HTMLCanvasElement): void {
   const scale = Math.min(rect.width / DISPLAY_WIDTH, rect.height / DISPLAY_HEIGHT, 1);
   canvas.style.width = `${Math.floor(DISPLAY_WIDTH * scale)}px`;
   canvas.style.height = `${Math.floor(DISPLAY_HEIGHT * scale)}px`;
+}
+
+async function freezeCaptureFrame(canvas: HTMLCanvasElement): Promise<void> {
+  await new Promise<void>((resolve) => requestAnimationFrame(() => requestAnimationFrame(() => resolve())));
+  const image = new Image();
+  image.id = canvas.id;
+  image.alt = 'Captured Console Chaos Engine title screen';
+  image.dataset.captureReady = 'true';
+  image.style.width = canvas.style.width;
+  image.style.height = canvas.style.height;
+  image.src = canvas.toDataURL('image/png');
+  await image.decode();
+  canvas.replaceWith(image);
 }
 
 function requireElement<ElementType extends Element>(selector: string): ElementType {
@@ -40,6 +60,7 @@ export async function bootstrap(): Promise<() => void> {
   const canvas = requireElement<HTMLCanvasElement>('#screen');
   const label = requireElement<HTMLElement>('#generation-label');
   const initialGeneration = initialGenerationFromSearch(window.location.search);
+  const captureTime = captureTimeFromSearch(window.location.search);
   canvas.width = DISPLAY_WIDTH;
   canvas.height = DISPLAY_HEIGHT;
   label.textContent = initialGeneration;
@@ -49,6 +70,7 @@ export async function bootstrap(): Promise<() => void> {
   const renderer = await createGenerationWebGlRenderer(canvas, {
     assets,
     manifest: createTitleRenderManifest(),
+    preserveDrawingBuffer: captureTime !== null,
   });
   const input = createKeyboardGamepadSource();
   const motionPreference = window.matchMedia('(prefers-reduced-motion: reduce)');
@@ -69,7 +91,12 @@ export async function bootstrap(): Promise<() => void> {
   const disconnectGeneration = host.context.events.on('generationSwitch', (event) => {
     label.textContent = event.to;
   });
-  await host.start(createTitleModule({ reducedMotion: () => reducedMotion }));
+  await host.start(createTitleModule({
+    reducedMotion: () => reducedMotion,
+    ...(captureTime === null ? {} : { fixedTimeSeconds: captureTime }),
+  }));
+
+  if (captureTime !== null) await freezeCaptureFrame(canvas);
 
   const canvasResize = observeCanvasResize(canvas, () => renderer.resize());
   const windowResize = (): void => fitCanvasToStage(canvas);

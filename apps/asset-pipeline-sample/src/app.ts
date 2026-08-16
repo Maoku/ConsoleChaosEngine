@@ -5,6 +5,7 @@ import {
   type GameModule,
   type GenerationVariant,
   type RenderFrame,
+  type SpriteCommand,
 } from '@console-chaos/engine';
 import { createTitleActionMap } from './actions';
 import { pivotedSpriteCenter, swayAngle } from './animation';
@@ -29,8 +30,17 @@ const TITLE_BACKGROUNDS = defineGenerationVariant({
   PS2: '#21154a',
 });
 
+const TITLE_SPRITE_ALPHA: GenerationVariant<Pick<SpriteCommand, 'alphaCutoff' | 'hardwareBlend'>> =
+  defineGenerationVariant({
+    FC: { alphaCutoff: 0.5 },
+    SFC: { alphaCutoff: 0.5 },
+    PS1: { alphaCutoff: 0.5 },
+    PS2: { hardwareBlend: { family: 'gen4-gs', preset: 'source-over' } },
+  });
+
 export interface TitleModuleOptions {
   readonly reducedMotion?: () => boolean;
+  readonly fixedTimeSeconds?: number;
 }
 
 export function buildTitleRenderFrame(
@@ -61,6 +71,7 @@ export function buildTitleRenderFrame(
       size: size.logo,
       color: '#ffffff',
       texture: assets.logo,
+      ...TITLE_SPRITE_ALPHA[generation],
       layer: 0,
       depthWrite: false,
     });
@@ -73,6 +84,7 @@ export function buildTitleRenderFrame(
       color: '#ffffff',
       rotation: angle,
       texture: assets.character,
+      ...TITLE_SPRITE_ALPHA[generation],
       layer: 1,
       depthWrite: false,
     });
@@ -98,7 +110,11 @@ export function createTitleModule(options: TitleModuleOptions = {}): GameModule 
           timeSeconds += dtSeconds;
         },
         buildRenderFrame(frame): void {
-          buildTitleRenderFrame(frame, timeSeconds, options.reducedMotion?.() ?? false);
+          buildTitleRenderFrame(
+            frame,
+            options.fixedTimeSeconds ?? timeSeconds,
+            options.reducedMotion?.() ?? false,
+          );
         },
         dispose(): void {
           actions.reset();

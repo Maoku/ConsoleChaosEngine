@@ -125,6 +125,8 @@ export interface RenderAssetManifest {
 export interface GenerationWebGlRendererOptions {
   assets: AssetManager;
   manifest: RenderAssetManifest;
+  /** Screenshot tooling can opt in without making the runtime retain every frame by default. */
+  preserveDrawingBuffer?: boolean;
   quality?: () => CrtQuality;
   glitchAmount?: () => number;
   motionAmount?: () => number;
@@ -1310,7 +1312,9 @@ export async function createGenerationWebGlRenderer(
   options: GenerationWebGlRendererOptions,
 ): Promise<FrameRenderer & GenerationWebGlRendererStats> {
   const cpu = await loadCpuAssets(options.assets, options.manifest);
-  const ctx = createGLContext(canvas);
+  const ctx = createGLContext(canvas, {
+    preserveDrawingBuffer: options.preserveDrawingBuffer ?? false,
+  });
   const key = `generation-webgl-renderer:${rendererSequence++}`;
   const gpu = await options.assets.acquireGpu(
     key,

@@ -37,6 +37,10 @@ describe('sprite billboard matrices', () => {
     expect([none[8], none[9], none[10]]).toEqual([0, 0, 1]);
     expect([screen[8], screen[9], screen[10]]).toEqual([0, 0, 1]);
     expect([screen[12], screen[13], screen[14]]).toEqual([1, 2, 3]);
+    expect([none[4], none[5], none[6]]).toEqual([0, 3, 0]);
+    expect(screen[4]).toBeCloseTo(0);
+    expect(screen[5]).toBeCloseTo(-3);
+    expect(screen[6]).toBeCloseTo(0);
   });
 
   it('defaults world sprites to cylindrical and enforces depth-write rules', () => {
