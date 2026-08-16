@@ -8,10 +8,14 @@
   },
   "scripts": {
     "dev": "vite",
+    "assets:build": "console-chaos-assets build --config tools/art.config.mjs",
+    "assets:check": "console-chaos-assets check --config tools/art.config.mjs",
+    "check:assets": "tsx tools/check-assets.ts",
     "build": "vite build",
     "preview": "vite preview",
     "lint": "eslint . && tsc --noEmit -p tsconfig.json && tsc --noEmit -p tsconfig.node.json",
-    "test": "vitest run --passWithNoTests"
+    "test": "vitest run --passWithNoTests",
+    "verify": "npm run assets:check && npm run check:assets && npm run lint && npm run test && npm run build"
   },
   "dependencies": {
     "@console-chaos/engine": "0.2.0"
