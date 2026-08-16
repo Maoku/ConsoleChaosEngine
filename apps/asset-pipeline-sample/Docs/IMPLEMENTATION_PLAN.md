@@ -4,7 +4,33 @@
 
 作成日: 2026-08-16
 
-状態: P9〜P12のImageGen変換元frame修正、統合検証、記録を完了（2026-08-16）
+状態: P16のPS2半透明合成停止と9組検証を実装（2026-08-16）
+
+> **P13履歴仕様:** P9〜P12で作成した9枚のImageGen sourceは保持するが、runtime出力は
+> `open` 3枚だけを全身textureとし、`half / closed` 6枚は顔部分だけのpatchにcropする。
+> PS2 patchは左右の目を不透明な楕円windowで置換し、外周2pxのsoft alphaとtransparent RGB bleedを保持する。
+> PS1/PS2の `rotation` / authored residualは廃止し、`left ↔ center ↔ right` の全身textureを
+> premultiplied-alpha空間で30/60 Hz Tweenする。以下のP9〜P12記述にあるresidual回転は履歴仕様であり、
+> P13により置き換えられた。
+
+> **P14黒枠修正:** 1554×820、PS2、`captureTime=2.9` で閉眼patch上端に暗い横線を再現した。
+> 原因は透明pixelのRGBではなく、half/closed原画に残る前髪・頬の微差まで矩形soft featherで合成したことだった。
+> 同じposeのopen画像を同一条件で変換・cropし、目の帯域内のRGB差だけをsmoothstep alphaへ変換する方式へ変更した。
+> PS2は差分を最大2pxだけ拡張し、透明pixelのbleed RGBは維持する。再発防止として、可視alphaがpatch上端25%へ
+> 入らないこと、1行の可視alphaが横幅80%を超えないこと、外周alpha 0・partial alpha・bleed RGBを自動検査する。
+
+> **P15二重表示修正:** P14の画素差分alphaは、原画間にある微小な位置・陰影差まで半透明で合成し、
+> 閉眼時にまつ毛・頬・前髪が薄く二重化した。画素差分による重み付けを廃止し、左右の目をそれぞれ
+> 不透明な楕円windowで完全に置換する。window外周だけをPS2で2px補間し、前髪・鼻・頬はalpha 0のままにする。
+> 回帰検査では可視alphaの75%以上が255、両目window中心がalpha 255、下端がpatch高72%以内、1行の被覆が
+> 横幅80%以下であることに加え、builderへ画素差分mask識別子が戻っていないことを確認する。
+
+> **P16現行仕様・半透明合成停止:** 黒円を含む合成不具合の切り分けを優先し、PS2のhalf/closed 6枚を
+> 顔patchではなく280×336の全身textureへ戻す。PS2は3姿勢×3眼状態の9枚から常に1枚だけを描画し、
+> `tweenTexture`、`textureMix`、追加の目sprite、`source-over` hardware blendを使用しない。
+> 60 Hz profile上ではleft / center / right / centerを各15 sample保持する離散切替とする。
+> `pose` / `eyes` capture overrideで9組すべてを1554×820で確認済み。半透明合成はOFFのまま維持し、
+> 再導入する場合は9 key frameに加えて全遷移組み合わせのcaptureと自動検査を先に追加する。
 
 > **適合性メモ:** 2026-08-16に完了したP5/P6は、単一の `character-upper.png` をコードで
 > shear / warpして揺らしと目パチを生成している。この経路は「ImageGenでアニメーション状態ごとの
@@ -24,7 +50,7 @@ Console Chaos Engine 上のタイトル画面で表示する。
 - 世代別画像は手作業せず、必ず `@console-chaos/asset-pipeline` から生成する
 - asset pipeline は Node.js の build-time tool に閉じ、ブラウザコードから import しない
 - Engine の世代プロファイル、世代切替、世代別 renderer を利用する
-- 第1・第2世代はImageGen由来の離散姿勢画像、第3・第4世代は同じkey poseとTweenで左右へ揺らす
+- 第1・第2・第4世代はImageGen由来の離散姿勢画像、第3世代だけ同じkey pose間をTweenする
 - ポニーテール揺れと目パチはコード変形ではなく、ImageGen由来のframe差分で表現する
 - 同一の楽曲データをEngineの世代別音源・同時発音数へ編曲し、体揺れと拍を同期する
 
@@ -36,7 +62,7 @@ Console Chaos Engine 上のタイトル画面で表示する。
 - `Console Chaos Engine` のタイトルロゴ
 - [character.png](character.png) のキャラクターを元にした上半身のImageGen変換元frame
 - ロゴ1種と、姿勢3種×目3種のキャラクター変換元frameから作る4世代出力
-- FC/SFCの画像パターン切替、PS1/PS2のTween
+- FC/SFC/PS2の画像パターン切替、PS1のTween
 - ポニーテール揺れと目パチアニメーション
 - 世代別の音声能力に沿ったタイトルBGM
 - キーボード／ゲームパッドによる世代切替
@@ -693,10 +719,12 @@ console-chaos-assets build \
 | FCの画面全体色数が25色を超える | ロゴ4色＋キャラクター16色を上限とし、背景は単色に限定する |
 | frameごとの減色結果でFCの色集合が増える | canonical frameから共通paletteを作り9frameへ適用する |
 | 目パチで顔全体が変化する | 各poseのopen画像を直接参照してhalf/closedを生成し、目周辺以外の差を目視比較する |
+| 顔patchの上端に暗い矩形線が出る | PS2は顔patchを使用せず、眼状態ごとの全身frameを1枚だけ描画する。FC/SFC/PS1はbinary alpha patchを維持する |
+| 目パチで顔が薄く二重化する | PS2の `tweenTexture` / `textureMix` / 追加目sprite / `source-over` を禁止し、9組の固定captureを確認する |
 | 回転で腰が横滑りする | 下端中央pivotからsprite中心を逆算し、座標不変をunit testする |
 | sourceの姿勢とPS1/PS2回転が二重になる | `authoredPoseAngle` を宣言し、runtimeは目標角との差分だけを回転する。端点角と切替連続性をtest / captureで確認する |
 | transitionで片方の世代画像が消える | 4世代commandを常時frameへ積み、generation maskでrendererに選ばせる |
-| PS1/PS2もコマ送りに見える | profileの30/60 Hzへ時刻を量子化した後にTweenし、captureで連続性を確認する |
+| PS2の半透明合成を早期に再導入する | 9 key frameと全遷移組み合わせの自動検査・captureが揃うまでOFFを維持する |
 | autoplay制限で無音になる | 最初のpointer/keyboard操作でunlockし、失敗時は画面を止めずnull audioへfallbackする |
 | 世代切替でBGMが曲頭へ戻る | profileとarrangementを分離し、切替時は `useScore()` だけを呼ぶ |
 | asset pipelineがbrowser bundleへ混入する | src/tool tsconfig分離、boundary検査、build output検査を行う |
@@ -712,7 +740,7 @@ console-chaos-assets build \
 - 10枚のproduction入力から `@console-chaos/asset-pipeline` だけで40個の世代別PNGを生成できる
 - 生成済みPNGを直接編集していないことを `assets:check` で確認できる
 - 4世代のロゴ、キャラクター、背景、animationが§4の完成条件を満たす
-- 第1・第2世代はImageGen姿勢assetの離散パターン、第3・第4世代は同じkey pose＋residual Tweenとして目視で区別できる
+- 第1・第2・第4世代はImageGen姿勢assetの離散パターン、第3世代は同じkey pose間のTweenとして目視で区別できる
 - 4世代すべてでポニーテール揺れと目パチを確認できる
 - 120 BPMの同一BGMが世代別の音源・同時発音数・編曲で再生され、切替時も拍位置を保つ
 - direct/cycle入力、transition、reduced-motion、disposeが動作する

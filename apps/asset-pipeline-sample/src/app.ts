@@ -8,9 +8,19 @@ import {
   type SpriteCommand,
 } from '@console-chaos/engine';
 import { createTitleActionMap } from './actions';
-import { pivotedSpriteCenter, titleAnimationFrame } from './animation';
+import {
+  titleAnimationFrame,
+  type CharacterPose,
+  type EyeFrame,
+} from './animation';
 import { arrangeTitleScore } from './audio';
-import { TITLE_GENERATION_ASSETS, characterFrameKey } from './render-manifest';
+import {
+  TITLE_GENERATION_ASSETS,
+  characterBodyKey,
+  characterEyePatchKey,
+  characterFrameKey,
+  eyePatchLayout,
+} from './render-manifest';
 
 export interface TitleAssetSize {
   readonly logo: readonly [number, number];
@@ -36,31 +46,41 @@ const TITLE_SPRITE_ALPHA: GenerationVariant<Pick<SpriteCommand, 'alphaCutoff' | 
     FC: { alphaCutoff: 0.5 },
     SFC: { alphaCutoff: 0.5 },
     PS1: { alphaCutoff: 0.5 },
-    PS2: { hardwareBlend: { family: 'gen4-gs', preset: 'source-over' } },
+    PS2: { alphaCutoff: 0.5 },
   });
 
 export interface TitleModuleOptions {
   readonly reducedMotion?: () => boolean;
   readonly fixedTimeSeconds?: number;
+  readonly fixedPose?: CharacterPose;
+  readonly fixedEyes?: EyeFrame;
 }
 
 export function buildTitleRenderFrame(
   frame: RenderFrame,
   timeSeconds: number,
   reducedMotion: boolean,
+  fixedPose?: CharacterPose,
+  fixedEyes?: EyeFrame,
 ): void {
   frame.timeSeconds = timeSeconds;
   for (const generation of GENERATION_IDS) {
     const hardware = HARDWARE_GENERATION_PROFILES[generation];
     const size = TITLE_ASSET_SIZES[generation];
     const assets = TITLE_GENERATION_ASSETS[generation];
-    const animation = titleAnimationFrame(hardware, timeSeconds, reducedMotion);
-    const residualAngle = animation.angle;
-    const characterCenter = pivotedSpriteCenter(
-      [hardware.video.internalWidth / 2, hardware.video.internalHeight],
-      size.character,
-      residualAngle,
-    );
+    const sampledAnimation = titleAnimationFrame(hardware, timeSeconds, reducedMotion);
+    const animation = {
+      ...sampledAnimation,
+      pose: fixedPose ?? sampledAnimation.pose,
+      eyes: fixedEyes ?? sampledAnimation.eyes,
+      tween: fixedPose
+        ? { from: fixedPose, to: fixedPose, progress: 0 }
+        : sampledAnimation.tween,
+    };
+    const characterCenter = [
+      hardware.video.internalWidth / 2,
+      hardware.video.internalHeight - size.character[1] / 2,
+    ] as const;
     frame.backgrounds.push({
       color: TITLE_BACKGROUNDS[generation],
       generations: [generation],
@@ -77,6 +97,7 @@ export function buildTitleRenderFrame(
       layer: 0,
       depthWrite: false,
     });
+    const ps2FullFrame = generation === 'PS2';
     frame.sprites.push({
       id: `character:${generation}`,
       generations: [generation],
@@ -84,12 +105,46 @@ export function buildTitleRenderFrame(
       position: [characterCenter[0], characterCenter[1], 0],
       size: size.character,
       color: '#ffffff',
-      rotation: residualAngle,
-      texture: assets.characters[characterFrameKey(animation.pose, animation.eyes)],
+      texture: ps2FullFrame
+        ? assets.characterFrames[characterFrameKey(animation.pose, animation.eyes)]
+        : assets.characterFrames[characterBodyKey(animation.tween.from)],
+      ...(!ps2FullFrame && animation.tween.from !== animation.tween.to
+        ? {
+            tweenTexture: assets.characterFrames[characterBodyKey(animation.tween.to)],
+            textureMix: animation.tween.progress,
+          }
+        : {}),
       ...TITLE_SPRITE_ALPHA[generation],
       layer: 1,
       depthWrite: false,
     });
+    if (!ps2FullFrame && animation.eyes !== 'open') {
+      const patch = eyePatchLayout(size.character);
+      frame.sprites.push({
+        id: `character-eyes:${generation}`,
+        generations: [generation],
+        screenSpace: true,
+        position: [
+          characterCenter[0] + patch.offset[0],
+          characterCenter[1] + patch.offset[1],
+          0,
+        ],
+        size: patch.size,
+        color: '#ffffff',
+        texture: assets.characterFrames[characterEyePatchKey(animation.tween.from, animation.eyes)],
+        ...(animation.tween.from === animation.tween.to
+          ? {}
+          : {
+              tweenTexture: assets.characterFrames[
+                characterEyePatchKey(animation.tween.to, animation.eyes)
+              ],
+              textureMix: animation.tween.progress,
+            }),
+        ...TITLE_SPRITE_ALPHA[generation],
+        layer: 2,
+        depthWrite: false,
+      });
+    }
   }
 }
 
@@ -120,6 +175,8 @@ export function createTitleModule(options: TitleModuleOptions = {}): GameModule 
             frame,
             options.fixedTimeSeconds ?? timeSeconds,
             options.reducedMotion?.() ?? false,
+            options.fixedPose,
+            options.fixedEyes,
           );
         },
         dispose(): void {

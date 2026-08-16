@@ -14,6 +14,12 @@ import {
   type GenerationId,
 } from '@console-chaos/engine';
 import { createTitleModule } from './app';
+import {
+  CHARACTER_POSES,
+  EYE_FRAMES,
+  type CharacterPose,
+  type EyeFrame,
+} from './animation';
 import { TITLE_BGM_BPM, arrangeTitleScore } from './audio';
 import { createTitleRenderManifest } from './render-manifest';
 import './style.css';
@@ -31,6 +37,16 @@ export function captureTimeFromSearch(search: string): number | null {
   if (value === null || value.trim() === '') return null;
   const seconds = Number(value);
   return Number.isFinite(seconds) && seconds >= 0 ? seconds : null;
+}
+
+export function capturePoseFromSearch(search: string): CharacterPose | undefined {
+  const requested = new URLSearchParams(search).get('pose');
+  return CHARACTER_POSES.find((pose) => pose === requested);
+}
+
+export function captureEyesFromSearch(search: string): EyeFrame | undefined {
+  const requested = new URLSearchParams(search).get('eyes');
+  return EYE_FRAMES.find((eyes) => eyes === requested);
 }
 
 export function fitCanvasToStage(canvas: HTMLCanvasElement): void {
@@ -67,6 +83,8 @@ export async function bootstrap(): Promise<() => void> {
   const label = requireElement<HTMLElement>('#generation-label');
   const initialGeneration = initialGenerationFromSearch(window.location.search);
   const captureTime = captureTimeFromSearch(window.location.search);
+  const capturePose = capturePoseFromSearch(window.location.search);
+  const captureEyes = captureEyesFromSearch(window.location.search);
   canvas.width = DISPLAY_WIDTH;
   canvas.height = DISPLAY_HEIGHT;
   label.textContent = initialGeneration;
@@ -112,6 +130,8 @@ export async function bootstrap(): Promise<() => void> {
   await host.start(createTitleModule({
     reducedMotion: () => reducedMotion,
     ...(captureTime === null ? {} : { fixedTimeSeconds: captureTime }),
+    ...(capturePose === undefined ? {} : { fixedPose: capturePose }),
+    ...(captureEyes === undefined ? {} : { fixedEyes: captureEyes }),
   }));
 
   if (captureTime !== null) await freezeCaptureFrame(canvas);

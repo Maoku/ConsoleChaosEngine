@@ -10,8 +10,10 @@ in vec3 vWorld;
 
 uniform sampler2D uBaseColor;
 uniform sampler2D uTopColor;
+uniform sampler2D uTweenColor;
 uniform sampler2D uEnvironment;
 uniform vec4 uBaseColorFactor;
+uniform float uTextureMix;
 uniform float uAffineAmount;
 uniform vec3 uLightDirection;
 uniform vec3 uDirectionalColor;
@@ -37,11 +39,23 @@ vec2 equirectangularUv(vec3 direction) {
   return vec2(u, v);
 }
 
+vec4 mixPremultipliedAlpha(vec4 from, vec4 to, float amount) {
+  float alpha = mix(from.a, to.a, amount);
+  vec3 premultiplied = mix(from.rgb * from.a, to.rgb * to.a, amount);
+  vec3 color = alpha > 0.00001 ? premultiplied / alpha : vec3(0.0);
+  return vec4(color, alpha);
+}
+
 void main() {
   vec2 affineUv = vUvW / vW;
   vec2 uv = mix(vUvCorrect, affineUv, uAffineAmount);
   vec3 normal = normalize(vNormal);
-  vec4 base = (normal.y > 0.5 ? texture(uTopColor, uv) : texture(uBaseColor, uv)) * uBaseColorFactor;
+  vec4 primary = normal.y > 0.5 ? texture(uTopColor, uv) : texture(uBaseColor, uv);
+  vec4 base = mixPremultipliedAlpha(
+    primary,
+    texture(uTweenColor, uv),
+    clamp(uTextureMix, 0.0, 1.0)
+  ) * uBaseColorFactor;
   if (base.a < uAlphaCutoff) discard;
 
   float lambert = max(dot(normal, normalize(uLightDirection)), 0.0);

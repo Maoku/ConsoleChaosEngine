@@ -3,8 +3,9 @@
 ImageGenで用意した世代非依存の3姿勢×3眼状態のキャラクター原画から、`@console-chaos/asset-pipeline` だけで `FC / SFC / PS1 / PS2` 用animation frameを生成し、Console Chaos Engine の世代別rendererと音源で同じタイトル画面・BGMを表現するサンプルです。
 
 - FC/SFC: ImageGen由来の3姿勢を6/12 Hzで切替。runtime回転は使用しません。
-- PS1/PS2: 同じkey poseに、poseへ焼き込まれた角度を差し引いた30/60 Hzのresidual Tweenを適用します。
-- 全世代: ImageGen由来の3段階の目パチとポニーテール差分をpipeline変換assetで再生します。
+- PS1: `left ↔ center ↔ right` の開眼全身textureを30 Hzでpremultiplied-alpha Tweenし、runtime回転は使用しません。
+- FC/SFC/PS1: 開眼全身3枚の上へ、半閉じ／閉眼の顔部分だけを切り出した6枚の小さなpatchを重ねて目パチします。
+- PS2: 半透明合成を停止し、3姿勢×3眼状態の全身texture 9枚から常に1枚だけを60 Hz profileで選択します。`textureMix`、目patch、`source-over` hardware blendは使用しません。
 - BGM: 120 BPMの同一曲を世代別音源で再生し、発音能力に応じて3/4/5/6 trackへ編曲します。
 
 ## 実行
@@ -28,6 +29,7 @@ npm run dev -w @console-chaos/asset-pipeline-sample
 - ゲームパッド左右shoulder: 前後の世代へ切替
 - `?generation=FC|SFC|PS1|PS2`: 初期世代を指定
 - `?captureTime=0.5`: 検証用にアニメーション位相を秒で固定し、描画を静止PNGへ凍結
+- `?pose=left|center|right&eyes=open|half|closed`: 検証用に姿勢と目状態を固定
 
 `prefers-reduced-motion` が有効な環境では左右の揺れを停止します。
 BGMは最初のpointerまたはkeyboard操作で再生可能になり、世代切替後も拍位置を維持します。
@@ -35,8 +37,8 @@ BGMは最初のpointerまたはkeyboard操作で再生可能になり、世代�
 ## 構成
 
 - `art/source`: ImageGen由来のproduction原画10枚（ロゴ1＋character 9）と参照anchor。runtime bundleには含めません。
-- `tools/art.config.mjs`: matte、共通crop、resample、tone、共有FC palette、alphaの世代変換定義。姿勢や目を作るwarpは含みません。
-- `public/assets/generated`: pipelineだけが生成する40枚のruntime PNGと決定的manifest。
+- `tools/art.config.mjs`: matte、共通crop、resample、tone、共有FC palette、FC/SFC/PS1顔patch、PS2全身frameの世代変換定義。姿勢や目を作るwarpは含みません。
+- `public/assets/generated`: pipelineだけが生成する40枚（logo 4、全身18、顔patch 18）のruntime PNGと決定的manifest。
 - `src`: Engine公開APIだけを利用するブラウザruntimeとタイトルScore。asset pipelineをimportしません。
 - `tests` / `tools/check-assets.ts`: animation、audio、配置、lifecycle、決定性、palette／alpha契約を検査します。
 
@@ -44,7 +46,7 @@ BGMは最初のpointerまたはkeyboard操作で再生可能になり、世代�
 
 ## 検証キャプチャ
 
-4世代とも `captureTime=0.5`、1280×720の同じviewportで取得しています。この位相は右端の開眼key poseで、PS1/PS2のruntime residualは0°です。閉眼frameは `captureTime=2.9` で全世代を追加目視し、保存captureとは分離しています。
+4世代とも `captureTime=0.5`、1280×720の同じviewportで取得しています。PS1のtexture mixは端点、PS2は右姿勢の全身key frameです。PS2は `pose × eyes` の9組も1554×820で個別確認しています。
 
 | FC | SFC |
 |---|---|

@@ -625,6 +625,8 @@ async function createGpuBackend(
       uAffineAmount: profile.video.affineTexture ? 1 : 0,
       uBaseColor: textureOf(material.baseColorTexture, profile.id),
       uTopColor: textureOf(material.topColorTexture ?? material.baseColorTexture, profile.id),
+      uTweenColor: textureOf(material.baseColorTexture, profile.id),
+      uTextureMix: 0,
       uBaseColorFactor: material.colorFactor ?? colorFactor(material.color ?? mesh.color),
       uLightDirection: directionalLight,
       uDirectionalColor: directionalLightColor,
@@ -922,6 +924,8 @@ async function createGpuBackend(
         uAffineAmount: profile.video.affineTexture ? 1 : 0,
         uBaseColor: fallback,
         uTopColor: fallback,
+        uTweenColor: fallback,
+        uTextureMix: 0,
         uBaseColorFactor: [0, 0, 0, SHADOW_STRENGTH * projected.strength],
         uLightDirection: [0, 1, 0],
         uDirectionalColor: WHITE_LIGHT,
@@ -975,6 +979,8 @@ async function createGpuBackend(
         uAffineAmount: profile.video.affineTexture ? 1 : 0,
         uBaseColor: rig.maps[index]!,
         uTopColor: rig.maps[index]!,
+        uTweenColor: rig.maps[index]!,
+        uTextureMix: 0,
         uBaseColorFactor: [base[0] * tint[0], base[1] * tint[1], base[2] * tint[2], base[3] * tint[3]],
         uLightDirection: directionalLight,
         uDirectionalColor: directionalLightColor,
@@ -1002,6 +1008,8 @@ async function createGpuBackend(
     blendControl[1] = blend.outputOpacity;
     const sheet = command.texture ? atlases.get(command.texture) : undefined;
     if (!sheet) throw new Error(`Sprite atlas is not preloaded: ${command.texture ?? command.id}`);
+    const tweenSheet = command.tweenTexture ? atlases.get(command.tweenTexture) : sheet;
+    if (!tweenSheet) throw new Error(`Sprite tween atlas is not preloaded: ${command.tweenTexture}`);
     const cell = Math.min(Math.max(command.cell ?? 0, 0), sheet.cells.length - 1);
     const billboard = profile.video.spriteComposition === 'scene' && !command.screenSpace
       ? command.billboard ?? 'cylindrical'
@@ -1017,6 +1025,8 @@ async function createGpuBackend(
       uAffineAmount: profile.video.affineTexture ? 1 : 0,
       uBaseColor: sheet.texture,
       uTopColor: sheet.texture,
+      uTweenColor: tweenSheet.texture,
+      uTextureMix: Math.min(Math.max(command.textureMix ?? 0, 0), 1),
       uBaseColorFactor: colorFactor(command.color),
       uLightDirection: directionalLight,
       uDirectionalColor: directionalLightColor,

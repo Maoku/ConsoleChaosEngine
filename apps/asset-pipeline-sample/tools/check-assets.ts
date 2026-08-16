@@ -28,21 +28,24 @@ const eyeFrames = ['open', 'half', 'closed'] as const;
 const characterAssetIds = poses.flatMap((pose) =>
   eyeFrames.map((eyes) => `character-${pose}-${eyes}` as const),
 );
+const bodyAssetIds = poses.map((pose) => `character-${pose}-open` as const);
+const eyePatchAssetIds = poses.flatMap((pose) =>
+  (['half', 'closed'] as const).map((eyes) => `character-${pose}-${eyes}` as const),
+);
 const expectedAssetIds = ['title-logo', ...characterAssetIds];
 
-const expectedSizes = {
-  'title-logo': {
-    FC: [200, 40],
-    SFC: [200, 40],
-    PS1: [250, 50],
-    PS2: [500, 100],
-  },
-  character: {
-    FC: [120, 144],
-    SFC: [130, 156],
-    PS1: [150, 180],
-    PS2: [280, 336],
-  },
+const logoSizes = {
+  FC: [200, 40],
+  SFC: [200, 40],
+  PS1: [250, 50],
+  PS2: [500, 100],
+} as const;
+
+const characterSizes = {
+  FC: [120, 144],
+  SFC: [130, 156],
+  PS1: [150, 180],
+  PS2: [280, 336],
 } as const;
 
 const colorBudgets = {
@@ -56,6 +59,17 @@ const fail = (condition: boolean, message: string): void => {
 };
 const colorKey = (color: Rgb): string => color.join(',');
 const isCharacter = (assetId: string): boolean => assetId.startsWith('character-');
+const isEyePatch = (assetId: string): boolean =>
+  isCharacter(assetId) && !assetId.endsWith('-open');
+
+function patchSize(generation: GenerationId): readonly [number, number] {
+  const [width, height] = characterSizes[generation];
+  if (generation === 'PS2') return [width, height];
+  return [
+    Math.ceil(width * 0.71) - Math.floor(width * 0.29),
+    Math.ceil(height * 0.39) - Math.floor(height * 0.19),
+  ];
+}
 
 function assertTransparentBlack(image: RgbaImage, label: string): void {
   for (let index = 0; index < image.data.length; index += 4) {
@@ -96,14 +110,14 @@ fail(manifest.outputs.length === 40, `manifest must contain 40 outputs, found ${
 fail(
   [...new Set(manifest.outputs.map((output) => output.assetId))].sort().join('|') ===
     [...expectedAssetIds].sort().join('|'),
-  'manifest asset IDs must be title-logo plus the nine declared character frames',
+  'manifest asset IDs must be title-logo plus the nine declared character inputs',
 );
 fail(
   [...new Set(manifest.outputs.map((output) => output.sourcePath))].sort().join('|') ===
     ['art/source/title-logo.png', ...characterAssetIds.map((assetId) => `art/source/${assetId}.png`)]
       .sort()
       .join('|'),
-  'manifest source paths must be the logo and nine matching character frame inputs',
+  'manifest source paths must be the logo and nine matching character inputs',
 );
 
 const provenance = readFileSync(resolve(root, 'Docs/ASSET_PROVENANCE.md'), 'utf8');
@@ -174,13 +188,16 @@ for (const assetId of expectedAssetIds) {
       errors.push(`${assetId}.${generation}: missing manifest output`);
       continue;
     }
-    const assetKind = isCharacter(assetId) ? 'character' : 'title-logo';
-    const expected = expectedSizes[assetKind][generation];
+    const expected = assetId === 'title-logo'
+      ? logoSizes[generation]
+      : isEyePatch(assetId)
+        ? patchSize(generation)
+        : characterSizes[generation];
     fail(
       output.width === expected[0] && output.height === expected[1],
       `${assetId}.${generation}: expected ${expected.join('x')}, found ${output.width}x${output.height}`,
     );
-    const budget = colorBudgets[assetKind][generation];
+    const budget = colorBudgets[assetId === 'title-logo' ? 'title-logo' : 'character'][generation];
     fail(budget === null || output.visibleColorCount <= budget, `${assetId}.${generation}: color budget exceeded`);
     fail(
       generation === 'FC'
@@ -211,7 +228,10 @@ for (const assetId of expectedAssetIds) {
         fail(colorKey(toRgb555(color)) === colorKey(color), `${assetId}.SFC: rgb(${colorKey(color)}) is not RGB555`);
       }
     }
-    if (assetKind === 'character') {
+    if (
+      bodyAssetIds.includes(assetId as (typeof bodyAssetIds)[number]) ||
+      (generation === 'PS2' && isEyePatch(assetId))
+    ) {
       const bounds = opaqueBounds(image);
       fail(bounds !== null, `${assetId}.${generation}: opaque bounds are empty`);
       if (bounds) {
@@ -222,26 +242,37 @@ for (const assetId of expectedAssetIds) {
     }
   }
 }
-fail(fcColors.size <= 20, `FC logo + character frames use ${fcColors.size} colors; expected at most 20`);
+fail(fcColors.size <= 20, `FC logo + character assets use ${fcColors.size} colors; expected at most 20`);
 
 for (const generation of GENERATION_IDS) {
-  for (const eyes of eyeFrames) {
-    const left = imageFor(`character-left-${eyes}`, generation);
-    const center = imageFor(`character-center-${eyes}`, generation);
-    const right = imageFor(`character-right-${eyes}`, generation);
-    fail(left !== null && center !== null && right !== null, `${generation}.${eyes}: missing pose frame`);
-    if (left && center && right) {
-      fail(!rgbaEqual(left, center), `${generation}.${eyes}: left and center pose frames are identical`);
-      fail(!rgbaEqual(center, right), `${generation}.${eyes}: center and right pose frames are identical`);
+  for (const assetId of eyePatchAssetIds) {
+    fail(imageFor(assetId, generation) !== null, `${assetId}.${generation}: missing eye variant`);
+  }
+  for (const pose of poses) {
+    const body = imageFor(`character-${pose}-open`, generation);
+    const half = imageFor(`character-${pose}-half`, generation);
+    const closed = imageFor(`character-${pose}-closed`, generation);
+    fail(body !== null && half !== null && closed !== null, `${generation}.${pose}: missing eye-state frame`);
+    if (body && half && closed) {
+      if (generation === 'PS2') {
+        fail(
+          half.width === body.width && half.height === body.height &&
+          closed.width === body.width && closed.height === body.height,
+          `${generation}.${pose}: eye-state frames must be full-body textures`,
+        );
+      } else {
+        fail(half.width < body.width && half.height < body.height, `${generation}.${pose}: eye patch is not cropped`);
+      }
+      fail(!rgbaEqual(half, closed), `${generation}.${pose}: half and closed eye variants are identical`);
     }
   }
-  const open = imageFor('character-center-open', generation);
-  const half = imageFor('character-center-half', generation);
-  const closed = imageFor('character-center-closed', generation);
-  fail(open !== null && half !== null && closed !== null, `${generation}: missing eye frame`);
-  if (open && half && closed) {
-    fail(!rgbaEqual(open, half), `${generation}: open and half eye frames are identical`);
-    fail(!rgbaEqual(half, closed), `${generation}: half and closed eye frames are identical`);
+  const left = imageFor('character-left-open', generation);
+  const center = imageFor('character-center-open', generation);
+  const right = imageFor('character-right-open', generation);
+  fail(left !== null && center !== null && right !== null, `${generation}: missing body pose`);
+  if (left && center && right) {
+    fail(!rgbaEqual(left, center), `${generation}: left and center bodies are identical`);
+    fail(!rgbaEqual(center, right), `${generation}: center and right bodies are identical`);
   }
 }
 
@@ -249,5 +280,5 @@ if (errors.length > 0) {
   for (const error of errors) console.error(`✗ ${error}`);
   process.exitCode = 1;
 } else {
-  console.log(`✓ asset contract: 40 outputs, ${fcColors.size} shared FC colors`);
+  console.log(`✓ asset contract: 18 full bodies + 18 eye patches, ${fcColors.size} shared FC colors`);
 }

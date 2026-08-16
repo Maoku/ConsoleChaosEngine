@@ -4,7 +4,6 @@ import {
   type HardwareGenerationProfile,
 } from '@console-chaos/engine';
 
-const AMPLITUDE_RADIANS = 5 * Math.PI / 180;
 const BLINK_CYCLE_SECONDS = 3;
 
 export const CHARACTER_POSES = ['left', 'center', 'right'] as const;
@@ -12,27 +11,25 @@ export type CharacterPose = (typeof CHARACTER_POSES)[number];
 export const EYE_FRAMES = ['open', 'half', 'closed'] as const;
 export type EyeFrame = (typeof EYE_FRAMES)[number];
 
-export const AUTHORED_POSE_ANGLES: Readonly<Record<CharacterPose, number>> = {
-  left: -AMPLITUDE_RADIANS,
-  center: 0,
-  right: AMPLITUDE_RADIANS,
-};
-
 export interface SwayAnimationProfile {
   readonly mode: 'step' | 'tween';
   readonly sampleHz: number;
-  readonly amplitudeRadians: number;
-  readonly authoredPoseAngles: Readonly<Record<CharacterPose, number>>;
   readonly cycleSeconds: number;
   readonly posePattern?: readonly CharacterPose[];
   readonly blinkPattern: readonly EyeFrame[];
 }
 
+export interface PoseTween {
+  readonly from: CharacterPose;
+  readonly to: CharacterPose;
+  readonly progress: number;
+}
+
 export interface TitleAnimationFrame {
-  /** Runtime residual rotation; authored source tilt is not included. */
-  readonly angle: number;
+  /** Nearest authored key pose, useful for state display and diagnostics. */
   readonly pose: CharacterPose;
-  readonly authoredPoseAngle: number;
+  /** PS1 texture pair; step generations keep from/to identical. No runtime rotation is used. */
+  readonly tween: PoseTween;
   readonly eyes: EyeFrame;
 }
 
@@ -40,8 +37,6 @@ export const SWAY_ANIMATION_PROFILES: GenerationVariant<SwayAnimationProfile> = 
   FC: {
     mode: 'step',
     sampleHz: 6,
-    amplitudeRadians: AMPLITUDE_RADIANS,
-    authoredPoseAngles: AUTHORED_POSE_ANGLES,
     cycleSeconds: 1,
     posePattern: ['left', 'left', 'center', 'right', 'right', 'center'],
     blinkPattern: ['closed'],
@@ -49,8 +44,6 @@ export const SWAY_ANIMATION_PROFILES: GenerationVariant<SwayAnimationProfile> = 
   SFC: {
     mode: 'step',
     sampleHz: 12,
-    amplitudeRadians: AMPLITUDE_RADIANS,
-    authoredPoseAngles: AUTHORED_POSE_ANGLES,
     cycleSeconds: 1,
     posePattern: [
       'left', 'left', 'left', 'left',
@@ -63,17 +56,19 @@ export const SWAY_ANIMATION_PROFILES: GenerationVariant<SwayAnimationProfile> = 
   PS1: {
     mode: 'tween',
     sampleHz: 30,
-    amplitudeRadians: AMPLITUDE_RADIANS,
-    authoredPoseAngles: AUTHORED_POSE_ANGLES,
     cycleSeconds: 1,
     blinkPattern: ['half', 'closed', 'closed', 'closed', 'half'],
   },
   PS2: {
-    mode: 'tween',
+    mode: 'step',
     sampleHz: 60,
-    amplitudeRadians: AMPLITUDE_RADIANS,
-    authoredPoseAngles: AUTHORED_POSE_ANGLES,
     cycleSeconds: 1,
+    posePattern: [
+      ...Array.from({ length: 15 }, () => 'left' as const),
+      ...Array.from({ length: 15 }, () => 'center' as const),
+      ...Array.from({ length: 15 }, () => 'right' as const),
+      ...Array.from({ length: 15 }, () => 'center' as const),
+    ],
     blinkPattern: ['half', 'half', 'closed', 'closed', 'closed', 'closed', 'closed', 'half', 'half'],
   },
 });
@@ -83,21 +78,17 @@ const positiveModulo = (value: number, divisor: number): number =>
 
 const smoothstep = (value: number): number => value * value * (3 - 2 * value);
 
-function tweenNormalized(profile: SwayAnimationProfile, sample: number): number {
+function tweenPose(profile: SwayAnimationProfile, sample: number): PoseTween {
   const sampledTime = sample / profile.sampleHz;
   const phase = positiveModulo(sampledTime, profile.cycleSeconds) / profile.cycleSeconds;
-  const halfPhase = phase < 0.5 ? phase * 2 : (phase - 0.5) * 2;
-  const eased = smoothstep(halfPhase);
-  return phase < 0.5 ? -1 + 2 * eased : 1 - 2 * eased;
-}
-
-function poseForTween(profile: SwayAnimationProfile, sample: number): CharacterPose {
-  // Texture animation follows one hardware sample behind the continuous body Tween.
-  const delayed = Math.max(sample - 1, 0);
-  const normalized = tweenNormalized(profile, delayed);
-  if (normalized < -1 / 3) return 'left';
-  if (normalized > 1 / 3) return 'right';
-  return 'center';
+  const path = ['left', 'center', 'right', 'center', 'left'] as const;
+  const scaled = phase * (path.length - 1);
+  const segment = Math.min(Math.floor(scaled), path.length - 2);
+  return {
+    from: path[segment] ?? 'left',
+    to: path[segment + 1] ?? 'center',
+    progress: smoothstep(scaled - segment),
+  };
 }
 
 function blinkFrame(profile: SwayAnimationProfile, sample: number): EyeFrame {
@@ -118,9 +109,8 @@ export function titleAnimationFrame(
   const eyes = blinkFrame(profile, sample);
   if (reducedMotion) {
     return {
-      angle: 0,
       pose: 'center',
-      authoredPoseAngle: profile.authoredPoseAngles.center,
+      tween: { from: 'center', to: 'center', progress: 0 },
       eyes,
     };
   }
@@ -130,40 +120,16 @@ export function titleAnimationFrame(
     if (!pattern || pattern.length === 0) throw new Error(`${hardware.id} pose pattern is empty`);
     const pose = pattern[sample % pattern.length] ?? 'center';
     return {
-      angle: 0,
       pose,
-      authoredPoseAngle: profile.authoredPoseAngles[pose],
+      tween: { from: pose, to: pose, progress: 0 },
       eyes,
     };
   }
 
-  const pose = poseForTween(profile, sample);
-  const authoredPoseAngle = profile.authoredPoseAngles[pose];
-  const tweenTargetAngle = tweenNormalized(profile, sample) * profile.amplitudeRadians;
+  const tween = tweenPose(profile, sample);
   return {
-    angle: tweenTargetAngle - authoredPoseAngle,
-    pose,
-    authoredPoseAngle,
+    pose: tween.progress < 0.5 ? tween.from : tween.to,
+    tween,
     eyes,
   };
-}
-
-export function swayAngle(
-  hardware: HardwareGenerationProfile,
-  timeSeconds: number,
-  reducedMotion: boolean,
-): number {
-  return titleAnimationFrame(hardware, timeSeconds, reducedMotion).angle;
-}
-
-export function pivotedSpriteCenter(
-  pivot: readonly [number, number],
-  size: readonly [number, number],
-  angle: number,
-): readonly [number, number] {
-  const halfHeight = size[1] / 2;
-  return [
-    pivot[0] + Math.sin(angle) * halfHeight,
-    pivot[1] - Math.cos(angle) * halfHeight,
-  ];
 }

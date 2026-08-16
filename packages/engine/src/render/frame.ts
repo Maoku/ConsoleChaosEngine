@@ -74,6 +74,13 @@ export interface SpriteCommand extends OrderingCommand {
   rotation?: number;
   layer?: number;
   texture?: string;
+  /**
+   * Optional matching-layout texture sampled together with `texture`.
+   * `textureMix` is clamped to 0..1 and interpolation is performed in
+   * premultiplied-alpha space to avoid dark seams around transparent edges.
+   */
+  tweenTexture?: string;
+  textureMix?: number;
   atlas?: string;
   cell?: number;
   flipX?: boolean;

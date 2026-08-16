@@ -13,13 +13,24 @@ import {
 } from '@console-chaos/engine-testkit';
 import { createTitleModule } from '../src/app';
 import { titleAnimationFrame } from '../src/animation';
-import { captureTimeFromSearch, initialGenerationFromSearch } from '../src/bootstrap';
-import { TITLE_GENERATION_ASSETS, characterFrameKey } from '../src/render-manifest';
+import {
+  captureEyesFromSearch,
+  capturePoseFromSearch,
+  captureTimeFromSearch,
+  initialGenerationFromSearch,
+} from '../src/bootstrap';
+import {
+  TITLE_GENERATION_ASSETS,
+  characterBodyKey,
+  characterFrameKey,
+} from '../src/render-manifest';
 
 interface CapturedCharacter {
   readonly id: string;
   readonly rotation: number;
   readonly texture: string | undefined;
+  readonly tweenTexture: string | undefined;
+  readonly textureMix: number | undefined;
 }
 
 interface CapturedFrame {
@@ -47,6 +58,8 @@ function createCapturingRenderer(): FrameRenderer & { readonly frames: CapturedF
             id: sprite.id,
             rotation: sprite.rotation ?? 0,
             texture: sprite.texture,
+            tweenTexture: sprite.tweenTexture,
+            textureMix: sprite.textureMix,
           })),
       });
     },
@@ -62,6 +75,10 @@ describe('title module lifecycle', () => {
     expect(captureTimeFromSearch('?captureTime=0.5')).toBe(0.5);
     expect(captureTimeFromSearch('?captureTime=-1')).toBeNull();
     expect(captureTimeFromSearch('?captureTime=not-a-number')).toBeNull();
+    expect(capturePoseFromSearch('?pose=left')).toBe('left');
+    expect(capturePoseFromSearch('?pose=unknown')).toBeUndefined();
+    expect(captureEyesFromSearch('?eyes=closed')).toBe('closed');
+    expect(captureEyesFromSearch('?eyes=unknown')).toBeUndefined();
   });
 
   it('renders, switches directly and cyclically, preserves phase, and disposes idempotently', async () => {
@@ -93,10 +110,18 @@ describe('title module lifecycle', () => {
       );
       expect(cycledFrame.characters.find((character) => character.id === `character:${generation}`))
         .toMatchObject({
-          rotation: animation.angle,
-          texture: TITLE_GENERATION_ASSETS[generation].characters[
-            characterFrameKey(animation.pose, animation.eyes)
+          rotation: 0,
+          texture: TITLE_GENERATION_ASSETS[generation].characterFrames[
+            characterBodyKey(animation.tween.from)
           ],
+          tweenTexture: animation.tween.from === animation.tween.to
+            ? undefined
+            : TITLE_GENERATION_ASSETS[generation].characterFrames[
+                characterBodyKey(animation.tween.to)
+              ],
+          textureMix: animation.tween.from === animation.tween.to
+            ? undefined
+            : animation.tween.progress,
         });
     }
     for (let frame = 0; frame < 22; frame += 1) host.frame(now += 17);
@@ -119,13 +144,34 @@ describe('title module lifecycle', () => {
         transitionFrame.timeSeconds,
         false,
       );
-      expect(transitionFrame.characters.find((character) => character.id === `character:${generation}`))
-        .toMatchObject({
-          rotation: animation.angle,
-          texture: TITLE_GENERATION_ASSETS[generation].characters[
+      const character = transitionFrame.characters.find(
+        (candidate) => candidate.id === `character:${generation}`,
+      );
+      if (generation === 'PS2') {
+        expect(character).toMatchObject({
+          rotation: 0,
+          texture: TITLE_GENERATION_ASSETS.PS2.characterFrames[
             characterFrameKey(animation.pose, animation.eyes)
           ],
+          tweenTexture: undefined,
+          textureMix: undefined,
         });
+      } else {
+        expect(character).toMatchObject({
+          rotation: 0,
+          texture: TITLE_GENERATION_ASSETS[generation].characterFrames[
+            characterBodyKey(animation.tween.from)
+          ],
+          tweenTexture: animation.tween.from === animation.tween.to
+            ? undefined
+            : TITLE_GENERATION_ASSETS[generation].characterFrames[
+                characterBodyKey(animation.tween.to)
+              ],
+          textureMix: animation.tween.from === animation.tween.to
+            ? undefined
+            : animation.tween.progress,
+        });
+      }
       for (let frame = 0; frame < 22; frame += 1) host.frame(now += 17);
       expect(host.context.generation.generation).toBe(generation);
       expect(host.context.generation.transition.active).toBe(false);

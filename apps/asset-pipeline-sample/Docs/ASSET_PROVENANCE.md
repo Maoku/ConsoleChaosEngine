@@ -157,6 +157,6 @@ Avoid: changing anything outside the eyelids and covered eye area, winking, asym
 
 - `asset-manifest.json` の9つのcharacter asset IDが、同名source pathと本書記載の異なるSHA-256へ1対1で対応することを自動検査した
 - `character-upper.png` がmanifestの変換入力に含まれず、builderにpose、ponytail、blinkを合成するwarp / shearが残っていないことを自動検査した
-- 40出力の `assets:check`、共有FC 17色、RGB555、alpha mode、bounds、2回目buildのwritten 0を確認した
-- 1280×720、`captureTime=0.5` の4世代captureで右端開眼poseを比較し、`captureTime=2.9` の一時captureで全世代の閉眼frameを比較した
-- 同一人物、衣装、canvas構図、下端pivotを保ち、ImageGen source差分が全世代へ到達すること、PS1/PS2端点でruntime residualが0°となること、haloや輪郭欠けがないことを目視確認した
+- 40出力（logo 4、全身18、FC/SFC/PS1のhalf/closed顔patch 18）の `assets:check`、共有FC 17色、RGB555、alpha mode、bounds、2回目buildのwritten 0を確認した
+- PS2のhalf/closed 6出力を280×336の全身frameへ戻し、runtimeで目patch、`tweenTexture`、`textureMix`、`source-over` hardware blendを使用しないことを自動検査した
+- `?generation=PS2&captureTime=0&pose={left|center|right}&eyes={open|half|closed}` の9組を1554×820で取得し、黒円、矩形edge、二重表示、欠け、console warning/errorがないことを目視確認した

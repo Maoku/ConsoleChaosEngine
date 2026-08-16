@@ -34,6 +34,18 @@ const generationSizes = {
 const POSES = ['left', 'center', 'right'];
 const EYE_FRAMES = ['open', 'half', 'closed'];
 
+// Kept in normalized character space so every generation crops the same face area.
+// The patch includes enough surrounding skin/hair to fully cover the open-eye base.
+const EYE_PATCH_REGION = { left: 0.29, top: 0.19, right: 0.71, bottom: 0.39 };
+
+function eyePatchRect(size) {
+  const x0 = Math.floor(size.width * EYE_PATCH_REGION.left);
+  const y0 = Math.floor(size.height * EYE_PATCH_REGION.top);
+  const x1 = Math.ceil(size.width * EYE_PATCH_REGION.right) - 1;
+  const y1 = Math.ceil(size.height * EYE_PATCH_REGION.bottom) - 1;
+  return { x0, y0, x1, y1, width: x1 - x0 + 1, height: y1 - y0 + 1 };
+}
+
 const characterFrames = POSES.flatMap((pose) =>
   EYE_FRAMES.map((eyes) => ({
     id: `character-${pose}-${eyes}`,
@@ -54,6 +66,14 @@ const character = defineAssetClass({
   targetSize: (generation) => generationSizes.character[generation],
 });
 
+const characterEyeVariant = defineAssetClass({
+  id: 'character-eye-variant',
+  colorBudget: { FC: 16, SFC: 48, PS1: 96, PS2: null },
+  targetSize: (generation) => generation === 'PS2'
+    ? generationSizes.character[generation]
+    : eyePatchRect(generationSizes.character[generation]),
+});
+
 const recipe = {
   assets: {
     'title-logo': {
@@ -67,6 +87,17 @@ const recipe = {
       crop: { x0: 31, y0: 47, x1: 992, y1: 1535 },
       padding: { top: 20, right: 16, bottom: 0, left: 16 },
       matte: { tolerance: 120, isolatedTolerance: 88, fringe: 460 },
+    },
+    eyePatch: {
+      region: EYE_PATCH_REGION,
+      // Use two semantic eye windows instead of pixel differences. ImageGen
+      // frames contain tiny alignment/shading drift that must never become a
+      // translucent second copy of the bangs, cheeks, or nose.
+      windows: [
+        { centerX: 0.34, centerY: 0.46, radiusX: 0.17, radiusY: 0.22 },
+        { centerX: 0.66, centerY: 0.46, radiusX: 0.17, radiusY: 0.22 },
+      ],
+      featherPixels: { FC: 1, SFC: 1, PS1: 1, PS2: 2 },
     },
   },
   tone: {
@@ -137,14 +168,44 @@ function normalizedCharacter(source, spec, activeRecipe) {
   return resample(normalized, spec.width, spec.height);
 }
 
+function maskEyeWindows(image, options) {
+  for (let y = 0; y < image.height; y += 1) {
+    for (let x = 0; x < image.width; x += 1) {
+      let amount = 0;
+      for (const window of options.windows) {
+        const radiusX = image.width * window.radiusX;
+        const radiusY = image.height * window.radiusY;
+        const deltaX = (x + 0.5 - image.width * window.centerX) / radiusX;
+        const deltaY = (y + 0.5 - image.height * window.centerY) / radiusY;
+        const distance = Math.hypot(deltaX, deltaY);
+        const feather = options.featherPixels / Math.min(radiusX, radiusY);
+        const edge = Math.min(Math.max((1 + feather - distance) / feather, 0), 1);
+        const eased = edge * edge * (3 - 2 * edge);
+        amount = Math.max(amount, eased);
+      }
+      const alphaIndex = (y * image.width + x) * 4 + 3;
+      image.data[alphaIndex] = Math.round((image.data[alphaIndex] ?? 0) * amount);
+    }
+  }
+
+  let visiblePixels = 0;
+  for (let index = 3; index < image.data.length; index += 4) {
+    if ((image.data[index] ?? 0) > 0) visiblePixels += 1;
+  }
+  if (visiblePixels === 0) throw new Error('Eye patch windows have no visible pixels');
+  return image;
+}
+
 const canonicalCharacter = readPng(
   resolve(import.meta.dirname, '../art/source/character-center-open.png'),
 );
-
 const characterAssets = characterFrames.map((frame) => ({
   id: frame.id,
   source: `art/source/${frame.id}.png`,
-  assetClass: character,
+  // PS2 uses all nine authored frames as full-body key textures so it never
+  // needs translucent eye-patch composition. Earlier generations keep the
+  // optimized cropped eye variants.
+  assetClass: frame.eyes === 'open' ? character : characterEyeVariant,
   outputs: {
     FC: `public/assets/generated/fc/${frame.id}.png`,
     SFC: `public/assets/generated/sfc/${frame.id}.png`,
@@ -184,9 +245,21 @@ export default defineAssetPipeline({
       image = resample(normalized, spec.width, spec.height);
       paletteSource = image;
     } else {
-      image = normalizedCharacter(source, spec, activeRecipe);
+      const fullCharacterSpec = generationSizes.character[generation];
+      const isEyePatch = !asset.id.endsWith('-open');
+      const normalized = normalizedCharacter(source, fullCharacterSpec, activeRecipe);
+      if (isEyePatch && generation !== 'PS2') {
+        const patch = eyePatchRect(fullCharacterSpec);
+        image = crop(normalized, patch.x0, patch.y0, patch.x1, patch.y1);
+        maskEyeWindows(image, {
+          windows: activeRecipe.assets.eyePatch.windows,
+          featherPixels: activeRecipe.assets.eyePatch.featherPixels[generation],
+        });
+      } else {
+        image = normalized;
+      }
       paletteSource = generation === 'FC'
-        ? normalizedCharacter(cloneImage(canonicalCharacter), spec, activeRecipe)
+        ? normalizedCharacter(cloneImage(canonicalCharacter), fullCharacterSpec, activeRecipe)
         : image;
     }
     applyTone(image, activeRecipe.tone[generation]);
