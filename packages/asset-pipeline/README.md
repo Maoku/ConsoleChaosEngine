@@ -61,6 +61,19 @@ export default defineAssetPipeline({
 `@console-chaos/engine` の `HARDWARE_GENERATION_PROFILES` から導出されます。素材単位の色数予算と版面だけを
 ゲーム側で宣言してください。
 
+## source画像と変形の方針
+
+asset pipelineの既定責務は、source画像の意味を保ったまま世代能力へ変換することです。
+`crop`、`resample`、grid snap、tone、palette、alpha量子化は通常の世代変換に含まれます。
+
+sourceに存在しない姿勢、表情、目パチ、髪や衣装の動きを、shear / warp / 局所変形で作ってはいけません。
+「揺らす」「目パチさせる」という機能要求だけでは、これらの変形方式を許可されたものと解釈しません。
+必要な状態は変換元frameとして用意するか、sourceの意味を変えないruntimeの平行移動・回転などで表現します。
+
+shear / warpを使用できるのは、ユーザーがその方式を明示的に指示した場合だけです。その場合も、意図、対象範囲、
+parameter、provenanceを記録し、決定的な再生成と自動・目視検査を必須とします。詳細と具体例は
+[`ASSET_RULES.md`](./ASSET_RULES.md#幾何変形の境界) を参照してください。
+
 ## Manifest
 
 入力・出力 path は設定ファイルから `rootDir` で指定した project root を基準にします。既定では設定ファイルの
