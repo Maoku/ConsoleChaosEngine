@@ -1,0 +1,62 @@
+:root {
+  color: #fff3dc;
+  background: #090616;
+  font-family: Inter, ui-sans-serif, system-ui, sans-serif;
+  color-scheme: dark;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  width: 100%;
+  min-width: 320px;
+  min-height: 100%;
+  margin: 0;
+}
+
+body {
+  min-height: 100vh;
+  min-height: 100svh;
+  overflow: hidden;
+}
+
+.app-shell {
+  display: grid;
+  grid-template-rows: minmax(0, 1fr) auto;
+  gap: 0.75rem;
+  width: 100vw;
+  height: 100vh;
+  height: 100svh;
+  padding: clamp(0.75rem, 2vw, 1.5rem);
+}
+
+.stage {
+  display: grid;
+  min-height: 0;
+  place-items: center;
+}
+
+#screen {
+  display: block;
+  max-width: 100%;
+  max-height: 100%;
+  aspect-ratio: 10 / 7;
+  background: #120d2a;
+  border: 1px solid rgb(255 243 220 / 18%);
+  box-shadow: 0 1.25rem 5rem rgb(0 0 0 / 55%);
+  image-rendering: pixelated;
+}
+
+.controls {
+  margin: 0;
+  text-align: center;
+  color: rgb(255 243 220 / 72%);
+  font: 500 0.875rem/1.5 ui-monospace, monospace;
+}
+
+.controls strong {
+  color: #ff6652;
+}
