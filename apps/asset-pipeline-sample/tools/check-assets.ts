@@ -2,6 +2,7 @@ import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import {
   analyzeImage,
+  keyOut,
   readPng,
   rgbaEqual,
   toRgb555,
@@ -99,9 +100,68 @@ fail(
 );
 fail(
   [...new Set(manifest.outputs.map((output) => output.sourcePath))].sort().join('|') ===
-    ['art/source/character-upper.png', 'art/source/title-logo.png'].join('|'),
-  'manifest source paths must be the two art/source inputs',
+    ['art/source/title-logo.png', ...characterAssetIds.map((assetId) => `art/source/${assetId}.png`)]
+      .sort()
+      .join('|'),
+  'manifest source paths must be the logo and nine matching character frame inputs',
 );
+
+const provenance = readFileSync(resolve(root, 'Docs/ASSET_PROVENANCE.md'), 'utf8');
+const configSource = readFileSync(resolve(root, 'tools/art.config.mjs'), 'utf8');
+fail(
+  !/\b(?:blinkWarp|motionWarp|sampleBilinear|shear)\b|function\s+warp\b/.test(configSource),
+  'art config must not synthesize animation with warp or shear code',
+);
+const sourceHashes = new Set<string>();
+const sourceImages = new Map<string, RgbaImage>();
+for (const assetId of characterAssetIds) {
+  const outputs = manifest.outputs.filter((output) => output.assetId === assetId);
+  const expectedSourcePath = `art/source/${assetId}.png`;
+  fail(
+    outputs.length === GENERATION_IDS.length && outputs.every((output) => output.sourcePath === expectedSourcePath),
+    `${assetId}: manifest source must be ${expectedSourcePath}`,
+  );
+  const hashes = new Set(outputs.map((output) => output.sourceSha256));
+  fail(hashes.size === 1, `${assetId}: generations must share one source hash`);
+  const hash = [...hashes][0];
+  if (hash) {
+    sourceHashes.add(hash);
+    fail(provenance.includes(hash), `${assetId}: source hash is missing from provenance`);
+  }
+
+  const source = readPng(resolve(root, expectedSourcePath));
+  fail(source.width === 1024 && source.height === 1536, `${assetId}: source canvas must be 1024x1536`);
+  keyOut(source, { tolerance: 120, isolatedTolerance: 88, fringe: 460 });
+  const bounds = opaqueBounds(source);
+  fail(bounds !== null, `${assetId}: keyed source bounds are empty`);
+  if (bounds) {
+    fail(bounds.x0 >= 31 && bounds.x1 <= 992, `${assetId}: source exceeds the shared horizontal crop`);
+    fail(bounds.y0 >= 47 && bounds.y1 === 1535, `${assetId}: source must preserve the shared bottom pivot`);
+  }
+  sourceImages.set(assetId, source);
+}
+fail(sourceHashes.size === characterAssetIds.length, 'character source hashes must be unique per asset ID');
+
+for (const eyes of eyeFrames) {
+  const left = sourceImages.get(`character-left-${eyes}`);
+  const center = sourceImages.get(`character-center-${eyes}`);
+  const right = sourceImages.get(`character-right-${eyes}`);
+  fail(left !== undefined && center !== undefined && right !== undefined, `${eyes}: missing keyed source pose`);
+  if (left && center && right) {
+    fail(!rgbaEqual(left, center), `${eyes}: left and center keyed sources are identical`);
+    fail(!rgbaEqual(center, right), `${eyes}: center and right keyed sources are identical`);
+  }
+}
+for (const pose of poses) {
+  const open = sourceImages.get(`character-${pose}-open`);
+  const half = sourceImages.get(`character-${pose}-half`);
+  const closed = sourceImages.get(`character-${pose}-closed`);
+  fail(open !== undefined && half !== undefined && closed !== undefined, `${pose}: missing keyed source eye frame`);
+  if (open && half && closed) {
+    fail(!rgbaEqual(open, half), `${pose}: open and half keyed sources are identical`);
+    fail(!rgbaEqual(half, closed), `${pose}: half and closed keyed sources are identical`);
+  }
+}
 
 const fcColors = new Set<string>();
 const masterPalette = new Set(MASTER_PALETTE_RGB.map(colorKey));
