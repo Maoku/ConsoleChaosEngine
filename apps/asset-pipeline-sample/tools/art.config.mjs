@@ -3,6 +3,7 @@ import {
   applyTone,
   blit,
   buildPalette,
+  cloneImage,
   createImage,
   cropToOpaque,
   defineAssetClass,
@@ -26,6 +27,18 @@ const generationSizes = {
     PS2: { width: 280, height: 336 },
   },
 };
+
+const POSES = ['left', 'center', 'right'];
+const EYE_FRAMES = ['open', 'half', 'closed'];
+const POSE_AMOUNT = { left: -1, center: 0, right: 1 };
+
+const characterFrames = POSES.flatMap((pose) =>
+  EYE_FRAMES.map((eyes) => ({
+    id: `character-${pose}-${eyes}`,
+    pose,
+    eyes,
+  })),
+);
 
 const titleLogo = defineAssetClass({
   id: 'title-logo',
@@ -98,6 +111,122 @@ function normalizeTransparentPixels(image) {
   return image;
 }
 
+function sampleBilinear(image, sourceX, sourceY) {
+  const x0 = Math.floor(sourceX);
+  const y0 = Math.floor(sourceY);
+  const xFraction = sourceX - x0;
+  const yFraction = sourceY - y0;
+  const samples = [
+    [x0, y0, (1 - xFraction) * (1 - yFraction)],
+    [x0 + 1, y0, xFraction * (1 - yFraction)],
+    [x0, y0 + 1, (1 - xFraction) * yFraction],
+    [x0 + 1, y0 + 1, xFraction * yFraction],
+  ];
+  let alpha = 0;
+  let red = 0;
+  let green = 0;
+  let blue = 0;
+  for (const [x, y, weight] of samples) {
+    if (x < 0 || y < 0 || x >= image.width || y >= image.height) continue;
+    const index = (y * image.width + x) * 4;
+    const sampleAlpha = (image.data[index + 3] ?? 0) / 255;
+    const weightedAlpha = sampleAlpha * weight;
+    alpha += weightedAlpha;
+    red += (image.data[index] ?? 0) * weightedAlpha;
+    green += (image.data[index + 1] ?? 0) * weightedAlpha;
+    blue += (image.data[index + 2] ?? 0) * weightedAlpha;
+  }
+  if (alpha <= 0) return [0, 0, 0, 0];
+  return [
+    Math.round(red / alpha),
+    Math.round(green / alpha),
+    Math.round(blue / alpha),
+    Math.round(Math.min(alpha, 1) * 255),
+  ];
+}
+
+function warp(image, sourcePosition) {
+  const output = createImage(image.width, image.height);
+  for (let y = 0; y < image.height; y += 1) {
+    for (let x = 0; x < image.width; x += 1) {
+      const [sourceX, sourceY] = sourcePosition(x, y);
+      output.data.set(sampleBilinear(image, sourceX, sourceY), (y * image.width + x) * 4);
+    }
+  }
+  return output;
+}
+
+function blinkWarp(image, eyes) {
+  const strength = eyes === 'half' ? 0.5 : eyes === 'closed' ? 0.84 : 0;
+  if (strength === 0) return cloneImage(image);
+  const centers = [0.403, 0.574];
+  const centerY = image.height * 0.292;
+  const radiusX = image.width * 0.065;
+  const radiusY = image.height * 0.061;
+  return warp(image, (x, y) => {
+    let sourceY = y;
+    for (const centerFraction of centers) {
+      const centerX = image.width * centerFraction;
+      const normalizedX = Math.abs(x - centerX) / radiusX;
+      const normalizedY = Math.abs(y - centerY) / radiusY;
+      if (normalizedX >= 1 || normalizedY >= 1) continue;
+      const horizontalWeight = 0.5 + 0.5 * Math.cos(normalizedX * Math.PI);
+      const scale = Math.max(1 - strength * horizontalWeight, 0.12);
+      const offset = Math.min(Math.max((y - centerY) / scale, -radiusY), radiusY);
+      sourceY = centerY + offset;
+      break;
+    }
+    return [x, sourceY];
+  });
+}
+
+function motionWarp(image, pose, generation) {
+  const amount = POSE_AMOUNT[pose];
+  if (amount === 0) return cloneImage(image);
+  const bakeBodyPose = generation === 'FC' || generation === 'SFC';
+  return warp(image, (x, y) => {
+    const normalizedX = x / Math.max(image.width - 1, 1);
+    const normalizedY = y / Math.max(image.height - 1, 1);
+    const bodyShift = bakeBodyPose
+      ? amount * image.width * 0.045 * (1 - normalizedY)
+      : 0;
+    const tailX = (normalizedX - 0.235) / 0.235;
+    const tailY = (normalizedY - 0.285) / 0.27;
+    const tailRadius = tailX * tailX + tailY * tailY;
+    const tailWeight = tailRadius < 1
+      ? 0.5 + 0.5 * Math.cos(Math.sqrt(tailRadius) * Math.PI)
+      : 0;
+    const tailShift = -amount * image.width * 0.055 * tailWeight;
+    return [x - bodyShift - tailShift, y];
+  });
+}
+
+function normalizedCharacter(source, spec, activeRecipe) {
+  const assetRecipe = activeRecipe.assets.character;
+  keyOut(source, assetRecipe.matte);
+  const opaque = cropToOpaque(source);
+  const normalized = padToAspect(opaque, spec.width, spec.height, assetRecipe.padding);
+  return resample(normalized, spec.width, spec.height);
+}
+
+function characterFrameFor(assetId) {
+  const frame = characterFrames.find((candidate) => candidate.id === assetId);
+  if (!frame) throw new Error(`Unknown character frame: ${assetId}`);
+  return frame;
+}
+
+const characterAssets = characterFrames.map((frame) => ({
+  id: frame.id,
+  source: 'art/source/character-upper.png',
+  assetClass: character,
+  outputs: {
+    FC: `public/assets/generated/fc/${frame.id}.png`,
+    SFC: `public/assets/generated/sfc/${frame.id}.png`,
+    PS1: `public/assets/generated/ps1/${frame.id}.png`,
+    PS2: `public/assets/generated/ps2/${frame.id}.png`,
+  },
+}));
+
 export default defineAssetPipeline({
   rootDir: '..',
   recipe,
@@ -114,27 +243,29 @@ export default defineAssetPipeline({
         PS2: 'public/assets/generated/ps2/title-logo.png',
       },
     },
-    {
-      id: 'character',
-      source: 'art/source/character-upper.png',
-      assetClass: character,
-      outputs: {
-        FC: 'public/assets/generated/fc/character.png',
-        SFC: 'public/assets/generated/sfc/character.png',
-        PS1: 'public/assets/generated/ps1/character.png',
-        PS2: 'public/assets/generated/ps2/character.png',
-      },
-    },
+    ...characterAssets,
   ],
   build({ asset, generation, source, spec, recipe: activeRecipe }) {
-    const assetRecipe = activeRecipe.assets[asset.id];
+    const assetRecipe = asset.id === 'title-logo'
+      ? activeRecipe.assets['title-logo']
+      : activeRecipe.assets.character;
     if (!assetRecipe) throw new Error(`Missing recipe for ${asset.id}`);
-    if (assetRecipe.keyOut) keyOut(source, assetRecipe.matte);
-    const opaque = cropToOpaque(source);
-    const normalized = padToAspect(opaque, spec.width, spec.height, assetRecipe.padding);
-    const image = resample(normalized, spec.width, spec.height);
+    let image;
+    let paletteSource;
+    if (asset.id === 'title-logo') {
+      const opaque = cropToOpaque(source);
+      const normalized = padToAspect(opaque, spec.width, spec.height, assetRecipe.padding);
+      image = resample(normalized, spec.width, spec.height);
+      paletteSource = image;
+    } else {
+      const frame = characterFrameFor(asset.id);
+      const canonical = normalizedCharacter(source, spec, activeRecipe);
+      image = motionWarp(blinkWarp(canonical, frame.eyes), frame.pose, generation);
+      paletteSource = canonical;
+    }
     applyTone(image, activeRecipe.tone[generation]);
-    const palette = buildPalette(image, {
+    if (paletteSource !== image) applyTone(paletteSource, activeRecipe.tone[generation]);
+    const palette = buildPalette(paletteSource, {
       colorCount: spec.colorBudget,
       ...(spec.masterPalette ? { candidates: spec.masterPalette } : {}),
       rgb555: spec.rgb555,

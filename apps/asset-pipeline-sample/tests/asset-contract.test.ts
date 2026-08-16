@@ -23,17 +23,21 @@ async function loadDefinition(): Promise<AssetPipelineDefinition<JsonObject>> {
 }
 
 describe('asset pipeline sample contract', () => {
-  it('checks the committed eight-output asset set through the public runner', async () => {
+  it('checks the committed forty-output animation asset set through the public runner', async () => {
     const definition = await loadDefinition();
     const result = await runAssetPipeline(definition, { command: 'check', baseDir: projectRoot });
     expect(result.ok, result.differences.join('\n')).toBe(true);
-    expect(result.plan).toHaveLength(8);
-    expect(new Set(result.plan.map((output) => output.assetId))).toEqual(new Set(['title-logo', 'character']));
-    for (const assetId of ['title-logo', 'character']) {
+    expect(result.plan).toHaveLength(40);
+    const characterIds = ['left', 'center', 'right'].flatMap((pose) =>
+      ['open', 'half', 'closed'].map((eyes) => `character-${pose}-${eyes}`),
+    );
+    expect(new Set(result.plan.map((output) => output.assetId)))
+      .toEqual(new Set(['title-logo', ...characterIds]));
+    for (const assetId of ['title-logo', ...characterIds]) {
       expect(result.plan.filter((output) => output.assetId === assetId).map((output) => output.generation))
         .toEqual(GENERATION_IDS);
     }
-  });
+  }, 20_000);
 
   it('writes the first fresh build once and writes nothing on the second build', async () => {
     const definition = await loadDefinition();
@@ -47,8 +51,8 @@ describe('asset pipeline sample contract', () => {
 
     const first = await runAssetPipeline(definition, { command: 'build', baseDir: root });
     const second = await runAssetPipeline(definition, { command: 'build', baseDir: root });
-    expect(first.written).toHaveLength(9);
+    expect(first.written).toHaveLength(41);
     expect(second.written).toEqual([]);
     expect((await runAssetPipeline(definition, { command: 'check', baseDir: root })).ok).toBe(true);
-  }, 20_000);
+  }, 60_000);
 });

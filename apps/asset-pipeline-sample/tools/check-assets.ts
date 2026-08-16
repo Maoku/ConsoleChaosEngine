@@ -3,6 +3,7 @@ import { resolve } from 'node:path';
 import {
   analyzeImage,
   readPng,
+  rgbaEqual,
   toRgb555,
   visibleColors,
   type AssetManifest,
@@ -12,6 +13,7 @@ import {
 import {
   GENERATION_IDS,
   MASTER_PALETTE_RGB,
+  type GenerationId,
 } from '@console-chaos/engine';
 
 const root = resolve(import.meta.dirname, '..');
@@ -19,6 +21,13 @@ const generatedRoot = resolve(root, 'public/assets/generated');
 const manifest = JSON.parse(
   readFileSync(resolve(generatedRoot, 'asset-manifest.json'), 'utf8'),
 ) as AssetManifest;
+
+const poses = ['left', 'center', 'right'] as const;
+const eyeFrames = ['open', 'half', 'closed'] as const;
+const characterAssetIds = poses.flatMap((pose) =>
+  eyeFrames.map((eyes) => `character-${pose}-${eyes}` as const),
+);
+const expectedAssetIds = ['title-logo', ...characterAssetIds];
 
 const expectedSizes = {
   'title-logo': {
@@ -45,6 +54,7 @@ const fail = (condition: boolean, message: string): void => {
   if (!condition) errors.push(message);
 };
 const colorKey = (color: Rgb): string => color.join(',');
+const isCharacter = (assetId: string): boolean => assetId.startsWith('character-');
 
 function assertTransparentBlack(image: RgbaImage, label: string): void {
   for (let index = 0; index < image.data.length; index += 4) {
@@ -74,10 +84,18 @@ function opaqueBounds(image: RgbaImage): { x0: number; y0: number; x1: number; y
   return x1 < 0 ? null : { x0, y0, x1, y1 };
 }
 
-fail(manifest.outputs.length === 8, `manifest must contain 8 outputs, found ${manifest.outputs.length}`);
+function imageFor(assetId: string, generation: GenerationId): RgbaImage | null {
+  const output = manifest.outputs.find(
+    (candidate) => candidate.assetId === assetId && candidate.generation === generation,
+  );
+  return output ? readPng(resolve(root, output.outputPath)) : null;
+}
+
+fail(manifest.outputs.length === 40, `manifest must contain 40 outputs, found ${manifest.outputs.length}`);
 fail(
-  new Set(manifest.outputs.map((output) => output.assetId)).size === 2,
-  'manifest must contain exactly two asset IDs',
+  [...new Set(manifest.outputs.map((output) => output.assetId))].sort().join('|') ===
+    [...expectedAssetIds].sort().join('|'),
+  'manifest asset IDs must be title-logo plus the nine declared character frames',
 );
 fail(
   [...new Set(manifest.outputs.map((output) => output.sourcePath))].sort().join('|') ===
@@ -87,7 +105,7 @@ fail(
 
 const fcColors = new Set<string>();
 const masterPalette = new Set(MASTER_PALETTE_RGB.map(colorKey));
-for (const assetId of ['title-logo', 'character'] as const) {
+for (const assetId of expectedAssetIds) {
   for (const generation of GENERATION_IDS) {
     const output = manifest.outputs.find(
       (candidate) => candidate.assetId === assetId && candidate.generation === generation,
@@ -96,12 +114,13 @@ for (const assetId of ['title-logo', 'character'] as const) {
       errors.push(`${assetId}.${generation}: missing manifest output`);
       continue;
     }
-    const expected = expectedSizes[assetId][generation];
+    const assetKind = isCharacter(assetId) ? 'character' : 'title-logo';
+    const expected = expectedSizes[assetKind][generation];
     fail(
       output.width === expected[0] && output.height === expected[1],
       `${assetId}.${generation}: expected ${expected.join('x')}, found ${output.width}x${output.height}`,
     );
-    const budget = colorBudgets[assetId][generation];
+    const budget = colorBudgets[assetKind][generation];
     fail(budget === null || output.visibleColorCount <= budget, `${assetId}.${generation}: color budget exceeded`);
     fail(
       generation === 'FC'
@@ -132,22 +151,43 @@ for (const assetId of ['title-logo', 'character'] as const) {
         fail(colorKey(toRgb555(color)) === colorKey(color), `${assetId}.SFC: rgb(${colorKey(color)}) is not RGB555`);
       }
     }
-    if (assetId === 'character') {
+    if (assetKind === 'character') {
       const bounds = opaqueBounds(image);
-      fail(bounds !== null, `character.${generation}: opaque bounds are empty`);
+      fail(bounds !== null, `${assetId}.${generation}: opaque bounds are empty`);
       if (bounds) {
-        fail(bounds.x0 > 0 && bounds.x1 < image.width - 1, `character.${generation}: side silhouette is clipped`);
-        fail(bounds.y0 > 0, `character.${generation}: ears are clipped`);
-        fail(bounds.y1 === image.height - 1, `character.${generation}: waist does not reach the pivot edge`);
+        fail(bounds.x0 > 0 && bounds.x1 < image.width - 1, `${assetId}.${generation}: side silhouette is clipped`);
+        fail(bounds.y0 > 0, `${assetId}.${generation}: ears are clipped`);
+        fail(bounds.y1 === image.height - 1, `${assetId}.${generation}: waist does not reach the pivot edge`);
       }
     }
   }
 }
-fail(fcColors.size <= 20, `FC logo + character use ${fcColors.size} colors; expected at most 20`);
+fail(fcColors.size <= 20, `FC logo + character frames use ${fcColors.size} colors; expected at most 20`);
+
+for (const generation of GENERATION_IDS) {
+  for (const eyes of eyeFrames) {
+    const left = imageFor(`character-left-${eyes}`, generation);
+    const center = imageFor(`character-center-${eyes}`, generation);
+    const right = imageFor(`character-right-${eyes}`, generation);
+    fail(left !== null && center !== null && right !== null, `${generation}.${eyes}: missing pose frame`);
+    if (left && center && right) {
+      fail(!rgbaEqual(left, center), `${generation}.${eyes}: left and center pose frames are identical`);
+      fail(!rgbaEqual(center, right), `${generation}.${eyes}: center and right pose frames are identical`);
+    }
+  }
+  const open = imageFor('character-center-open', generation);
+  const half = imageFor('character-center-half', generation);
+  const closed = imageFor('character-center-closed', generation);
+  fail(open !== null && half !== null && closed !== null, `${generation}: missing eye frame`);
+  if (open && half && closed) {
+    fail(!rgbaEqual(open, half), `${generation}: open and half eye frames are identical`);
+    fail(!rgbaEqual(half, closed), `${generation}: half and closed eye frames are identical`);
+  }
+}
 
 if (errors.length > 0) {
   for (const error of errors) console.error(`✗ ${error}`);
   process.exitCode = 1;
 } else {
-  console.log(`✓ asset contract: 8 outputs, ${fcColors.size} shared FC colors`);
+  console.log(`✓ asset contract: 40 outputs, ${fcColors.size} shared FC colors`);
 }
