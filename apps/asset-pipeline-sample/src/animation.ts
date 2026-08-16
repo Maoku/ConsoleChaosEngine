@@ -12,18 +12,27 @@ export type CharacterPose = (typeof CHARACTER_POSES)[number];
 export const EYE_FRAMES = ['open', 'half', 'closed'] as const;
 export type EyeFrame = (typeof EYE_FRAMES)[number];
 
+export const AUTHORED_POSE_ANGLES: Readonly<Record<CharacterPose, number>> = {
+  left: -AMPLITUDE_RADIANS,
+  center: 0,
+  right: AMPLITUDE_RADIANS,
+};
+
 export interface SwayAnimationProfile {
   readonly mode: 'step' | 'tween';
   readonly sampleHz: number;
   readonly amplitudeRadians: number;
+  readonly authoredPoseAngles: Readonly<Record<CharacterPose, number>>;
   readonly cycleSeconds: number;
   readonly posePattern?: readonly CharacterPose[];
   readonly blinkPattern: readonly EyeFrame[];
 }
 
 export interface TitleAnimationFrame {
+  /** Runtime residual rotation; authored source tilt is not included. */
   readonly angle: number;
   readonly pose: CharacterPose;
+  readonly authoredPoseAngle: number;
   readonly eyes: EyeFrame;
 }
 
@@ -32,6 +41,7 @@ export const SWAY_ANIMATION_PROFILES: GenerationVariant<SwayAnimationProfile> = 
     mode: 'step',
     sampleHz: 6,
     amplitudeRadians: AMPLITUDE_RADIANS,
+    authoredPoseAngles: AUTHORED_POSE_ANGLES,
     cycleSeconds: 1,
     posePattern: ['left', 'left', 'center', 'right', 'right', 'center'],
     blinkPattern: ['closed'],
@@ -40,6 +50,7 @@ export const SWAY_ANIMATION_PROFILES: GenerationVariant<SwayAnimationProfile> = 
     mode: 'step',
     sampleHz: 12,
     amplitudeRadians: AMPLITUDE_RADIANS,
+    authoredPoseAngles: AUTHORED_POSE_ANGLES,
     cycleSeconds: 1,
     posePattern: [
       'left', 'left', 'left', 'left',
@@ -53,6 +64,7 @@ export const SWAY_ANIMATION_PROFILES: GenerationVariant<SwayAnimationProfile> = 
     mode: 'tween',
     sampleHz: 30,
     amplitudeRadians: AMPLITUDE_RADIANS,
+    authoredPoseAngles: AUTHORED_POSE_ANGLES,
     cycleSeconds: 1,
     blinkPattern: ['half', 'closed', 'closed', 'closed', 'half'],
   },
@@ -60,6 +72,7 @@ export const SWAY_ANIMATION_PROFILES: GenerationVariant<SwayAnimationProfile> = 
     mode: 'tween',
     sampleHz: 60,
     amplitudeRadians: AMPLITUDE_RADIANS,
+    authoredPoseAngles: AUTHORED_POSE_ANGLES,
     cycleSeconds: 1,
     blinkPattern: ['half', 'half', 'closed', 'closed', 'closed', 'closed', 'closed', 'half', 'half'],
   },
@@ -103,21 +116,34 @@ export function titleAnimationFrame(
   const profile = SWAY_ANIMATION_PROFILES[hardware.id];
   const sample = Math.floor(Math.max(timeSeconds, 0) * profile.sampleHz + 1e-9);
   const eyes = blinkFrame(profile, sample);
-  if (reducedMotion) return { angle: 0, pose: 'center', eyes };
-
-  if (profile.mode === 'step') {
-    const pattern = profile.posePattern;
-    if (!pattern || pattern.length === 0) throw new Error(`${hardware.id} pose pattern is empty`);
+  if (reducedMotion) {
     return {
       angle: 0,
-      pose: pattern[sample % pattern.length] ?? 'center',
+      pose: 'center',
+      authoredPoseAngle: profile.authoredPoseAngles.center,
       eyes,
     };
   }
 
+  if (profile.mode === 'step') {
+    const pattern = profile.posePattern;
+    if (!pattern || pattern.length === 0) throw new Error(`${hardware.id} pose pattern is empty`);
+    const pose = pattern[sample % pattern.length] ?? 'center';
+    return {
+      angle: 0,
+      pose,
+      authoredPoseAngle: profile.authoredPoseAngles[pose],
+      eyes,
+    };
+  }
+
+  const pose = poseForTween(profile, sample);
+  const authoredPoseAngle = profile.authoredPoseAngles[pose];
+  const tweenTargetAngle = tweenNormalized(profile, sample) * profile.amplitudeRadians;
   return {
-    angle: tweenNormalized(profile, sample) * profile.amplitudeRadians,
-    pose: poseForTween(profile, sample),
+    angle: tweenTargetAngle - authoredPoseAngle,
+    pose,
+    authoredPoseAngle,
     eyes,
   };
 }

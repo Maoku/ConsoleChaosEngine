@@ -55,11 +55,11 @@ export function buildTitleRenderFrame(
     const size = TITLE_ASSET_SIZES[generation];
     const assets = TITLE_GENERATION_ASSETS[generation];
     const animation = titleAnimationFrame(hardware, timeSeconds, reducedMotion);
-    const angle = animation.angle;
+    const residualAngle = animation.angle;
     const characterCenter = pivotedSpriteCenter(
       [hardware.video.internalWidth / 2, hardware.video.internalHeight],
       size.character,
-      angle,
+      residualAngle,
     );
     frame.backgrounds.push({
       color: TITLE_BACKGROUNDS[generation],
@@ -84,7 +84,7 @@ export function buildTitleRenderFrame(
       position: [characterCenter[0], characterCenter[1], 0],
       size: size.character,
       color: '#ffffff',
-      rotation: angle,
+      rotation: residualAngle,
       texture: assets.characters[characterFrameKey(animation.pose, animation.eyes)],
       ...TITLE_SPRITE_ALPHA[generation],
       layer: 1,

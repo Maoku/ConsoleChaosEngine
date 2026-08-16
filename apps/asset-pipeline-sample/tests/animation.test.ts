@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { GENERATION_IDS, HARDWARE_GENERATION_PROFILES } from '@console-chaos/engine';
 import {
+  AUTHORED_POSE_ANGLES,
   SWAY_ANIMATION_PROFILES,
   pivotedSpriteCenter,
   titleAnimationFrame,
@@ -21,6 +22,7 @@ describe('title character animation', () => {
         const beforeNext = titleAnimationFrame(hardware, start + 0.999 / sampleHz, false);
         expect(atStart.angle).toBe(0);
         expect(beforeNext).toEqual(atStart);
+        expect(atStart.authoredPoseAngle).toBe(AUTHORED_POSE_ANGLES[atStart.pose]);
         poses.add(atStart.pose);
       }
       expect([...poses].sort()).toEqual(['center', 'left', 'right']);
@@ -31,11 +33,18 @@ describe('title character animation', () => {
     for (const generation of ['PS1', 'PS2'] as const) {
       const hardware = HARDWARE_GENERATION_PROFILES[generation];
       expect(SWAY_ANIMATION_PROFILES[generation].sampleHz).toBe(hardware.video.animationHz);
-      expect(degrees(titleAnimationFrame(hardware, 0, false).angle)).toBeCloseTo(-5, 12);
-      expect(degrees(titleAnimationFrame(hardware, 0.5, false).angle)).toBeCloseTo(5, 12);
-      expect(degrees(titleAnimationFrame(hardware, 1, false).angle)).toBeCloseTo(-5, 12);
+      const compositeAngle = (timeSeconds: number): number => {
+        const frame = titleAnimationFrame(hardware, timeSeconds, false);
+        expect(frame.authoredPoseAngle).toBe(AUTHORED_POSE_ANGLES[frame.pose]);
+        return frame.angle + frame.authoredPoseAngle;
+      };
+      expect(degrees(compositeAngle(0))).toBeCloseTo(-5, 12);
+      expect(degrees(compositeAngle(0.5))).toBeCloseTo(5, 12);
+      expect(degrees(compositeAngle(1))).toBeCloseTo(-5, 12);
+      expect(titleAnimationFrame(hardware, 0, false).angle).toBeCloseTo(0, 12);
+      expect(titleAnimationFrame(hardware, 0.5, false).angle).toBeCloseTo(0, 12);
       const samples = Array.from({ length: 16 }, (_, index) =>
-        titleAnimationFrame(hardware, index / 30, false).angle,
+        compositeAngle(index / 30),
       );
       for (let index = 1; index < samples.length; index += 1) {
         expect(samples[index]).toBeGreaterThanOrEqual(samples[index - 1] ?? -Infinity);
@@ -43,9 +52,31 @@ describe('title character animation', () => {
     }
 
     for (const time of [0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.75, 0.9]) {
-      const ps1 = titleAnimationFrame(HARDWARE_GENERATION_PROFILES.PS1, time, false).angle;
-      const ps2 = titleAnimationFrame(HARDWARE_GENERATION_PROFILES.PS2, time, false).angle;
+      const ps1Frame = titleAnimationFrame(HARDWARE_GENERATION_PROFILES.PS1, time, false);
+      const ps2Frame = titleAnimationFrame(HARDWARE_GENERATION_PROFILES.PS2, time, false);
+      const ps1 = ps1Frame.angle + ps1Frame.authoredPoseAngle;
+      const ps2 = ps2Frame.angle + ps2Frame.authoredPoseAngle;
       expect(ps1 * ps2).toBeGreaterThanOrEqual(-Number.EPSILON);
+    }
+  });
+
+  it('keeps the authored pose plus runtime residual continuous and within five degrees', () => {
+    for (const generation of ['PS1', 'PS2'] as const) {
+      const hardware = HARDWARE_GENERATION_PROFILES[generation];
+      const frames = Array.from({ length: hardware.video.animationHz + 1 }, (_, sample) =>
+        titleAnimationFrame(hardware, sample / hardware.video.animationHz, false),
+      );
+      const composite = frames.map((frame) => frame.angle + frame.authoredPoseAngle);
+      for (let index = 0; index < frames.length; index += 1) {
+        const frame = frames[index]!;
+        expect(frame.authoredPoseAngle).toBe(AUTHORED_POSE_ANGLES[frame.pose]);
+        expect(Math.abs(degrees(composite[index]!))).toBeLessThanOrEqual(5 + 1e-10);
+        expect(Math.abs(degrees(frame.angle))).toBeLessThan(5);
+        if (index > 0) {
+          expect(Math.abs(degrees(composite[index]! - composite[index - 1]!)))
+            .toBeLessThanOrEqual(1);
+        }
+      }
     }
   });
 
@@ -75,6 +106,7 @@ describe('title character animation', () => {
       expect(new Set(states.map((state) => state.pose))).toEqual(new Set(['left', 'center', 'right']));
       expect(states[0]?.pose).toBe('left');
       expect(states[1]?.pose).toBe('left');
+      expect(states.every((state) => state.authoredPoseAngle === AUTHORED_POSE_ANGLES[state.pose])).toBe(true);
       expect(states.some((state) => state.pose === 'center' && state.angle !== 0)).toBe(true);
     }
   });
@@ -99,6 +131,7 @@ describe('title character animation', () => {
       expect(titleAnimationFrame(hardware, blinkTime, true)).toMatchObject({
         angle: 0,
         pose: 'center',
+        authoredPoseAngle: 0,
       });
       expect(titleAnimationFrame(hardware, blinkTime, true).eyes).not.toBe('open');
     }

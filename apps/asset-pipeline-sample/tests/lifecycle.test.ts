@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import {
+  HARDWARE_GENERATION_PROFILES,
   createDeviceSnapshot,
   createGameHost,
   type FrameRenderer,
@@ -11,13 +12,22 @@ import {
   createMutableInputSource,
 } from '@console-chaos/engine-testkit';
 import { createTitleModule } from '../src/app';
+import { titleAnimationFrame } from '../src/animation';
 import { captureTimeFromSearch, initialGenerationFromSearch } from '../src/bootstrap';
+import { TITLE_GENERATION_ASSETS, characterFrameKey } from '../src/render-manifest';
+
+interface CapturedCharacter {
+  readonly id: string;
+  readonly rotation: number;
+  readonly texture: string | undefined;
+}
 
 interface CapturedFrame {
   readonly timeSeconds: number;
   readonly sprites: number;
   readonly backgrounds: number;
   readonly renderGenerations: readonly GenerationId[];
+  readonly characters: readonly CapturedCharacter[];
 }
 
 function createCapturingRenderer(): FrameRenderer & { readonly frames: CapturedFrame[]; readonly dispose: ReturnType<typeof vi.fn> } {
@@ -31,6 +41,13 @@ function createCapturingRenderer(): FrameRenderer & { readonly frames: CapturedF
         sprites: frame.sprites.length,
         backgrounds: frame.backgrounds.length,
         renderGenerations: [...generation.renderGenerations()],
+        characters: frame.sprites
+          .filter((sprite) => sprite.id.startsWith('character:'))
+          .map((sprite) => ({
+            id: sprite.id,
+            rotation: sprite.rotation ?? 0,
+            texture: sprite.texture,
+          })),
       });
     },
     resize: () => {},
@@ -67,6 +84,21 @@ describe('title module lifecycle', () => {
     expect(host.context.generation.generation).toBe('SFC');
     expect(renderer.frames.at(-2)?.renderGenerations).toEqual(['FC', 'SFC']);
     expect(renderer.frames.at(-1)?.timeSeconds).toBeGreaterThan(beforeSwitch);
+    const cycledFrame = renderer.frames.at(-1)!;
+    for (const generation of ['FC', 'SFC'] as const) {
+      const animation = titleAnimationFrame(
+        HARDWARE_GENERATION_PROFILES[generation],
+        cycledFrame.timeSeconds,
+        false,
+      );
+      expect(cycledFrame.characters.find((character) => character.id === `character:${generation}`))
+        .toMatchObject({
+          rotation: animation.angle,
+          texture: TITLE_GENERATION_ASSETS[generation].characters[
+            characterFrameKey(animation.pose, animation.eyes)
+          ],
+        });
+    }
     for (let frame = 0; frame < 22; frame += 1) host.frame(now += 17);
     expect(host.context.generation.transition.active).toBe(false);
 
@@ -80,6 +112,20 @@ describe('title module lifecycle', () => {
       host.frame(now += 17);
       input.set(createDeviceSnapshot());
       host.frame(now += 17);
+      const transitionFrame = renderer.frames.at(-1)!;
+      expect(transitionFrame.renderGenerations).toContain(generation);
+      const animation = titleAnimationFrame(
+        HARDWARE_GENERATION_PROFILES[generation],
+        transitionFrame.timeSeconds,
+        false,
+      );
+      expect(transitionFrame.characters.find((character) => character.id === `character:${generation}`))
+        .toMatchObject({
+          rotation: animation.angle,
+          texture: TITLE_GENERATION_ASSETS[generation].characters[
+            characterFrameKey(animation.pose, animation.eyes)
+          ],
+        });
       for (let frame = 0; frame < 22; frame += 1) host.frame(now += 17);
       expect(host.context.generation.generation).toBe(generation);
       expect(host.context.generation.transition.active).toBe(false);

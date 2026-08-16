@@ -60,8 +60,37 @@ describe('title render frame', () => {
           characterFrameKey(animation.pose, animation.eyes)
         ],
       );
-      if (generation === 'FC' || generation === 'SFC') expect(character.rotation).toBe(0);
-      else expect(character.rotation).not.toBe(0);
+      expect(character.rotation).toBe(animation.angle);
+      if (generation === 'FC' || generation === 'SFC') {
+        expect(character.rotation).toBe(0);
+      } else {
+        expect(character.rotation).not.toBe(0);
+        expect(Math.abs(animation.angle + animation.authoredPoseAngle))
+          .toBeLessThanOrEqual(5 * Math.PI / 180);
+        expect(Math.abs(animation.angle)).toBeLessThan(5 * Math.PI / 180);
+      }
+    }
+  });
+
+  it('uses authored endpoint textures without adding a second endpoint rotation', () => {
+    for (const timeSeconds of [0, 0.5, 1]) {
+      const frame = createRenderFrame();
+      buildTitleRenderFrame(frame, timeSeconds, false);
+      for (const generation of ['PS1', 'PS2'] as const) {
+        const character = frame.sprites.find((command) => command.id === `character:${generation}`)!;
+        const animation = titleAnimationFrame(
+          HARDWARE_GENERATION_PROFILES[generation],
+          timeSeconds,
+          false,
+        );
+        expect(character.texture).toBe(
+          TITLE_GENERATION_ASSETS[generation].characters[
+            characterFrameKey(animation.pose, animation.eyes)
+          ],
+        );
+        expect(character.rotation).toBeCloseTo(0, 12);
+        expect(Math.abs(animation.authoredPoseAngle)).toBeCloseTo(5 * Math.PI / 180, 12);
+      }
     }
   });
 
