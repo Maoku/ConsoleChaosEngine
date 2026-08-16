@@ -8,8 +8,8 @@ import {
   type SpriteCommand,
 } from '@console-chaos/engine';
 import { createTitleActionMap } from './actions';
-import { pivotedSpriteCenter, swayAngle } from './animation';
-import { TITLE_GENERATION_ASSETS } from './render-manifest';
+import { pivotedSpriteCenter, titleAnimationFrame } from './animation';
+import { TITLE_GENERATION_ASSETS, characterFrameKey } from './render-manifest';
 
 export interface TitleAssetSize {
   readonly logo: readonly [number, number];
@@ -53,7 +53,8 @@ export function buildTitleRenderFrame(
     const hardware = HARDWARE_GENERATION_PROFILES[generation];
     const size = TITLE_ASSET_SIZES[generation];
     const assets = TITLE_GENERATION_ASSETS[generation];
-    const angle = swayAngle(hardware, timeSeconds, reducedMotion);
+    const animation = titleAnimationFrame(hardware, timeSeconds, reducedMotion);
+    const angle = animation.angle;
     const characterCenter = pivotedSpriteCenter(
       [hardware.video.internalWidth / 2, hardware.video.internalHeight],
       size.character,
@@ -83,7 +84,7 @@ export function buildTitleRenderFrame(
       size: size.character,
       color: '#ffffff',
       rotation: angle,
-      texture: assets.character,
+      texture: assets.characters[characterFrameKey(animation.pose, animation.eyes)],
       ...TITLE_SPRITE_ALPHA[generation],
       layer: 1,
       depthWrite: false,

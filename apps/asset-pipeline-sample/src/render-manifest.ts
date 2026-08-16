@@ -1,26 +1,58 @@
 import {
   defineGenerationVariant,
+  type GenerationId,
   type GenerationVariant,
   type RenderAssetManifest,
 } from '@console-chaos/engine';
+import {
+  CHARACTER_POSES,
+  EYE_FRAMES,
+  type CharacterPose,
+  type EyeFrame,
+} from './animation';
 
 const assetUrl = (path: string): string => `${import.meta.env.BASE_URL}assets/generated/${path}`;
 
+export type CharacterFrameKey = `character-${CharacterPose}-${EyeFrame}`;
+
 export interface TitleGenerationAssets {
   readonly logo: string;
-  readonly character: string;
+  readonly characters: Readonly<Record<CharacterFrameKey, string>>;
+}
+
+export function characterFrameKey(pose: CharacterPose, eyes: EyeFrame): CharacterFrameKey {
+  return `character-${pose}-${eyes}`;
+}
+
+function generationAssets(generation: GenerationId): TitleGenerationAssets {
+  const directory = generation.toLowerCase();
+  const characters = Object.fromEntries(
+    CHARACTER_POSES.flatMap((pose) =>
+      EYE_FRAMES.map((eyes) => {
+        const key = characterFrameKey(pose, eyes);
+        return [key, assetUrl(`${directory}/${key}.png`)] as const;
+      }),
+    ),
+  ) as Record<CharacterFrameKey, string>;
+  return {
+    logo: assetUrl(`${directory}/title-logo.png`),
+    characters,
+  };
 }
 
 export const TITLE_GENERATION_ASSETS: GenerationVariant<TitleGenerationAssets> = defineGenerationVariant({
-  FC: { logo: assetUrl('fc/title-logo.png'), character: assetUrl('fc/character.png') },
-  SFC: { logo: assetUrl('sfc/title-logo.png'), character: assetUrl('sfc/character.png') },
-  PS1: { logo: assetUrl('ps1/title-logo.png'), character: assetUrl('ps1/character.png') },
-  PS2: { logo: assetUrl('ps2/title-logo.png'), character: assetUrl('ps2/character.png') },
+  FC: generationAssets('FC'),
+  SFC: generationAssets('SFC'),
+  PS1: generationAssets('PS1'),
+  PS2: generationAssets('PS2'),
 });
 
 export function createTitleRenderManifest(): RenderAssetManifest {
   const variants = Object.values(TITLE_GENERATION_ASSETS);
-  const generatedUrls = variants.flatMap((variant) => [variant.logo, variant.character]);
+  const generatedUrls = variants.flatMap((variant) => [
+    variant.logo,
+    ...Object.values(variant.characters),
+  ]);
   return {
     textures: generatedUrls.map((url) => ({ url })),
     models: [],

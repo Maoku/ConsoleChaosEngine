@@ -5,7 +5,12 @@ import {
   createRenderFrame,
 } from '@console-chaos/engine';
 import { TITLE_ASSET_SIZES, buildTitleRenderFrame } from '../src/app';
-import { TITLE_GENERATION_ASSETS, createTitleRenderManifest } from '../src/render-manifest';
+import { titleAnimationFrame } from '../src/animation';
+import {
+  TITLE_GENERATION_ASSETS,
+  characterFrameKey,
+  createTitleRenderManifest,
+} from '../src/render-manifest';
 
 describe('title render frame', () => {
   it('contains one background, logo, and character for every generation', () => {
@@ -28,7 +33,7 @@ describe('title render frame', () => {
       });
       expect(character).toMatchObject({
         screenSpace: true,
-        texture: TITLE_GENERATION_ASSETS[generation].character,
+        texture: TITLE_GENERATION_ASSETS[generation].characters['character-center-open'],
         generations: [generation],
       });
       expect(logo?.atlas).toBeUndefined();
@@ -40,6 +45,23 @@ describe('title render frame', () => {
         expect(logo?.alphaCutoff).toBe(0.5);
         expect(character?.alphaCutoff).toBe(0.5);
       }
+    }
+  });
+
+  it('uses asset poses without low-generation rotation and Tween rotation for PS1/PS2', () => {
+    const timeSeconds = 0.1;
+    const frame = createRenderFrame();
+    buildTitleRenderFrame(frame, timeSeconds, false);
+    for (const generation of GENERATION_IDS) {
+      const character = frame.sprites.find((command) => command.id === `character:${generation}`)!;
+      const animation = titleAnimationFrame(HARDWARE_GENERATION_PROFILES[generation], timeSeconds, false);
+      expect(character.texture).toBe(
+        TITLE_GENERATION_ASSETS[generation].characters[
+          characterFrameKey(animation.pose, animation.eyes)
+        ],
+      );
+      if (generation === 'FC' || generation === 'SFC') expect(character.rotation).toBe(0);
+      else expect(character.rotation).not.toBe(0);
     }
   });
 
@@ -69,12 +91,12 @@ describe('title render frame', () => {
     }
   });
 
-  it('registers exactly the eight generated runtime textures', () => {
+  it('registers exactly the forty generated runtime textures', () => {
     const manifest = createTitleRenderManifest();
     const expected = Object.values(TITLE_GENERATION_ASSETS)
-      .flatMap((variant) => [variant.logo, variant.character]);
+      .flatMap((variant) => [variant.logo, ...Object.values(variant.characters)]);
     expect(manifest.textures.map((texture) => texture.url)).toEqual(expected);
-    expect(new Set(expected).size).toBe(8);
+    expect(new Set(expected).size).toBe(40);
     expect(manifest.models).toEqual([]);
     expect(manifest.atlases.map((atlas) => atlas.url)).toEqual(expected);
     expect(manifest.atlases.every((atlas) => atlas.columns === 1 && atlas.rows === 1)).toBe(true);
