@@ -1,6 +1,11 @@
 # Asset Pipeline Sample
 
-1枚の世代非依存原画から `@console-chaos/asset-pipeline` で `FC / SFC / PS1 / PS2` 用画像を生成し、Console Chaos Engine の世代別rendererで同じタイトル画面を表示するサンプルです。
+1枚の世代非依存キャラクター原画から `@console-chaos/asset-pipeline` で `FC / SFC / PS1 / PS2` 用animation frameを生成し、Console Chaos Engine の世代別rendererと音源で同じタイトル画面・BGMを表現するサンプルです。
+
+- FC/SFC: 原画から生成した3姿勢を6/12 Hzで切替。runtime回転は使用しません。
+- PS1/PS2: 下端pivotを保ったまま30/60 HzのTweenで左右へ傾けます。
+- 全世代: 3段階の目パチとポニーテール差分をpipeline生成assetで再生します。
+- BGM: 120 BPMの同一曲を世代別音源で再生し、発音能力に応じて3/4/5/6 trackへ編曲します。
 
 ## 実行
 
@@ -25,14 +30,15 @@ npm run dev -w @console-chaos/asset-pipeline-sample
 - `?captureTime=0.5`: 検証用にアニメーション位相を秒で固定し、描画を静止PNGへ凍結
 
 `prefers-reduced-motion` が有効な環境では左右の揺れを停止します。
+BGMは最初のpointerまたはkeyboard操作で再生可能になり、世代切替後も拍位置を維持します。
 
 ## 構成
 
 - `art/source`: ImageGen由来の世代非依存原画。runtime bundleには含めません。
-- `tools/art.config.mjs`: matte、crop、resample、tone、palette、alphaの変換定義。
-- `public/assets/generated`: pipelineだけが生成する8枚のruntime PNGと決定的manifest。
-- `src`: Engine公開APIだけを利用するブラウザruntime。asset pipelineをimportしません。
-- `tests` / `tools/check-assets.ts`: animation、配置、lifecycle、決定性、palette／alpha契約を検査します。
+- `tools/art.config.mjs`: matte、crop、resample、body shear、ponytail／blink warp、tone、palette、alphaの変換定義。
+- `public/assets/generated`: pipelineだけが生成する40枚のruntime PNGと決定的manifest。
+- `src`: Engine公開APIだけを利用するブラウザruntimeとタイトルScore。asset pipelineをimportしません。
+- `tests` / `tools/check-assets.ts`: animation、audio、配置、lifecycle、決定性、palette／alpha契約を検査します。
 
 詳細な設計と完成条件は [Docs/IMPLEMENTATION_PLAN.md](Docs/IMPLEMENTATION_PLAN.md)、原画の生成履歴は [Docs/ASSET_PROVENANCE.md](Docs/ASSET_PROVENANCE.md) を参照してください。
 

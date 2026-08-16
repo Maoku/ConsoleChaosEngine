@@ -4,7 +4,7 @@
 
 作成日: 2026-08-16
 
-状態: 追加要件を実装中（2026-08-16）
+状態: 追加要件を実装・検証済み（2026-08-16）
 
 ## 1. 目的
 
@@ -375,7 +375,8 @@ pivotedSpriteCenter(pivot, size, angle): readonly [number, number]
 Tweenは左右の端で速度が0になる `smoothstep` または同等のease-in-outを使う。
 PS1は1/30秒、PS2は1/60秒へ時刻を量子化してから補間する。
 低世代は補間値を計算せず `rotation: 0` のまま、宣言した画像パターンを直接返す。
-ポニーテールframeは体の位相に対して1 sample遅らせ、体と一体の板が回転しているだけに見えない動きを作る。
+FC/SFCはasset内で体と逆方向へポニーテールをwarpし、PS1/PS2はtexture選択を体のTweenから
+1 sample遅らせる。体と髪が一体の板として回転しているだけに見えない動きを作る。
 
 ### 7.4 screen-space配置
 
@@ -626,3 +627,25 @@ console-chaos-assets build \
 - asset、unit、lifecycle、build、boundaryの全検査が成功する
 - 4世代captureと実行手順が保存される
 - root `npm run verify` が成功する
+
+## 14. 実装結果（2026-08-16）
+
+追加要件のP5〜P8を完了した。
+
+| フェーズ | commit | 結果 |
+|---|---|---|
+| 計画更新 | `6a28d86` | PLAN差分を40出力・animation・audio設計へ反映 |
+| P5 | `24a1c74` | 2原画からロゴ4枚＋character 36枚を決定的生成 |
+| P6 | `3d4a854` | FC/SFC asset pose、PS1/PS2 Tween、ponytail、blinkをruntimeへ統合 |
+| P7 | `944068f` | 120 BPM Score、能力ベース編曲、世代別音源、audio unlockを統合 |
+| P8 | `docs(asset-sample): complete animated title integration` | capture、README、本書、全体検証を更新 |
+
+検証結果:
+
+- `npm run verify -w @console-chaos/asset-pipeline-sample`: 成功
+- asset contract: 40 outputs、FCのロゴ＋全character frameの共有色17色
+- Vitest: 5 files / 18 tests 成功
+- lint、browser/tool TypeScript、Vite production build: 成功
+- `npm run verify`: 成功（Engine 46、asset pipeline 25、sample 18、Console Chaos 415、E2E 2 testsを含む）
+- `Docs/captures/title-{fc|sfc|ps1|ps2}.png`: 1280×720、`captureTime=0.5` で再取得
+- ブラウザ目視: 4世代のロゴ、姿勢、layout、世代別描画を確認。console warning/errorなし
