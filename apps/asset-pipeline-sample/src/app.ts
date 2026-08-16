@@ -9,6 +9,7 @@ import {
 } from '@console-chaos/engine';
 import { createTitleActionMap } from './actions';
 import { pivotedSpriteCenter, titleAnimationFrame } from './animation';
+import { arrangeTitleScore } from './audio';
 import { TITLE_GENERATION_ASSETS, characterFrameKey } from './render-manifest';
 
 export interface TitleAssetSize {
@@ -97,6 +98,10 @@ export function createTitleModule(options: TitleModuleOptions = {}): GameModule 
     id: 'asset-pipeline-title',
     async create(context) {
       const actions = createTitleActionMap();
+      const disconnectAudio = context.events.on('generationSwitch', ({ to }) => {
+        context.audio.useScore(arrangeTitleScore(HARDWARE_GENERATION_PROFILES[to]));
+      });
+      context.audio.playScore(arrangeTitleScore(context.generation.profile));
       let timeSeconds = 0;
       return {
         prepareFixedUpdate({ dtMs }): void {
@@ -118,6 +123,7 @@ export function createTitleModule(options: TitleModuleOptions = {}): GameModule 
           );
         },
         dispose(): void {
+          disconnectAudio();
           actions.reset();
         },
       };

@@ -1,14 +1,20 @@
 import {
   GENERATION_IDS,
+  HARDWARE_GENERATION_PROFILES,
   createAssetManager,
   createBrowserLoopHost,
   createGameHost,
+  createGenerationAudioService,
   createGenerationWebGlRenderer,
   createKeyboardGamepadSource,
+  createNullAudioService,
+  installAudioUnlock,
   observeCanvasResize,
+  type AudioService,
   type GenerationId,
 } from '@console-chaos/engine';
 import { createTitleModule } from './app';
+import { TITLE_BGM_BPM, arrangeTitleScore } from './audio';
 import { createTitleRenderManifest } from './render-manifest';
 import './style.css';
 
@@ -73,6 +79,17 @@ export async function bootstrap(): Promise<() => void> {
     preserveDrawingBuffer: captureTime !== null,
   });
   const input = createKeyboardGamepadSource();
+  const initialScore = arrangeTitleScore(HARDWARE_GENERATION_PROFILES[initialGeneration]);
+  let audio: AudioService = createNullAudioService(TITLE_BGM_BPM);
+  try {
+    audio = createGenerationAudioService(
+      new AudioContext({ latencyHint: 'interactive' }),
+      initialScore,
+    );
+  } catch {
+    // Automated browsers and restricted WebViews still run the complete visual sample.
+  }
+  const audioUnlock = installAudioUnlock(document, () => audio.unlock());
   const motionPreference = window.matchMedia('(prefers-reduced-motion: reduce)');
   let reducedMotion = motionPreference.matches;
   const updateMotionPreference = (): void => {
@@ -84,6 +101,7 @@ export async function bootstrap(): Promise<() => void> {
     loopHost: createBrowserLoopHost(),
     renderer,
     input,
+    audio,
     assets,
     initialGeneration,
     seed: 0x41535345,
@@ -107,6 +125,7 @@ export async function bootstrap(): Promise<() => void> {
     disposed = true;
     window.removeEventListener('resize', windowResize);
     motionPreference.removeEventListener('change', updateMotionPreference);
+    audioUnlock.dispose();
     disconnectGeneration();
     canvasResize.dispose();
     host.dispose();
