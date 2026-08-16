@@ -152,3 +152,11 @@ Avoid: changing anything outside the eyelids and covered eye area, winking, asym
 - 生成別の見た目調整は `tools/art.config.mjs` の recipe へ記録する。
 - `public/assets/generated` のPNGは編集せず、必ず asset pipeline から再生成する。
 - Image Gen に世代名を指定した直接生成、世代別の構図変更、手作業のpixel化は行わない。
+
+## 統合検証（2026-08-16）
+
+- `asset-manifest.json` の9つのcharacter asset IDが、同名source pathと本書記載の異なるSHA-256へ1対1で対応することを自動検査した
+- `character-upper.png` がmanifestの変換入力に含まれず、builderにpose、ponytail、blinkを合成するwarp / shearが残っていないことを自動検査した
+- 40出力の `assets:check`、共有FC 17色、RGB555、alpha mode、bounds、2回目buildのwritten 0を確認した
+- 1280×720、`captureTime=0.5` の4世代captureで右端開眼poseを比較し、`captureTime=2.9` の一時captureで全世代の閉眼frameを比較した
+- 同一人物、衣装、canvas構図、下端pivotを保ち、ImageGen source差分が全世代へ到達すること、PS1/PS2端点でruntime residualが0°となること、haloや輪郭欠けがないことを目視確認した

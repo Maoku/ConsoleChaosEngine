@@ -4,12 +4,13 @@
 
 作成日: 2026-08-16
 
-状態: ImageGen変換元frameへの修正計画を策定済み（実装修正は未着手、2026-08-16）
+状態: P9〜P12のImageGen変換元frame修正、統合検証、記録を完了（2026-08-16）
 
 > **適合性メモ:** 2026-08-16に完了したP5/P6は、単一の `character-upper.png` をコードで
 > shear / warpして揺らしと目パチを生成している。この経路は「ImageGenでアニメーション状態ごとの
 > 変換元画像を `art/source` に用意し、そこから各世代へ変換する」という本サンプルの要件を満たさない。
-> 現行生成物は暫定扱いとし、P9〜P12で置き換える。
+> P9〜P12で9つのImageGen source frame、sourceごとのpipeline変換、authored pose residual、captureへ置き換えた。
+> P5/P6の実装は履歴としてのみ残し、現行経路では使用しない。
 
 ## 1. 目的
 
@@ -747,7 +748,26 @@ console-chaos-assets build \
 | 項目 | 状態 |
 |---|---|
 | 計画更新 | 完了。本書にImageGen source set、pipeline移行、runtime補正、検証を定義 |
-| P9 ImageGen source set | 未着手 |
-| P10 pipeline source migration | 未着手 |
-| P11 authored pose runtime | 未着手 |
-| P12 integration verification | 未着手 |
+| P9 ImageGen source set | 完了。9枚のsource、prompt、参照、採否、hash、canvas、alphaを記録 |
+| P10 pipeline source migration | 完了。9 IDを同名sourceへ移し、warpを削除して40出力を再生成 |
+| P11 authored pose runtime | 完了。`authoredPoseAngle` とPS1/PS2 residual Tweenを実装 |
+| P12 integration verification | 完了。4世代capture、README、本書、sample/root verifyを更新 |
+
+## 15. 修正実装結果（2026-08-16）
+
+| フェーズ | commit | 結果 |
+|---|---|---|
+| P9 | `ff9ca74` | ImageGenをvariantごとに実行し、1024×1536の9 source frameと完全なprovenanceを追加 |
+| P10 | `d2c313c` | 9 sourceを1対1でmanifestへ追跡し、semantic warpを削除、共有FC paletteで40出力を再生成 |
+| P11 | `8f9150f` | `-5° / 0° / +5°` のauthored poseとruntime residualを分離し、animation / render / lifecycle testを更新 |
+| P12 | `docs(asset-sample): verify imagegen source-frame workflow` | 4世代capture、再現手順、受入結果、commit対応を記録 |
+
+修正後の受入結果:
+
+- production入力はロゴ1枚＋character 9枚の計10枚。9つのcharacter sourceは異なるSHA-256を持ち、`character-upper.png` は参照anchorとして変換入力外
+- `motionWarp`、`blinkWarp`、body shear相当処理は `art.config.mjs` から削除。2回目の `assets:build` はwritten 0
+- asset contractは40出力、FCのロゴ＋全character frameの共有色17色、source path / hash / canvas / pivot / palette / alpha /決定性を確認
+- `npm run verify -w @console-chaos/asset-pipeline-sample`: 成功（Vitest 5 files / 20 tests、lint、browser/tool TypeScript、Vite buildを含む）
+- `npm run verify`: 成功（Engine 46、engine-testkit 1、asset pipeline 25、sample 20、Console Chaos 415、E2E 2 tests、boundaryと全buildを含む）
+- `Docs/captures/title-{fc|sfc|ps1|ps2}.png`: 1280×720、`captureTime=0.5`、同じ右端開眼位相で再取得
+- ブラウザ目視: `captureTime=0.5` で4世代のsource姿勢とPS1/PS2 residual 0°、`captureTime=2.9` で4世代の閉眼frameを確認。identity drift、frame jump、二重傾斜、halo、欠け、console warning/errorなし
