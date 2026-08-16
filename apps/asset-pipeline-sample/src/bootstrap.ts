@@ -1,8 +1,15 @@
 import {
   GENERATION_IDS,
-  HARDWARE_GENERATION_PROFILES,
+  createAssetManager,
+  createBrowserLoopHost,
+  createGameHost,
+  createGenerationWebGlRenderer,
+  createKeyboardGamepadSource,
+  observeCanvasResize,
   type GenerationId,
 } from '@console-chaos/engine';
+import { createTitleModule } from './app';
+import { createTitleRenderManifest } from './render-manifest';
 import './style.css';
 
 export const DISPLAY_WIDTH = 960;
@@ -29,40 +36,56 @@ function requireElement<ElementType extends Element>(selector: string): ElementT
   return element;
 }
 
-function drawScaffold(canvas: HTMLCanvasElement, generation: GenerationId): void {
-  const context = canvas.getContext('2d');
-  if (!context) throw new Error('Canvas 2D context is unavailable');
-  const profile = HARDWARE_GENERATION_PROFILES[generation];
-  context.fillStyle = '#120d2a';
-  context.fillRect(0, 0, canvas.width, canvas.height);
-  context.fillStyle = '#fff3dc';
-  context.textAlign = 'center';
-  context.font = '700 42px system-ui, sans-serif';
-  context.fillText('Asset Pipeline Sample', canvas.width / 2, canvas.height / 2 - 12);
-  context.fillStyle = '#ff6652';
-  context.font = '600 24px ui-monospace, monospace';
-  context.fillText(
-    `${generation} · ${profile.video.internalWidth}×${profile.video.internalHeight}`,
-    canvas.width / 2,
-    canvas.height / 2 + 36,
-  );
-}
-
-export function bootstrap(): () => void {
+export async function bootstrap(): Promise<() => void> {
   const canvas = requireElement<HTMLCanvasElement>('#screen');
   const label = requireElement<HTMLElement>('#generation-label');
-  const generation = initialGenerationFromSearch(window.location.search);
+  const initialGeneration = initialGenerationFromSearch(window.location.search);
   canvas.width = DISPLAY_WIDTH;
   canvas.height = DISPLAY_HEIGHT;
-  label.textContent = generation;
-  drawScaffold(canvas, generation);
+  label.textContent = initialGeneration;
+  fitCanvasToStage(canvas);
 
-  const resize = (): void => fitCanvasToStage(canvas);
-  const dispose = (): void => window.removeEventListener('resize', resize);
-  resize();
-  window.addEventListener('resize', resize);
+  const assets = createAssetManager();
+  const renderer = await createGenerationWebGlRenderer(canvas, {
+    assets,
+    manifest: createTitleRenderManifest(),
+  });
+  const input = createKeyboardGamepadSource();
+  const motionPreference = window.matchMedia('(prefers-reduced-motion: reduce)');
+  let reducedMotion = motionPreference.matches;
+  const updateMotionPreference = (): void => {
+    reducedMotion = motionPreference.matches;
+  };
+  motionPreference.addEventListener('change', updateMotionPreference);
+
+  const host = createGameHost({
+    loopHost: createBrowserLoopHost(),
+    renderer,
+    input,
+    assets,
+    initialGeneration,
+    seed: 0x41535345,
+  });
+  const disconnectGeneration = host.context.events.on('generationSwitch', (event) => {
+    label.textContent = event.to;
+  });
+  await host.start(createTitleModule({ reducedMotion: () => reducedMotion }));
+
+  const canvasResize = observeCanvasResize(canvas, () => renderer.resize());
+  const windowResize = (): void => fitCanvasToStage(canvas);
+  window.addEventListener('resize', windowResize);
+  let disposed = false;
+  const dispose = (): void => {
+    if (disposed) return;
+    disposed = true;
+    window.removeEventListener('resize', windowResize);
+    motionPreference.removeEventListener('change', updateMotionPreference);
+    disconnectGeneration();
+    canvasResize.dispose();
+    host.dispose();
+  };
   window.addEventListener('pagehide', dispose, { once: true });
   return dispose;
 }
 
-void bootstrap();
+if (typeof document !== 'undefined') void bootstrap();
