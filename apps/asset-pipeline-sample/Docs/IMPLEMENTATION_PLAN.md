@@ -4,7 +4,7 @@
 
 作成日: 2026-08-16
 
-状態: 実装済み（2026-08-16）
+状態: 追加要件を実装中（2026-08-16）
 
 ## 1. 目的
 
@@ -17,7 +17,9 @@
 - 世代別画像は手作業せず、必ず `@console-chaos/asset-pipeline` から生成する
 - asset pipeline は Node.js の build-time tool に閉じ、ブラウザコードから import しない
 - Engine の世代プロファイル、世代切替、世代別 renderer を利用する
-- 第1・第2世代は離散パターン、第3・第4世代は Tween でキャラクターを左右へ揺らす
+- 第1・第2世代は原画から生成した離散姿勢画像、第3・第4世代は Tween でキャラクターを左右へ揺らす
+- 同じ原画から生成したframeでポニーテール揺れと目パチを表現する
+- 同一の楽曲データをEngineの世代別音源・同時発音数へ編曲し、体揺れと拍を同期する
 
 ## 2. スコープ
 
@@ -26,14 +28,17 @@
 - 1画面だけのタイトル画面
 - `Console Chaos Engine` のタイトルロゴ
 - [character.png](character.png) のキャラクターを元にした上半身画像
-- ロゴとキャラクターそれぞれの4世代出力
+- ロゴと、姿勢3種×目3種のキャラクターframeそれぞれの4世代出力
+- FC/SFCの画像パターン切替、PS1/PS2のTween
+- ポニーテール揺れと目パチアニメーション
+- 世代別の音声能力に沿ったタイトルBGM
 - キーボード／ゲームパッドによる世代切替
 - asset生成、決定性、runtime配置、アニメーションの自動検査
 - 4世代の目視確認
 
 ### 2.2 スコープ外
 
-- ゲーム本編、タイトル決定後の遷移、音楽、効果音
+- ゲーム本編、タイトル決定後の遷移、効果音
 - 世代ごとに別の構図・表情・ポーズをAI生成すること
 - glTF、動画、音声の変換
 - asset pipeline 共通パッケージへのゲーム固有機能の追加
@@ -81,21 +86,55 @@ Image Gen原画
 
 ### 3.3 アニメーションはruntime責務
 
-左右への揺れは画像へ焼き込まず、1枚のキャラクター画像に対する `SpriteCommand.rotation` で表現する。
-これにより、姿勢を世代別に直接制作せず、同じ瞬間を世代の時間解像度だけ変えて表示できる。
+左右への揺れは世代の能力に応じて2つの経路へ分ける。いずれも `character-upper.png` だけを入力とし、
+世代別frameをImage Genや画像編集ソフトで直接制作しない。
 
 | 世代 | 動作 | サンプリング | 角度 |
 |---|---|---:|---:|
-| FC | `左 → 中央 → 右 → 中央` のパターン切替 | 4 Hz。値は離散 | ±5° |
-| SFC | `左 → 中央 → 右 → 中央` のパターン切替 | 8 Hz。値は離散 | ±5° |
+| FC | pipelineで生成した `左 → 中央 → 右 → 中央` の画像パターン切替。runtime回転なし | profileの6 Hz | 見かけ±5°相当 |
+| SFC | pipelineで生成した `左 → 中央 → 右 → 中央` の画像パターン切替。runtime回転なし | profileの12 Hz | 見かけ±5°相当 |
 | PS1 | 左右の目標角間を ease-in-out Tween | profileの30 Hz | ±5° |
 | PS2 | 左右の目標角間を ease-in-out Tween | profileの60 Hz | ±5° |
 
 1往復は1秒とし、全世代で拍の位置は共有する。PS1/PS2だけ周期や振幅を変えるのではなく、
 同じ位相に対する補間方法とサンプリング密度だけを変える。
 
-回転中心は画像中央ではなく上半身の下端中央とする。`SpriteCommand` 自体は中央回転なので、
+FC/SFCの姿勢frameは下端を固定した水平方向のshearで生成し、角度を変えた1枚絵に見えない輪郭差を持たせる。
+PS1/PS2の回転中心は画像中央ではなく上半身の下端中央とする。`SpriteCommand` 自体は中央回転なので、
 下端中央をpivotとして回したときのsprite中心を毎frame計算し、腰が横滑りしないようにする。
+
+### 3.4 ポニーテールと目パチもpipeline出力にする
+
+キャラクターframe IDは `character-{left|center|right}-{open|half|closed}` の9種とする。
+
+- `left / center / right` はポニーテール領域へ滑らかな局所warpを適用する
+- FC/SFCでは同じframeへ体の離散姿勢も焼き込む
+- PS1/PS2では体を直立のままにし、ポニーテール差分だけを焼き込む
+- `open / half / closed` は両目領域の縦方向warpで生成し、手描きの世代別frameを追加しない
+- blink周期は3秒とし、FCは開閉2frame、SFC以降は半閉じを含むframe列をprofileのanimation Hzでsampleする
+- reduced motionでは体とポニーテールを中央に固定するが、目パチは停止しない
+
+9種は同じsource hashと共通recipeを持つ。FCの全frameは共通の16色paletteを使い、frame切替で
+画面全体の色数が増えないようにする。
+
+### 3.5 BGMは同一Scoreを世代能力で編曲する
+
+`src/audio.ts` に120 BPM、4/4拍子、4小節ループの明るいタイトル曲を `Score` として定義する。
+体揺れは1秒で1往復とし、左右の端点が120 BPMの各beatへ一致する。
+
+世代差は世代IDの直接分岐ではなく `HardwareGenerationProfile.audio` から導出する。
+
+| 能力 | 編曲 |
+|---|---|
+| 5 channels | lead / bass / percussionの基本3part |
+| 8 channels以上 | 2音のpadを追加 |
+| 24 channels以上 | harmonyを追加 |
+| 48 channels以上 | 高域のaccentを追加 |
+
+再生には `createGenerationAudioService()` を使用するため、profileの `psg / brr / adpcm / streaming`、
+sample rate、reverb、positional能力がEngine側で適用される。世代切替時は曲を再開せず `useScore()` で
+編曲だけを差し替え、loop内のtick位相を維持する。ブラウザのautoplay制限には `installAudioUnlock()` で対応し、
+Web Audioを作れない環境では `createNullAudioService()` へfallbackする。
 
 ## 4. 完成条件
 
@@ -105,6 +144,9 @@ Image Gen原画
 - キャラクターの上半身が画面下端中央に接して表示される
 - ロゴと顔が重ならず、耳、髪、顔、襟、腕の主要輪郭が欠けない
 - 4世代とも同じ構図、同じキャラクター、同じ拍位置を保つ
+- FC/SFCはruntimeのrotationを使わず、画像の輪郭が変わる3姿勢を切り替える
+- PS1/PS2は下端pivotを保ったままTweenで滑らかに傾く
+- ポニーテールが体とは異なる位相で揺れ、3秒周期で自然に目パチする
 - 背景は単色を基本とし、第1世代の同時色数を不必要に消費しない
 - transition中は旧世代と新世代の両方が正しい画像と動作で合成される
 
@@ -114,17 +156,26 @@ Image Gen原画
 - `Q / E` またはゲームパッドのshoulderで前後の世代へ切り替えられる
 - `?generation=FC|SFC|PS1|PS2` で初期世代を固定できる
 - OSの `prefers-reduced-motion` が有効な場合は角度を0°に固定できる
+- 最初のpointerまたはkeyboard操作でBGMのWeb Audioをunlockできる
 
 ### 4.3 asset
 
-- 原画2枚から計8枚の世代別PNGが生成される
+- 原画2枚からロゴ4枚とキャラクター36枚、計40枚の世代別PNGが生成される
 - 全出力が `asset-manifest.json` に source hash、recipe hash、世代、寸法、色数、alpha mode とともに記録される
-- FCのロゴとキャラクターの色数上限の合計が20色以下で、単色背景を加えても25色以内に収まる
+- FCのロゴと全キャラクターframeの色集合が20色以下で、単色背景を加えても25色以内に収まる
 - FC出力は固定54色だけ、SFC出力はRGB555、FC/SFC/PS1はbinary alphaになる
 - PS2は原画の滑らかなalphaを保持できる
 - 同じ入力とrecipeで再生成したdecode後RGBAとmanifestが一致する
 
-### 4.4 boundary
+### 4.4 audio
+
+- 120 BPMのbeatと体揺れの左右端点が一致する
+- 全世代でテンポ、拍子、loop長、旋律を共有する
+- `profile.audio.channels` に応じて3 / 4 / 5 / 6 track相当へ段階的に編曲する
+- 世代切替時に再生tickをresetせず、Engineの世代別音源へ切り替わる
+- AudioContextを利用できないテスト・制限環境でもアプリ全体は動作する
+
+### 4.5 boundary
 
 - `src/**` は `@console-chaos/asset-pipeline` をimportしない
 - `tools/**` だけが `@console-chaos/asset-pipeline` を利用する
@@ -152,18 +203,19 @@ apps/asset-pipeline-sample/
   public/
     assets/generated/
       fc/title-logo.png
-      fc/character.png
+      fc/character-{left|center|right}-{open|half|closed}.png
       sfc/title-logo.png
-      sfc/character.png
+      sfc/character-{left|center|right}-{open|half|closed}.png
       ps1/title-logo.png
-      ps1/character.png
+      ps1/character-{left|center|right}-{open|half|closed}.png
       ps2/title-logo.png
-      ps2/character.png
+      ps2/character-{left|center|right}-{open|half|closed}.png
       asset-manifest.json
   src/
     actions.ts
     animation.ts
     app.ts
+    audio.ts
     bootstrap.ts
     render-manifest.ts
     style.css
@@ -202,7 +254,7 @@ Engineの `HARDWARE_GENERATION_PROFILES` からpalette mode、palette block、ti
 | PS1 | 250×50 | 32 | 横幅320pxの約78%。nearest filterでも文字を保つ |
 | PS2 | 500×100 | 制限なし | 横幅640pxの約78%。linear filterとsoft alphaを利用する |
 
-#### キャラクター
+#### キャラクターframe（9 asset IDで共通）
 
 | 世代 | 出力寸法 | 色数上限 | 根拠 |
 |---|---:|---:|---|
@@ -236,18 +288,20 @@ Engineの `HARDWARE_GENERATION_PROFILES` からpalette mode、palette block、ti
 
 ### 6.3 builderの処理順
 
-ロゴとキャラクターで同じ共通処理を使い、意味の違うcrop/matteだけを素材IDで選ぶ。
+ロゴとキャラクターで同じ共通処理を使い、意味の違うcrop/matteとframe変形だけを素材IDで選ぶ。
 
 1. 入力PNGをdecodeする
 2. 必要な場合だけ `keyOut()` で均一背景を透明化する
 3. `cropToOpaque()` とpaddingで正規化する
 4. 出力と同じ縦横比へ中央cropする
 5. `resample()` で世代別寸法へ縮小する
-6. `applyTone()` でrecipeの階調と彩度を適用する
-7. `buildPalette()` で `spec.colorBudget / masterPalette / rgb555` に沿ったpaletteを作る
-8. `applyPalette()` でpalette、ディザ、alpha thresholdを適用する
-9. `BuiltAsset.paletteCount` と画像をrunnerへ返す
-10. runnerの共通検査を通してPNGとmanifestを書き出す
+6. frame IDから局所的なポニーテールwarpと目の縦方向warpを適用する
+7. FC/SFCだけ下端固定の離散姿勢shearを適用する
+8. `applyTone()` でrecipeの階調と彩度を適用する
+9. canonicalな中央・開眼frameから共通paletteを作り、同じ世代の全frameへ適用する
+10. `applyPalette()` でpalette、ディザ、alpha thresholdを適用する
+11. `BuiltAsset.paletteCount` と画像をrunnerへ返す
+12. runnerの共通検査を通してPNGとmanifestを書き出す
 
 縦横比調整、palette resolverなどゲーム固有の薄い処理は `art.config.mjs` に置く。
 再利用先が1つしかない処理を `packages/asset-pipeline` へ追加しない。
@@ -257,7 +311,7 @@ Engineの `HARDWARE_GENERATION_PROFILES` からpalette mode、palette block、ti
 asset pipelineの `asset-manifest.json` はbuild追跡用であり、ブラウザrendererの
 `RenderAssetManifest` とは別の契約として扱う。
 
-`src/render-manifest.ts` は8枚の生成済みURLを `textures` へ登録し、世代別のURL表を
+`src/render-manifest.ts` は40枚の生成済みURLを `textures` へ登録し、世代別・姿勢別・目frame別のURL表を
 `defineGenerationVariant()` で公開する。全spriteはtextureを明示するため、
 `fallbackTextures` はrenderer契約を満たす保険として各世代のロゴURLを指定する。
 
@@ -270,9 +324,10 @@ asset pipelineの `asset-manifest.json` はbuild追跡用であり、ブラウ�
 1. `#screen` canvasを取得する
 2. URLから初期世代を検証する。未知値は `FC` へfallbackする
 3. `createAssetManager()` と `createGenerationWebGlRenderer()` を作る
-4. `createKeyboardGamepadSource()` と `createGameHost()` を作る
-5. `createTitleModule()` を開始する
-6. resize、pagehide、reduced-motionのlistenerを登録・解放する
+4. `createGenerationAudioService()` を作り、失敗時はnull serviceへfallbackする
+5. `createKeyboardGamepadSource()` と `createGameHost()` を作る
+6. `createTitleModule()` を開始し、audio unlockを登録する
+7. resize、pagehide、reduced-motion、audio unlockのlistenerを登録・解放する
 
 canvasの表示サイズはCSSで縦横比を維持する。描画bufferは外側表示用の固定サイズにし、
 各世代の内部解像度、palette、filter、CRTはrendererへ任せる。
@@ -290,7 +345,7 @@ canvasの表示サイズはCSSで縦横比を維持する。描画bufferは外�
 
 1. `generations: [generation]` を持つ単色background
 2. 画面上部中央のscreen-space logo sprite
-3. 下端中央をpivotにしたscreen-space character sprite
+3. animation stateに対応するtextureを使った下端中央pivotのscreen-space character sprite
 
 現在世代だけをapp側で選ばず4世代のcommandを同居させる。これにより、Engineのtransition中に
 `renderGenerations()` が旧・新2世代を描く場合も、それぞれ正しい画像と角度を取得できる。
@@ -300,21 +355,27 @@ canvasの表示サイズはCSSで縦横比を維持する。描画bufferは外�
 `animation.ts` はDOMやEngine hostへ依存しない純粋関数として実装する。
 
 ```ts
-swayAngle(profile, timeSeconds, reducedMotion): number
+titleAnimationFrame(profile, timeSeconds, reducedMotion): {
+  angle: number;
+  pose: 'left' | 'center' | 'right';
+  eyes: 'open' | 'half' | 'closed';
+}
 pivotedSpriteCenter(pivot, size, angle): readonly [number, number]
 ```
 
 世代IDの `if` を散らさず、`defineGenerationVariant()` で次を網羅定義する。
 
 - `mode: 'step' | 'tween'`
-- `sampleHz`
+- `sampleHz`（profileの `video.animationHz` と一致）
 - `amplitudeRadians`
 - `cycleSeconds`
 - step patternまたはeasing
+- blink frame sequence
 
 Tweenは左右の端で速度が0になる `smoothstep` または同等のease-in-outを使う。
 PS1は1/30秒、PS2は1/60秒へ時刻を量子化してから補間する。
-低世代は補間値を計算せず、宣言した4パターンの角度を直接返す。
+低世代は補間値を計算せず `rotation: 0` のまま、宣言した画像パターンを直接返す。
+ポニーテールframeは体の位相に対して1 sample遅らせ、体と一体の板が回転しているだけに見えない動きを作る。
 
 ### 7.4 screen-space配置
 
@@ -336,34 +397,45 @@ PS1は1/30秒、PS2は1/60秒へ時刻を量子化してから補間する。
 `tests/asset-contract.test.ts` と `tools/check-assets.ts` で次を検査する。
 
 - `console-chaos-assets check` が差分なしで成功する
-- asset IDは `title-logo / character` の2つだけである
-- 各assetに4世代の出力があり、計8枚である
+- asset IDは `title-logo` と9つの `character-*` だけである
+- 各assetに4世代の出力があり、計40枚である
 - manifestのsource pathが `art/source` の2枚だけを指す
 - 寸法、visible color count、palette mode、alpha modeが§6.1の契約と一致する
 - FCの全可視RGBがEngineのmaster paletteに所属する
 - SFCの全可視RGBがRGB555で表現できる
-- FCのロゴとキャラクターの色集合の和が20色以下である
+- FCのロゴと全キャラクターframeの色集合の和が20色以下である
 - 透明画素のRGBがclear blackへ正規化されている
-- characterのopaque boundsが空でなく、意図しない四辺の切れがない
+- 全character frameのopaque boundsが空でなく、意図しない四辺の切れがない
+- FC/SFCのleft/center/rightがdecode後RGBAで異なる
+- open/half/closedがdecode後RGBAで異なる
 - 2回のbuildで2回目に書き込みが発生せず、Git差分も増えない
 
 ### 8.2 unit test
 
 `tests/animation.test.ts`:
 
-- FC/SFCの角度が `-5° / 0° / +5°` の集合から外れない
-- step区間内で角度が変化しない
+- FC/SFCのruntime角度が常に0°である
+- FC/SFCのposeが `left / center / right` の宣言パターンだけを取り、sample区間内で変化しない
 - PS1/PS2は端点で正確に±5°となり、中間で単調に補間する
 - 同じ時刻のPS1/PS2が同じ方向を向く
+- blinkが3秒周期で `open / half / closed` の世代別frame列を取る
+- ポニーテールposeが体に対して1 sample遅れる
 - pivot補正後も画像下端中央が1px以内で固定される
 - reduced-motionでは全世代0°になる
 
 `tests/render-frame.test.ts`:
 
-- 各世代にbackground、logo、characterが1つずつ存在する
+- 各世代にbackground、logo、選択中character frameが1つずつ存在する
 - commandのgeneration maskとtexture URLが対応する
 - logoとcharacterが内部解像度内に収まり、互いの主要領域が重ならない
 - spriteが `screenSpace: true` で、atlasや世代外textureを参照しない
+
+`tests/audio.test.ts`:
+
+- Scoreが120 BPM、4/4、4小節で決定的にloopする
+- 編曲track数がchannel能力に応じて単調増加する
+- FC編曲の最大同時発音数が5を超えない
+- GameModule開始時にBGMを再生し、世代切替では位相をresetせずscoreだけを差し替える
 
 ### 8.3 lifecycle test
 
@@ -373,6 +445,7 @@ PS1は1/30秒、PS2は1/60秒へ時刻を量子化してから補間する。
 - `Digit1..4` で4世代を順に切り替えられる
 - transition中は旧・新世代のcommandが両方存在する
 - timeは世代切替後も連続し、アニメーション位相がresetされない
+- audio source profileと編曲が世代切替に追従する
 - `dispose()` を複数回呼んでもresourceが残らない
 
 ### 8.4 目視確認
@@ -390,6 +463,9 @@ PS1は1/30秒、PS2は1/60秒へ時刻を量子化してから補間する。
 白背景と暗背景の両方で一時確認し、haloが暗背景でだけ見つかる問題を防ぐ。
 
 ## 9. 実装フェーズ
+
+P0〜P4は初回実装で完了済み。PLAN.mdの2026-08-16追加要件をP5〜P8として実装し、
+各フェーズを独立したcommitにする。
 
 ### P0: 原画と契約の固定
 
@@ -434,7 +510,40 @@ PS1は1/30秒、PS2は1/60秒へ時刻を量子化してから補間する。
 | AP-17 | root lint/test/build/verifyへsampleを追加する | root `npm run verify` が成功 |
 | AP-18 | READMEまたは本書へ実行手順と結果を追記する | 新規利用者が生成、起動、検査を再現できる |
 
-依存順は `P0 → P1 → P2 → P3 → P4` とする。P2の出力契約が確定する前にruntimeへ仮画像を入れない。
+### P5: animation asset生成
+
+| ID | 作業 | 完了条件 |
+|---|---|---|
+| AP-19 | 9つのcharacter frame IDと共通recipeを定義する | 原画追加なしで計40出力のplanが確定する |
+| AP-20 | body shear、ponytail warp、blink warpをbuilderへ実装する | left/center/rightとopen/half/closedのRGBA差を検査できる |
+| AP-21 | 共通FC paletteと40出力contractへ検査を更新する | 全frameと背景を含むFC色数が25以内になる |
+
+### P6: title animation runtime
+
+| ID | 作業 | 完了条件 |
+|---|---|---|
+| AP-22 | render manifestを40 textureへ拡張する | generation/pose/eyesから一意なURLを引ける |
+| AP-23 | 世代profileに沿うsway、ponytail、blink stateを実装する | FC/SFCはrotation 0、PS1/PS2だけTweenになる |
+| AP-24 | GameModuleのtexture選択とテストを更新する | transition中も両世代が正しいframeを描画する |
+
+### P7: generation-aware BGM
+
+| ID | 作業 | 完了条件 |
+|---|---|---|
+| AP-25 | 120 BPMのタイトルScoreと能力ベース編曲を実装する | 4世代で旋律・拍・loop長を共有する |
+| AP-26 | generation audio service、unlock、fallbackを起動へ統合する | browser制限下でも起動し、操作後は音が鳴る |
+| AP-27 | 世代切替時のprofile/arrangement追従をテストする | tickをresetせず音源と編曲が切り替わる |
+
+### P8: 統合検証と完了記録
+
+| ID | 作業 | 完了条件 |
+|---|---|---|
+| AP-28 | sample verifyとroot verifyを実行する | asset/check/lint/test/build/boundaryが成功する |
+| AP-29 | 4世代captureとREADMEを更新する | 新frameの表示を目視確認し再現手順を残す |
+| AP-30 | 本書の状態と検証結果を更新する | 全追加要件とcommitの対応を追跡できる |
+
+追加実装の依存順は `計画更新 → P5 → P6 → P7 → P8` とする。生成済みPNGを手修正せず、
+P5のasset contractが確定してからruntimeのtexture参照を切り替える。
 
 ## 10. package scripts
 
@@ -477,10 +586,10 @@ npm run verify
 ```sh
 console-chaos-assets build \
   --config apps/asset-pipeline-sample/tools/art.config.mjs \
-  --only character \
+  --only character-center-open \
   --generation FC \
   --out-dir apps/asset-pipeline-sample/build/art-trial \
-  --set character.tone.FC.saturation=1.1
+  --set tone.FC.saturation=1.1
 ```
 
 ## 12. リスクと対策
@@ -491,9 +600,14 @@ console-chaos-assets build \
 | 現行character画像の背景が切り抜けない | 参照編集で均一背景または透過の上半身原画を1枚作り、世代別編集は行わない |
 | FCで顔の情報が消える | 16色を髪・肌・目・衣装の明度差へ優先配分し、試行はrecipe overrideで行う |
 | FCの画面全体色数が25色を超える | ロゴ4色＋キャラクター16色を上限とし、背景は単色に限定する |
+| frameごとの減色結果でFCの色集合が増える | canonical frameから共通paletteを作り9frameへ適用する |
+| 局所warpで髪や目の輪郭に穴が開く | inverse mappingで必ず出力画素から入力をsampleし、boundsと差分を自動検査する |
+| 目パチが顔全体の変形に見える | 2つの楕円領域だけを縦方向へwarpし、open/half/closedを目視比較する |
 | 回転で腰が横滑りする | 下端中央pivotからsprite中心を逆算し、座標不変をunit testする |
 | transitionで片方の世代画像が消える | 4世代commandを常時frameへ積み、generation maskでrendererに選ばせる |
 | PS1/PS2もコマ送りに見える | profileの30/60 Hzへ時刻を量子化した後にTweenし、captureで連続性を確認する |
+| autoplay制限で無音になる | 最初のpointer/keyboard操作でunlockし、失敗時は画面を止めずnull audioへfallbackする |
+| 世代切替でBGMが曲頭へ戻る | profileとarrangementを分離し、切替時は `useScore()` だけを呼ぶ |
 | asset pipelineがbrowser bundleへ混入する | src/tool tsconfig分離、boundary検査、build output検査を行う |
 | 生成済みPNGが手修正される | `assets:check` とdeterministic manifestをCI必須にする |
 
@@ -502,10 +616,12 @@ console-chaos-assets build \
 次のすべてを満たした時点で完了とする。
 
 - Image Gen由来の2つの原画とprovenanceが存在する
-- 原画から `@console-chaos/asset-pipeline` だけで8つの世代別PNGを生成できる
+- 原画から `@console-chaos/asset-pipeline` だけで40個の世代別PNGを生成できる
 - 生成済みPNGを直接編集していないことを `assets:check` で確認できる
 - 4世代のロゴ、キャラクター、背景、animationが§4の完成条件を満たす
-- 第1・第2世代は離散パターン、第3・第4世代はTweenとして目視で区別できる
+- 第1・第2世代は姿勢assetの離散パターン、第3・第4世代はruntime Tweenとして目視で区別できる
+- 4世代すべてでポニーテール揺れと目パチを確認できる
+- 120 BPMの同一BGMが世代別の音源・同時発音数・編曲で再生され、切替時も拍位置を保つ
 - direct/cycle入力、transition、reduced-motion、disposeが動作する
 - asset、unit、lifecycle、build、boundaryの全検査が成功する
 - 4世代captureと実行手順が保存される
