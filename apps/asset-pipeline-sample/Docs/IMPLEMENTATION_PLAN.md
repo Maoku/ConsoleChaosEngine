@@ -4,21 +4,27 @@
 
 作成日: 2026-08-16
 
-状態: 追加要件を実装・検証済み（2026-08-16）
+状態: ImageGen変換元frameへの修正計画を策定済み（実装修正は未着手、2026-08-16）
+
+> **適合性メモ:** 2026-08-16に完了したP5/P6は、単一の `character-upper.png` をコードで
+> shear / warpして揺らしと目パチを生成している。この経路は「ImageGenでアニメーション状態ごとの
+> 変換元画像を `art/source` に用意し、そこから各世代へ変換する」という本サンプルの要件を満たさない。
+> 現行生成物は暫定扱いとし、P9〜P12で置き換える。
 
 ## 1. 目的
 
-`@console-chaos/asset-pipeline` の最小かつ実用的なサンプルとして、1つの原画から
-`FC / SFC / PS1 / PS2` の能力差に沿った画像を生成し、Console Chaos Engine 上のタイトル画面で表示する。
+`@console-chaos/asset-pipeline` の最小かつ実用的なサンプルとして、ImageGenで用意した
+世代非依存のアニメーション変換元画像から `FC / SFC / PS1 / PS2` の能力差に沿った画像を生成し、
+Console Chaos Engine 上のタイトル画面で表示する。
 
 完成物は次を同時に示す。
 
-- Image Gen で用意した世代非依存の原画を入力にする
+- ImageGenで用意した世代非依存のロゴと、姿勢・ポニーテール・目の状態が描かれたframe原画を入力にする
 - 世代別画像は手作業せず、必ず `@console-chaos/asset-pipeline` から生成する
 - asset pipeline は Node.js の build-time tool に閉じ、ブラウザコードから import しない
 - Engine の世代プロファイル、世代切替、世代別 renderer を利用する
-- 第1・第2世代は原画から生成した離散姿勢画像、第3・第4世代は Tween でキャラクターを左右へ揺らす
-- 同じ原画から生成したframeでポニーテール揺れと目パチを表現する
+- 第1・第2世代はImageGen由来の離散姿勢画像、第3・第4世代は同じkey poseとTweenで左右へ揺らす
+- ポニーテール揺れと目パチはコード変形ではなく、ImageGen由来のframe差分で表現する
 - 同一の楽曲データをEngineの世代別音源・同時発音数へ編曲し、体揺れと拍を同期する
 
 ## 2. スコープ
@@ -27,8 +33,8 @@
 
 - 1画面だけのタイトル画面
 - `Console Chaos Engine` のタイトルロゴ
-- [character.png](character.png) のキャラクターを元にした上半身画像
-- ロゴと、姿勢3種×目3種のキャラクターframeそれぞれの4世代出力
+- [character.png](character.png) のキャラクターを元にした上半身のImageGen変換元frame
+- ロゴ1種と、姿勢3種×目3種のキャラクター変換元frameから作る4世代出力
 - FC/SFCの画像パターン切替、PS1/PS2のTween
 - ポニーテール揺れと目パチアニメーション
 - 世代別の音声能力に沿ったタイトルBGM
@@ -39,7 +45,8 @@
 ### 2.2 スコープ外
 
 - ゲーム本編、タイトル決定後の遷移、効果音
-- 世代ごとに別の構図・表情・ポーズをAI生成すること
+- FC / SFC / PS1 / PS2専用の完成画像をImageGenで直接生成すること
+- 変換元frameをコードのshear / warpで代替すること
 - glTF、動画、音声の変換
 - asset pipeline 共通パッケージへのゲーム固有機能の追加
 - DOM/CSSだけでロゴを代替すること
@@ -47,32 +54,43 @@
 
 ## 3. 先に固定する設計判断
 
-### 3.1 原画は素材ごとに1枚だけ
+### 3.1 ImageGen変換元frameをasset IDごとに用意する
 
-原画は次の2枚だけを使用する。
+pipelineが実際に入力する原画は次の10枚とする。
 
-| 素材ID | 原画 | 用途 |
+| 素材ID | 変換元画像 | 用途 |
 |---|---|---|
 | `title-logo` | `art/source/title-logo.png` | 正確に `Console Chaos Engine` と読める透過ロゴ |
-| `character` | `art/source/character-upper.png` | `Docs/character.png` と同じキャラクターの上半身透過画像 |
+| `character-{left\|center\|right}-{open\|half\|closed}` | `art/source/character-{left\|center\|right}-{open\|half\|closed}.png` | 3つの揺らし・ポニーテール状態と3つの目状態を組み合わせた9枚の透過key pose |
 
-どちらも Image Gen で作成する。`character-upper.png` は新しいキャラクターを生成するのではなく、
-`Docs/character.png` を参照画像にした編集として、顔、髪、猫耳、衣装、配色を維持したまま上半身構図へ整える。
+`art/source/character-upper.png` は同一キャラクターを維持するための参照anchorとして残すが、
+修正後のcharacter assetを直接変換する入力にはしない。既存ファイルを上書きせず、9枚を新しい兄弟fileとして追加する。
 
-現行の `Docs/character.png` は 1080×1920、8-bit RGB、不透明で、白い中央部と左右のカーテンを含む。
-背景が均一キー色ではないため、`keyOut()` の閾値調整だけで直接切り抜く入力にはしない。
-Image Gen の編集結果を透過PNG、または被写体と重ならない均一な単色背景のPNGとして出力し、
-後者の場合だけ `keyOut()` と `cropToOpaque()` を asset pipeline の builder 内で適用する。
+9枚はbuilt-in ImageGenのidentity-preserve編集で作成する。最初に `Docs/character.png` と
+`art/source/character-upper.png` を `view_image` で目視し、参照画像の役割を
+「character identity / composition anchor」と明記する。その後、次の順で
+1 asset variantにつき独立したImageGen callを1回以上行い、複数variantを1回のbatch生成で代替しない。
 
-Image Gen のプロンプト、参照画像、採用理由、出力ファイルを `Docs/ASSET_PROVENANCE.md` に記録する。
-AI出力はあくまで世代非依存の原画であり、`fc` などの世代名を含む画像をImage Genから直接作らない。
+1. `left / center / right` の開眼key poseを個別に生成する
+2. 各開眼key poseを参照し、姿勢、髪、衣装、canvas配置を変えず `half / closed` を個別に生成する
+3. 各採用出力を生成先から `art/source` へ保存し、採否を目視確認する。不採用出力や既存assetを上書きしない
+
+全callで、同一人物、猫耳、髪色、ポニーテール、顔、衣装、配色、上半身構図、canvas寸法、
+下端中央pivot、透明背景を不変条件として繰り返す。変えてよいのは指定した体の揺れ、
+それに遅れて動くポニーテール、目の開きだけとする。左・中央・右は世代名ではなく、
+全世代で共有するanimation key poseである。
+
+ImageGenの最終prompt、参照画像とその役割、出力file、採用理由、却下理由、SHA-256、
+canvas寸法、alpha有無を `Docs/ASSET_PROVENANCE.md` に記録する。`fc` などの世代名やpixel-art化を
+promptへ含めず、世代差は必ずasset pipelineで付与する。ImageGenが真正のalphaを返さなかった場合は、
+被写体と重ならない均一key背景かを記録し、その場合だけpipelineの `keyOut()` を使用する。
 
 ### 3.2 世代別画像の唯一の生成経路
 
 `tools/art.config.mjs` を変換定義の正本とし、次の経路だけを許可する。
 
 ```text
-Image Gen原画
+ImageGen変換元frame（asset IDごと）
   -> @console-chaos/asset-pipeline
      -> crop / matte / resample
      -> tone / palette / RGB555 / alpha量子化
@@ -86,36 +104,44 @@ Image Gen原画
 
 ### 3.3 アニメーションはruntime責務
 
-左右への揺れは世代の能力に応じて2つの経路へ分ける。いずれも `character-upper.png` だけを入力とし、
-世代別frameをImage Genや画像編集ソフトで直接制作しない。
+左右への揺れは世代の能力に応じて2つの経路へ分ける。どちらも同じ9枚のImageGen変換元frameを使い、
+世代別frameをImageGenや画像編集ソフトで直接制作しない。
 
 | 世代 | 動作 | サンプリング | 角度 |
 |---|---|---:|---:|
 | FC | pipelineで生成した `左 → 中央 → 右 → 中央` の画像パターン切替。runtime回転なし | profileの6 Hz | 見かけ±5°相当 |
 | SFC | pipelineで生成した `左 → 中央 → 右 → 中央` の画像パターン切替。runtime回転なし | profileの12 Hz | 見かけ±5°相当 |
-| PS1 | 左右の目標角間を ease-in-out Tween | profileの30 Hz | ±5° |
-| PS2 | 左右の目標角間を ease-in-out Tween | profileの60 Hz | ±5° |
+| PS1 | ImageGen key poseを使い、poseに焼き込まれた角度を差し引いたresidualをease-in-out Tween | profileの30 Hz | 合成結果±5° |
+| PS2 | ImageGen key poseを使い、poseに焼き込まれた角度を差し引いたresidualをease-in-out Tween | profileの60 Hz | 合成結果±5° |
 
 1往復は1秒とし、全世代で拍の位置は共有する。PS1/PS2だけ周期や振幅を変えるのではなく、
 同じ位相に対する補間方法とサンプリング密度だけを変える。
 
-FC/SFCの姿勢frameは下端を固定した水平方向のshearで生成し、角度を変えた1枚絵に見えない輪郭差を持たせる。
+`left / center / right` は、下端中央を揃えつつ肩、髪、ポニーテールの輪郭が実際に異なるImageGen key poseとする。
+コードでshearや局所warpを作ってはならない。各poseに見かけ上焼き込まれた基準角を
+`authoredPoseAngle`（初期値 `-5° / 0° / +5°`）として宣言し、PS1/PS2のruntime回転は
+`tweenTargetAngle - authoredPoseAngle` のresidualだけを適用する。これによりsource poseとTweenの二重傾斜を防ぐ。
+
 PS1/PS2の回転中心は画像中央ではなく上半身の下端中央とする。`SpriteCommand` 自体は中央回転なので、
 下端中央をpivotとして回したときのsprite中心を毎frame計算し、腰が横滑りしないようにする。
+実装時は実画像を目視して `authoredPoseAngle` を調整し、最終的な端点が±5°相当を超えないことをcaptureで確認する。
 
 ### 3.4 ポニーテールと目パチもpipeline出力にする
 
-キャラクターframe IDは `character-{left|center|right}-{open|half|closed}` の9種とする。
+キャラクターframe IDは `character-{left|center|right}-{open|half|closed}` の9種とし、
+各IDを同名のImageGen変換元PNGへ1対1で対応させる。
 
-- `left / center / right` はポニーテール領域へ滑らかな局所warpを適用する
-- FC/SFCでは同じframeへ体の離散姿勢も焼き込む
-- PS1/PS2では体を直立のままにし、ポニーテール差分だけを焼き込む
-- `open / half / closed` は両目領域の縦方向warpで生成し、手描きの世代別frameを追加しない
+- `left / center / right` は体の揺れと、体に対して遅れて見えるポニーテールをImageGen出力内に描く
+- `open / half / closed` はImageGenで描き分け、コードの縦方向warpで代替しない
+- 9枚は同じcanvas、crop、下端pivotを持ち、frame切替時に全体が跳ねないようにする
+- 顔、猫耳、前髪、衣装、手、輪郭のうち指定箇所以外が変化した出力は採用しない
+- FC / SFC / PS1 / PS2はすべて同じ9枚を入力とし、世代ごとのImageGen画像を追加しない
 - blink周期は3秒とし、FCは開閉2frame、SFC以降は半閉じを含むframe列をprofileのanimation Hzでsampleする
 - reduced motionでは体とポニーテールを中央に固定するが、目パチは停止しない
 
-9種は同じsource hashと共通recipeを持つ。FCの全frameは共通の16色paletteを使い、frame切替で
-画面全体の色数が増えないようにする。
+9種はそれぞれ異なるsource hashと同じ変換recipeを持つ。FCの全frameは共通の16色paletteを使い、frame切替で
+画面全体の色数が増えないようにする。source画像間の差はImageGen由来、世代出力間の差はpipeline由来として
+manifestとprovenanceの両方から追跡できるようにする。
 
 ### 3.5 BGMは同一Scoreを世代能力で編曲する
 
@@ -160,7 +186,8 @@ Web Audioを作れない環境では `createNullAudioService()` へfallbackす�
 
 ### 4.3 asset
 
-- 原画2枚からロゴ4枚とキャラクター36枚、計40枚の世代別PNGが生成される
+- production入力10枚（ロゴ1枚＋character key pose 9枚）から計40枚の世代別PNGが生成される
+- 9つのcharacter asset IDがそれぞれ同名のImageGen変換元PNGをsourceとして持つ
 - 全出力が `asset-manifest.json` に source hash、recipe hash、世代、寸法、色数、alpha mode とともに記録される
 - FCのロゴと全キャラクターframeの色集合が20色以下で、単色背景を加えても25色以内に収まる
 - FC出力は固定54色だけ、SFC出力はRGB555、FC/SFC/PS1はbinary alphaになる
@@ -199,7 +226,16 @@ apps/asset-pipeline-sample/
   art/
     source/
       title-logo.png
-      character-upper.png
+      character-upper.png  # identity / composition参照anchor（変換入力外）
+      character-left-open.png
+      character-left-half.png
+      character-left-closed.png
+      character-center-open.png
+      character-center-half.png
+      character-center-closed.png
+      character-right-open.png
+      character-right-half.png
+      character-right-closed.png
   public/
     assets/generated/
       fc/title-logo.png
@@ -288,20 +324,22 @@ Engineの `HARDWARE_GENERATION_PROFILES` からpalette mode、palette block、ti
 
 ### 6.3 builderの処理順
 
-ロゴとキャラクターで同じ共通処理を使い、意味の違うcrop/matteとframe変形だけを素材IDで選ぶ。
+ロゴとキャラクターで同じ共通処理を使い、意味の違うcrop/matteだけを素材IDで選ぶ。
 
 1. 入力PNGをdecodeする
 2. 必要な場合だけ `keyOut()` で均一背景を透明化する
-3. `cropToOpaque()` とpaddingで正規化する
-4. 出力と同じ縦横比へ中央cropする
-5. `resample()` で世代別寸法へ縮小する
-6. frame IDから局所的なポニーテールwarpと目の縦方向warpを適用する
-7. FC/SFCだけ下端固定の離散姿勢shearを適用する
-8. `applyTone()` でrecipeの階調と彩度を適用する
-9. canonicalな中央・開眼frameから共通paletteを作り、同じ世代の全frameへ適用する
-10. `applyPalette()` でpalette、ディザ、alpha thresholdを適用する
-11. `BuiltAsset.paletteCount` と画像をrunnerへ返す
-12. runnerの共通検査を通してPNGとmanifestを書き出す
+3. 9つのcharacter sourceが同じcanvas寸法、下端pivot、許容boundsに入ることを検査する
+4. 共通のcrop矩形とpaddingで正規化する。frameごとの自動cropで中心をずらさない
+5. 出力と同じ縦横比へ中央cropする
+6. `resample()` で世代別寸法へ縮小する
+7. `applyTone()` でrecipeの階調と彩度を適用する
+8. canonicalな中央・開眼frameを基準に共通paletteを作り、同じ世代の全frameへ適用する
+9. `applyPalette()` でpalette、ディザ、alpha thresholdを適用する
+10. `BuiltAsset.paletteCount` と画像をrunnerへ返す
+11. runnerの共通検査を通してPNGとmanifestを書き出す
+
+builderには姿勢、ポニーテール、目を作る `motionWarp`、`blinkWarp`、shear、同等のpixel変形処理を置かない。
+builderの責務はImageGen変換元frameに同じ世代変換を適用することに限定する。
 
 縦横比調整、palette resolverなどゲーム固有の薄い処理は `art.config.mjs` に置く。
 再利用先が1つしかない処理を `packages/asset-pipeline` へ追加しない。
@@ -358,6 +396,7 @@ canvasの表示サイズはCSSで縦横比を維持する。描画bufferは外�
 titleAnimationFrame(profile, timeSeconds, reducedMotion): {
   angle: number;
   pose: 'left' | 'center' | 'right';
+  authoredPoseAngle: number;
   eyes: 'open' | 'half' | 'closed';
 }
 pivotedSpriteCenter(pivot, size, angle): readonly [number, number]
@@ -368,15 +407,17 @@ pivotedSpriteCenter(pivot, size, angle): readonly [number, number]
 - `mode: 'step' | 'tween'`
 - `sampleHz`（profileの `video.animationHz` と一致）
 - `amplitudeRadians`
+- `authoredPoseAngle`
 - `cycleSeconds`
 - step patternまたはeasing
 - blink frame sequence
 
 Tweenは左右の端で速度が0になる `smoothstep` または同等のease-in-outを使う。
 PS1は1/30秒、PS2は1/60秒へ時刻を量子化してから補間する。
-低世代は補間値を計算せず `rotation: 0` のまま、宣言した画像パターンを直接返す。
-FC/SFCはasset内で体と逆方向へポニーテールをwarpし、PS1/PS2はtexture選択を体のTweenから
-1 sample遅らせる。体と髪が一体の板として回転しているだけに見えない動きを作る。
+低世代は補間値を計算せず `rotation: 0` のまま、ImageGen画像パターンを直接返す。
+PS1/PS2はImageGen key poseを選び、runtimeへ渡す角度を
+`tweenTargetAngle - authoredPoseAngle` とする。key pose内の揺れを消さず、剛体回転だけが二重にならないようにする。
+ポニーテールの遅れは画像内のkey pose差として持たせ、runtimeはframe順序だけを制御する。
 
 ### 7.4 screen-space配置
 
@@ -400,15 +441,18 @@ FC/SFCはasset内で体と逆方向へポニーテールをwarpし、PS1/PS2はt
 - `console-chaos-assets check` が差分なしで成功する
 - asset IDは `title-logo` と9つの `character-*` だけである
 - 各assetに4世代の出力があり、計40枚である
-- manifestのsource pathが `art/source` の2枚だけを指す
+- manifestのsource pathが `art/source/title-logo.png` と9つの同名character sourceを指す
+- 9つのcharacter asset IDとsource pathが1対1であり、`character-upper.png` を変換入力として再利用しない
+- 9つのcharacter source hashが一致せず、provenanceのSHA-256とmanifestのsource hashが対応する
 - 寸法、visible color count、palette mode、alpha modeが§6.1の契約と一致する
 - FCの全可視RGBがEngineのmaster paletteに所属する
 - SFCの全可視RGBがRGB555で表現できる
 - FCのロゴと全キャラクターframeの色集合の和が20色以下である
 - 透明画素のRGBがclear blackへ正規化されている
 - 全character frameのopaque boundsが空でなく、意図しない四辺の切れがない
-- FC/SFCのleft/center/rightがdecode後RGBAで異なる
-- open/half/closedがdecode後RGBAで異なる
+- sourceとFC/SFC出力のleft/center/rightがdecode後RGBAで異なる
+- sourceと全世代出力のopen/half/closedがdecode後RGBAで異なる
+- `art.config.mjs` に姿勢、ポニーテール、目を合成するwarp / shear処理が残っていない
 - 2回のbuildで2回目に書き込みが発生せず、Git差分も増えない
 
 ### 8.2 unit test
@@ -417,10 +461,11 @@ FC/SFCはasset内で体と逆方向へポニーテールをwarpし、PS1/PS2はt
 
 - FC/SFCのruntime角度が常に0°である
 - FC/SFCのposeが `left / center / right` の宣言パターンだけを取り、sample区間内で変化しない
-- PS1/PS2は端点で正確に±5°となり、中間で単調に補間する
+- PS1/PS2はsourceの `authoredPoseAngle` とruntime residualの合成結果が端点で±5°となり、中間で単調に補間する
+- pose切替時にruntime residualが焼き込み角を相殺し、二重傾斜や角度の不連続を作らない
 - 同じ時刻のPS1/PS2が同じ方向を向く
 - blinkが3秒周期で `open / half / closed` の世代別frame列を取る
-- ポニーテールposeが体に対して1 sample遅れる
+- ポニーテールの遅れを含むImageGen pose frameが宣言順で選択される
 - pivot補正後も画像下端中央が1px以内で固定される
 - reduced-motionでは全世代0°になる
 
@@ -458,15 +503,16 @@ FC/SFCはasset内で体と逆方向へポニーテールをwarpし、PS1/PS2はt
 | ロゴ可読性 | 固定paletteでも全文を読める | RGB555で色崩れなし | nearestで輪郭が明瞭 | soft edgeが滲まない |
 | 顔 | 目・口・猫耳を識別できる | 髪と肌が分離する | 細線がノイズ化しない | 原画に最も近い |
 | alpha | 白縁・色縁が目立たない | 同左 | 同左 | soft edgeが背景となじむ |
-| motion | 明確なコマ切替 | 明確なコマ切替 | 30 Hz Tween | 60 Hz Tween |
+| motion | ImageGen key poseの明確なコマ切替 | ImageGen key poseの明確なコマ切替 | key pose＋30 Hz residual Tween | key pose＋60 Hz residual Tween |
 | layout | 下端pivot固定 | 同左 | 同左 | 同左 |
 
 白背景と暗背景の両方で一時確認し、haloが暗背景でだけ見つかる問題を防ぐ。
 
 ## 9. 実装フェーズ
 
-P0〜P4は初回実装で完了済み。PLAN.mdの2026-08-16追加要件をP5〜P8として実装し、
-各フェーズを独立したcommitにする。
+P0〜P8は履歴として完了済みだが、P5/P6のsource設計は本書冒頭の適合性メモにより置換対象である。
+修正はP9〜P12で行い、各フェーズを独立したcommitにする。P9のImageGen出力を受け入れる前にP10へ進まず、
+生成済みPNGや既存sourceを上書きしない。
 
 ### P0: 原画と契約の固定
 
@@ -511,12 +557,12 @@ P0〜P4は初回実装で完了済み。PLAN.mdの2026-08-16追加要件をP5〜
 | AP-17 | root lint/test/build/verifyへsampleを追加する | root `npm run verify` が成功 |
 | AP-18 | READMEまたは本書へ実行手順と結果を追記する | 新規利用者が生成、起動、検査を再現できる |
 
-### P5: animation asset生成
+### P5: animation asset生成（完了済み・P9/P10で置換）
 
 | ID | 作業 | 完了条件 |
 |---|---|---|
-| AP-19 | 9つのcharacter frame IDと共通recipeを定義する | 原画追加なしで計40出力のplanが確定する |
-| AP-20 | body shear、ponytail warp、blink warpをbuilderへ実装する | left/center/rightとopen/half/closedのRGBA差を検査できる |
+| AP-19 | 9つのcharacter frame IDと共通recipeを定義する | 旧設計として計40出力を作成済み。source経路は不適合 |
+| AP-20 | body shear、ponytail warp、blink warpをbuilderへ実装する | 旧実装。P10で削除する |
 | AP-21 | 共通FC paletteと40出力contractへ検査を更新する | 全frameと背景を含むFC色数が25以内になる |
 
 ### P6: title animation runtime
@@ -543,8 +589,47 @@ P0〜P4は初回実装で完了済み。PLAN.mdの2026-08-16追加要件をP5〜
 | AP-29 | 4世代captureとREADMEを更新する | 新frameの表示を目視確認し再現手順を残す |
 | AP-30 | 本書の状態と検証結果を更新する | 全追加要件とcommitの対応を追跡できる |
 
-追加実装の依存順は `計画更新 → P5 → P6 → P7 → P8` とする。生成済みPNGを手修正せず、
-P5のasset contractが確定してからruntimeのtexture参照を切り替える。
+### P9: ImageGen animation source set
+
+| ID | 作業 | 完了条件 |
+|---|---|---|
+| AP-31 | `Docs/character.png` と `art/source/character-upper.png` を `view_image` で確認し、identity-preserve prompt、不変条件、pose定義を固定する | 参照画像の役割、変更可／不可、canvas、pivot、背景、命名がprovenance草稿にある |
+| AP-32 | built-in ImageGenを1 variant 1 call以上で実行し、開眼3poseからhalf/closedを派生させる | 9つの異なるPNGが `art/source/character-{pose}-{eyes}.png` に保存され、既存fileを上書きしていない |
+| AP-33 | 9枚を目視選定し、prompt、参照、採否、SHA-256、寸法、alphaを記録する | 同一人物・衣装・構図・pivotが維持され、指定した姿勢、髪、目以外のdriftがない |
+
+P9 commit: `feat(asset-sample): add imagegen animation source frames`
+
+### P10: pipeline source migration
+
+| ID | 作業 | 完了条件 |
+|---|---|---|
+| AP-34 | 9つのcharacter asset IDを同名sourceへ1対1で割り当てる | manifestで9つのsource path / hashを追跡でき、`character-upper.png` は変換入力外になる |
+| AP-35 | `motionWarp`、`blinkWarp`、body shearと同等処理を削除し、共通crop / tone / palette変換だけにする | animation差分がsourceに存在し、builderが世代変換だけを行う |
+| AP-36 | 共通canvas / pivot、source差分、共有FC palette、40出力、決定性のcontractを更新する | `assets:build` / `assets:check` / `check:assets`が成功し、再buildのwritten件数が0 |
+
+P10 commit: `refactor(asset-sample): derive animation assets from source frames`
+
+### P11: authored pose対応runtime
+
+| ID | 作業 | 完了条件 |
+|---|---|---|
+| AP-37 | poseごとの `authoredPoseAngle` とPS1/PS2のresidual Tweenを実装する | FC/SFCはrotation 0、PS1/PS2はsource姿勢と合成して±5°相当を超えない |
+| AP-38 | animation / render / lifecycle testをsource frame semanticsへ更新する | pose切替、blink、reduced motion、transition、pivot、角度連続性を自動検査できる |
+
+P11 commit: `fix(asset-sample): align tween with authored motion frames`
+
+### P12: integration verification and documentation
+
+| ID | 作業 | 完了条件 |
+|---|---|---|
+| AP-39 | 4世代captureを同じ位相で再取得し、原画9枚と各世代の揺れ・目パチを目視比較する | identity drift、frame jump、二重傾斜、halo、欠けがなく、全世代でsource差分を確認できる |
+| AP-40 | README、provenance、本書の状態・結果・commit対応を更新する | ImageGen → `art/source` → pipeline → runtimeの再現手順が一致する |
+| AP-41 | sample verifyとroot verifyを実行する | asset/check/lint/test/build/boundaryを含む全検査が成功する |
+
+P12 commit: `docs(asset-sample): verify imagegen source-frame workflow`
+
+修正の依存順は `計画更新 → P9 → P10 → P11 → P12` とする。各commitの直前にそのフェーズの検査を実行し、
+次フェーズの変更を混在させない。ImageGenによるsource生成はP9だけ、世代変換はP10だけで行う。
 
 ## 10. package scripts
 
@@ -598,13 +683,17 @@ console-chaos-assets build \
 | リスク | 対策 |
 |---|---|
 | Image Genのロゴ文字が誤字になる | 文字列を目視で1文字ずつ照合し、正確な出力だけを採用する |
-| 現行character画像の背景が切り抜けない | 参照編集で均一背景または透過の上半身原画を1枚作り、世代別編集は行わない |
+| ImageGen call間で顔・衣装・構図がdriftする | 開眼3poseをanchorにhalf/closedを個別編集し、全promptでidentityと不変条件を反復する。指定外の差がある出力は採用しない |
+| 9枚のcanvas / pivotがずれてframe切替で跳ねる | 同一canvasと下端pivotをpromptで固定し、pipeline前のsource bounds検査と同位相captureで確認する |
+| ImageGen出力に真正のalphaがない | 透明背景を明示する。失敗時だけ被写体と重ならない均一key背景を採用し、provenanceへ記録して `keyOut()` する |
+| ImageGen出力がworkspace外にだけ残る | 採用fileを必ず `art/source` へ保存し、provenanceのpathとSHA-256を検査する |
+| 既存sourceや採用assetを上書きする | 新規の意味的file名を使い、不採用出力は別管理する。上書きは行わない |
 | FCで顔の情報が消える | 16色を髪・肌・目・衣装の明度差へ優先配分し、試行はrecipe overrideで行う |
 | FCの画面全体色数が25色を超える | ロゴ4色＋キャラクター16色を上限とし、背景は単色に限定する |
 | frameごとの減色結果でFCの色集合が増える | canonical frameから共通paletteを作り9frameへ適用する |
-| 局所warpで髪や目の輪郭に穴が開く | inverse mappingで必ず出力画素から入力をsampleし、boundsと差分を自動検査する |
-| 目パチが顔全体の変形に見える | 2つの楕円領域だけを縦方向へwarpし、open/half/closedを目視比較する |
+| 目パチで顔全体が変化する | 各poseのopen画像を直接参照してhalf/closedを生成し、目周辺以外の差を目視比較する |
 | 回転で腰が横滑りする | 下端中央pivotからsprite中心を逆算し、座標不変をunit testする |
+| sourceの姿勢とPS1/PS2回転が二重になる | `authoredPoseAngle` を宣言し、runtimeは目標角との差分だけを回転する。端点角と切替連続性をtest / captureで確認する |
 | transitionで片方の世代画像が消える | 4世代commandを常時frameへ積み、generation maskでrendererに選ばせる |
 | PS1/PS2もコマ送りに見える | profileの30/60 Hzへ時刻を量子化した後にTweenし、captureで連続性を確認する |
 | autoplay制限で無音になる | 最初のpointer/keyboard操作でunlockし、失敗時は画面を止めずnull audioへfallbackする |
@@ -616,11 +705,13 @@ console-chaos-assets build \
 
 次のすべてを満たした時点で完了とする。
 
-- Image Gen由来の2つの原画とprovenanceが存在する
-- 原画から `@console-chaos/asset-pipeline` だけで40個の世代別PNGを生成できる
+- ImageGen由来のproduction入力10枚（ロゴ1＋character 9）と参照anchor、完全なprovenanceが存在する
+- 9つのcharacter asset IDが同名の異なるImageGen sourceへ1対1で対応する
+- 姿勢、ポニーテール、目パチを作るコードwarp / shearがbuilderに存在しない
+- 10枚のproduction入力から `@console-chaos/asset-pipeline` だけで40個の世代別PNGを生成できる
 - 生成済みPNGを直接編集していないことを `assets:check` で確認できる
 - 4世代のロゴ、キャラクター、背景、animationが§4の完成条件を満たす
-- 第1・第2世代は姿勢assetの離散パターン、第3・第4世代はruntime Tweenとして目視で区別できる
+- 第1・第2世代はImageGen姿勢assetの離散パターン、第3・第4世代は同じkey pose＋residual Tweenとして目視で区別できる
 - 4世代すべてでポニーテール揺れと目パチを確認できる
 - 120 BPMの同一BGMが世代別の音源・同時発音数・編曲で再生され、切替時も拍位置を保つ
 - direct/cycle入力、transition、reduced-motion、disposeが動作する
@@ -628,19 +719,20 @@ console-chaos-assets build \
 - 4世代captureと実行手順が保存される
 - root `npm run verify` が成功する
 
-## 14. 実装結果（2026-08-16）
+## 14. 旧実装結果と修正判定（2026-08-16）
 
-追加要件のP5〜P8を完了した。
+追加要件のP5〜P8は一度完了したが、P5/P6のanimation source経路は不適合と判定した。
+次のcommitは履歴として保持し、P9〜P12で生成物と実装を置き換える。
 
 | フェーズ | commit | 結果 |
 |---|---|---|
 | 計画更新 | `6a28d86` | PLAN差分を40出力・animation・audio設計へ反映 |
-| P5 | `24a1c74` | 2原画からロゴ4枚＋character 36枚を決定的生成 |
-| P6 | `3d4a854` | FC/SFC asset pose、PS1/PS2 Tween、ponytail、blinkをruntimeへ統合 |
+| P5 | `24a1c74` | 単一character原画をコード変形して36枚を生成。**source要件不適合、P9/P10で置換対象** |
+| P6 | `3d4a854` | 旧warp frameとTweenを統合。**P11でImageGen key pose semanticsへ修正対象** |
 | P7 | `944068f` | 120 BPM Score、能力ベース編曲、世代別音源、audio unlockを統合 |
 | P8 | `docs(asset-sample): complete animated title integration` | capture、README、本書、全体検証を更新 |
 
-検証結果:
+旧実装の検証結果（修正後の受入結果としては扱わない）:
 
 - `npm run verify -w @console-chaos/asset-pipeline-sample`: 成功
 - asset contract: 40 outputs、FCのロゴ＋全character frameの共有色17色
@@ -649,3 +741,13 @@ console-chaos-assets build \
 - `npm run verify`: 成功（Engine 46、asset pipeline 25、sample 18、Console Chaos 415、E2E 2 testsを含む）
 - `Docs/captures/title-{fc|sfc|ps1|ps2}.png`: 1280×720、`captureTime=0.5` で再取得
 - ブラウザ目視: 4世代のロゴ、姿勢、layout、世代別描画を確認。console warning/errorなし
+
+修正計画の現在地:
+
+| 項目 | 状態 |
+|---|---|
+| 計画更新 | 完了。本書にImageGen source set、pipeline移行、runtime補正、検証を定義 |
+| P9 ImageGen source set | 未着手 |
+| P10 pipeline source migration | 未着手 |
+| P11 authored pose runtime | 未着手 |
+| P12 integration verification | 未着手 |
