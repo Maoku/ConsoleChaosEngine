@@ -1,10 +1,19 @@
 # Console Chaos Engine
 
-4つのコンソール世代表現をゲーム内容から分離した TypeScript/Vite workspace です。
+FC/SFC/PS1/PS2 の4つのコンソール世代表現を提供するエンジン
 
-- `packages/engine`: 固定ティック、generation、ActionMap、RenderFrame、audio、assets、physics、scene、web host
+ゲームの状態は単一で共有、4つの世代の出力を切り替えて遊ぶなどができます。
+厳密なハード制約に準拠するというよりは世代の表現を擬似体験するためのものです。
+
+元々は、4つのコンソール世代表現を渡り歩くことで進められる謎解きアクションを作らせてみようというところからスタートし
+そのゲーム実装から再利用のためのエンジン化を行ったものです。
+
+[`Docs/CORE_PLAN.md`](Docs/CORE_PLAN.md) が起点となった指示です。
+
+- `packages/engine`: エンジン実装
 - `packages/engine-testkit`: browser API を使わない deterministic fake
-- `apps/console-chaos`: 参照ゲームの無変更取り込みを基準にした謎解きアクション
+- `apps/console-chaos`: 元となった謎解きアクション
+- `apps/asset-pipeline-sample`: 元素材から各世代のアセットを生成するパイプラインの例
 
 ## 4世代のコンソール表現
 
@@ -25,6 +34,7 @@ Engineは同じゲーム状態を維持したまま、映像・音声・入力�
 npm install
 npm run verify
 npm run dev -w @console-chaos/console-chaos
+npm run dev -w @console-chaos/asset-pipeline-sample
 ```
 
 ## 他プロジェクトで使う
@@ -40,5 +50,3 @@ npm run verify:distribution
 [`Docs/DISTRIBUTION.md`](Docs/DISTRIBUTION.md)、変更点は
 [`packages/engine/RELEASE_NOTES.md`](packages/engine/RELEASE_NOTES.md) を参照してください。
 
-参照元 `../Opus5ConsoleChaos` は読み取り専用です。基準 commit と531ファイルの SHA-256 は
-`Docs/REFERENCE_SNAPSHOT.json` に記録しています。
