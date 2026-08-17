@@ -16,8 +16,6 @@ import {
 import { arrangeTitleScore } from './audio';
 import {
   TITLE_GENERATION_ASSETS,
-  characterBodyKey,
-  characterEyePatchKey,
   characterFrameKey,
   eyePatchLayout,
 } from './render-manifest';
@@ -97,7 +95,6 @@ export function buildTitleRenderFrame(
       layer: 0,
       depthWrite: false,
     });
-    const ps2FullFrame = generation === 'PS2';
     frame.sprites.push({
       id: `character:${generation}`,
       generations: [generation],
@@ -105,12 +102,10 @@ export function buildTitleRenderFrame(
       position: [characterCenter[0], characterCenter[1], 0],
       size: size.character,
       color: '#ffffff',
-      texture: ps2FullFrame
-        ? assets.characterFrames[characterFrameKey(animation.pose, animation.eyes)]
-        : assets.characterFrames[characterBodyKey(animation.tween.from)],
-      ...(!ps2FullFrame && animation.tween.from !== animation.tween.to
+      texture: assets.characterBodies[animation.tween.from],
+      ...(animation.tween.from !== animation.tween.to
         ? {
-            tweenTexture: assets.characterFrames[characterBodyKey(animation.tween.to)],
+            tweenTexture: assets.characterBodies[animation.tween.to],
             textureMix: animation.tween.progress,
           }
         : {}),
@@ -118,8 +113,8 @@ export function buildTitleRenderFrame(
       layer: 1,
       depthWrite: false,
     });
-    if (!ps2FullFrame && animation.eyes !== 'open') {
-      const patch = eyePatchLayout(size.character);
+    if (generation === 'PS2' || animation.eyes !== 'open') {
+      const patch = eyePatchLayout(size.character, generation);
       frame.sprites.push({
         id: `character-eyes:${generation}`,
         generations: [generation],
@@ -131,12 +126,12 @@ export function buildTitleRenderFrame(
         ],
         size: patch.size,
         color: '#ffffff',
-        texture: assets.characterFrames[characterEyePatchKey(animation.tween.from, animation.eyes)],
+        texture: assets.characterFrames[characterFrameKey(animation.tween.from, animation.eyes)],
         ...(animation.tween.from === animation.tween.to
           ? {}
           : {
               tweenTexture: assets.characterFrames[
-                characterEyePatchKey(animation.tween.to, animation.eyes)
+                characterFrameKey(animation.tween.to, animation.eyes)
               ],
               textureMix: animation.tween.progress,
             }),

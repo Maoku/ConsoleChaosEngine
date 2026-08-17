@@ -15,10 +15,12 @@ const assetUrl = (path: string): string => `${import.meta.env.BASE_URL}assets/ge
 
 export const EYE_PATCH_FRAMES = ['half', 'closed'] as const satisfies readonly EyeFrame[];
 export const EYE_PATCH_REGION = { left: 0.29, top: 0.19, right: 0.71, bottom: 0.39 } as const;
+export const PS2_EYE_PATCH_PARITY_PADDING = 10;
+export const PS2_EYE_PATCH_FEATHER_PIXELS = 4;
 
 export type EyePatchFrame = (typeof EYE_PATCH_FRAMES)[number];
 export type CharacterFrameKey = `character-${CharacterPose}-${EyeFrame}`;
-export type CharacterBodyKey = Extract<CharacterFrameKey, `character-${CharacterPose}-open`>;
+export type CharacterBodyKey = `character-${CharacterPose}-body`;
 export type CharacterEyePatchKey = Extract<CharacterFrameKey, `character-${CharacterPose}-${EyePatchFrame}`>;
 
 export interface EyePatchLayout {
@@ -28,6 +30,7 @@ export interface EyePatchLayout {
 
 export interface TitleGenerationAssets {
   readonly logo: string;
+  readonly characterBodies: Readonly<Record<CharacterPose, string>>;
   readonly characterFrames: Readonly<Record<CharacterFrameKey, string>>;
 }
 
@@ -36,7 +39,7 @@ export function characterFrameKey(pose: CharacterPose, eyes: EyeFrame): Characte
 }
 
 export function characterBodyKey(pose: CharacterPose): CharacterBodyKey {
-  return `character-${pose}-open`;
+  return `character-${pose}-body`;
 }
 
 export function characterEyePatchKey(
@@ -47,12 +50,18 @@ export function characterEyePatchKey(
 }
 
 /** Matches tools/art.config.mjs; offset is relative to the full-body sprite centre. */
-export function eyePatchLayout(characterSize: readonly [number, number]): EyePatchLayout {
+export function eyePatchLayout(
+  characterSize: readonly [number, number],
+  generation: GenerationId,
+): EyePatchLayout {
   const [width, height] = characterSize;
-  const x0 = Math.floor(width * EYE_PATCH_REGION.left);
-  const y0 = Math.floor(height * EYE_PATCH_REGION.top);
-  const x1 = Math.ceil(width * EYE_PATCH_REGION.right);
-  const y1 = Math.ceil(height * EYE_PATCH_REGION.bottom);
+  const padding = generation === 'PS2'
+    ? PS2_EYE_PATCH_PARITY_PADDING + PS2_EYE_PATCH_FEATHER_PIXELS
+    : 0;
+  const x0 = Math.floor(width * EYE_PATCH_REGION.left) - padding;
+  const y0 = Math.floor(height * EYE_PATCH_REGION.top) - padding;
+  const x1 = Math.ceil(width * EYE_PATCH_REGION.right) + padding;
+  const y1 = Math.ceil(height * EYE_PATCH_REGION.bottom) + padding;
   const patchWidth = x1 - x0;
   const patchHeight = y1 - y0;
   return {
@@ -71,8 +80,15 @@ function generationAssets(generation: GenerationId): TitleGenerationAssets {
       }),
     ),
   ) as Record<CharacterFrameKey, string>;
+  const characterBodies = Object.fromEntries(
+    CHARACTER_POSES.map((pose) => [
+      pose,
+      assetUrl(`${directory}/${generation === 'PS2' ? characterBodyKey(pose) : characterFrameKey(pose, 'open')}.png`),
+    ]),
+  ) as Record<CharacterPose, string>;
   return {
     logo: assetUrl(`${directory}/title-logo.png`),
+    characterBodies,
     characterFrames,
   };
 }
@@ -86,10 +102,11 @@ export const TITLE_GENERATION_ASSETS: GenerationVariant<TitleGenerationAssets> =
 
 export function createTitleRenderManifest(): RenderAssetManifest {
   const variants = Object.values(TITLE_GENERATION_ASSETS);
-  const generatedUrls = variants.flatMap((variant) => [
+  const generatedUrls = [...new Set(variants.flatMap((variant) => [
     variant.logo,
+    ...Object.values(variant.characterBodies),
     ...Object.values(variant.characterFrames),
-  ]);
+  ]))];
   return {
     textures: generatedUrls.map((url) => ({ url })),
     models: [],

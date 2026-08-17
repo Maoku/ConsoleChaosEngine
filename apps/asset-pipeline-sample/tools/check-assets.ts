@@ -29,10 +29,11 @@ const characterAssetIds = poses.flatMap((pose) =>
   eyeFrames.map((eyes) => `character-${pose}-${eyes}` as const),
 );
 const bodyAssetIds = poses.map((pose) => `character-${pose}-open` as const);
+const ps2BodyAssetIds = poses.map((pose) => `character-${pose}-body` as const);
 const eyePatchAssetIds = poses.flatMap((pose) =>
   (['half', 'closed'] as const).map((eyes) => `character-${pose}-${eyes}` as const),
 );
-const expectedAssetIds = ['title-logo', ...characterAssetIds];
+const expectedAssetIds = ['title-logo', ...characterAssetIds, ...ps2BodyAssetIds];
 
 const logoSizes = {
   FC: [200, 40],
@@ -51,6 +52,7 @@ const characterSizes = {
 const colorBudgets = {
   'title-logo': { FC: 4, SFC: 12, PS1: 32, PS2: null },
   character: { FC: 16, SFC: 48, PS1: 96, PS2: null },
+  'ps2-body': { FC: 1, SFC: 1, PS1: 1, PS2: null },
 } as const;
 
 const errors: string[] = [];
@@ -58,16 +60,19 @@ const fail = (condition: boolean, message: string): void => {
   if (!condition) errors.push(message);
 };
 const colorKey = (color: Rgb): string => color.join(',');
-const isCharacter = (assetId: string): boolean => assetId.startsWith('character-');
 const isEyePatch = (assetId: string): boolean =>
-  isCharacter(assetId) && !assetId.endsWith('-open');
+  eyePatchAssetIds.includes(assetId as (typeof eyePatchAssetIds)[number]);
+const isCharacterFrame = (assetId: string): boolean =>
+  characterAssetIds.includes(assetId as (typeof characterAssetIds)[number]);
+const isPs2Body = (assetId: string): boolean =>
+  ps2BodyAssetIds.includes(assetId as (typeof ps2BodyAssetIds)[number]);
 
 function patchSize(generation: GenerationId): readonly [number, number] {
   const [width, height] = characterSizes[generation];
-  if (generation === 'PS2') return [width, height];
+  const padding = generation === 'PS2' ? 14 : 0;
   return [
-    Math.ceil(width * 0.71) - Math.floor(width * 0.29),
-    Math.ceil(height * 0.39) - Math.floor(height * 0.19),
+    Math.ceil(width * 0.71) - Math.floor(width * 0.29) + padding * 2,
+    Math.ceil(height * 0.39) - Math.floor(height * 0.19) + padding * 2,
   ];
 }
 
@@ -106,11 +111,11 @@ function imageFor(assetId: string, generation: GenerationId): RgbaImage | null {
   return output ? readPng(resolve(root, output.outputPath)) : null;
 }
 
-fail(manifest.outputs.length === 40, `manifest must contain 40 outputs, found ${manifest.outputs.length}`);
+fail(manifest.outputs.length === 52, `manifest must contain 52 outputs, found ${manifest.outputs.length}`);
 fail(
   [...new Set(manifest.outputs.map((output) => output.assetId))].sort().join('|') ===
     [...expectedAssetIds].sort().join('|'),
-  'manifest asset IDs must be title-logo plus the nine declared character inputs',
+  'manifest asset IDs must be title-logo, nine face states, and three PS2 helper bodies',
 );
 fail(
   [...new Set(manifest.outputs.map((output) => output.sourcePath))].sort().join('|') ===
@@ -190,14 +195,20 @@ for (const assetId of expectedAssetIds) {
     }
     const expected = assetId === 'title-logo'
       ? logoSizes[generation]
-      : isEyePatch(assetId)
-        ? patchSize(generation)
-        : characterSizes[generation];
+      : isPs2Body(assetId)
+        ? generation === 'PS2'
+          ? characterSizes[generation]
+          : [1, 1] as const
+        : isEyePatch(assetId) || (generation === 'PS2' && isCharacterFrame(assetId))
+          ? patchSize(generation)
+          : characterSizes[generation];
     fail(
       output.width === expected[0] && output.height === expected[1],
       `${assetId}.${generation}: expected ${expected.join('x')}, found ${output.width}x${output.height}`,
     );
-    const budget = colorBudgets[assetId === 'title-logo' ? 'title-logo' : 'character'][generation];
+    const budget = colorBudgets[
+      assetId === 'title-logo' ? 'title-logo' : isPs2Body(assetId) ? 'ps2-body' : 'character'
+    ][generation];
     fail(budget === null || output.visibleColorCount <= budget, `${assetId}.${generation}: color budget exceeded`);
     fail(
       generation === 'FC'
@@ -215,7 +226,9 @@ for (const assetId of expectedAssetIds) {
     const image = readPng(resolve(root, output.outputPath));
     const analysis = analyzeImage(image);
     fail(analysis.visibleColorCount === output.visibleColorCount, `${assetId}.${generation}: manifest color count differs`);
-    assertTransparentBlack(image, `${assetId}.${generation}`);
+    if (!(generation === 'PS2' && isPs2Body(assetId))) {
+      assertTransparentBlack(image, `${assetId}.${generation}`);
+    }
     const colors = visibleColors(image);
     if (generation === 'FC') {
       for (const color of colors) {
@@ -229,8 +242,8 @@ for (const assetId of expectedAssetIds) {
       }
     }
     if (
-      bodyAssetIds.includes(assetId as (typeof bodyAssetIds)[number]) ||
-      (generation === 'PS2' && isEyePatch(assetId))
+      (generation !== 'PS2' && bodyAssetIds.includes(assetId as (typeof bodyAssetIds)[number])) ||
+      (generation === 'PS2' && isPs2Body(assetId))
     ) {
       const bounds = opaqueBounds(image);
       fail(bounds !== null, `${assetId}.${generation}: opaque bounds are empty`);
@@ -249,19 +262,27 @@ for (const generation of GENERATION_IDS) {
     fail(imageFor(assetId, generation) !== null, `${assetId}.${generation}: missing eye variant`);
   }
   for (const pose of poses) {
-    const body = imageFor(`character-${pose}-open`, generation);
+    const open = imageFor(`character-${pose}-open`, generation);
     const half = imageFor(`character-${pose}-half`, generation);
     const closed = imageFor(`character-${pose}-closed`, generation);
-    fail(body !== null && half !== null && closed !== null, `${generation}.${pose}: missing eye-state frame`);
-    if (body && half && closed) {
+    const ps2Body = imageFor(`character-${pose}-body`, generation);
+    fail(open !== null && half !== null && closed !== null, `${generation}.${pose}: missing eye-state frame`);
+    fail(ps2Body !== null, `${generation}.${pose}: missing PS2 body helper`);
+    if (open && half && closed && ps2Body) {
       if (generation === 'PS2') {
         fail(
-          half.width === body.width && half.height === body.height &&
-          closed.width === body.width && closed.height === body.height,
-          `${generation}.${pose}: eye-state frames must be full-body textures`,
+          ps2Body.width === characterSizes.PS2[0] && ps2Body.height === characterSizes.PS2[1],
+          `${generation}.${pose}: helper body must keep full character dimensions`,
+        );
+        fail(
+          open.width === 146 && open.height === 97 &&
+          half.width === open.width && half.height === open.height &&
+          closed.width === open.width && closed.height === open.height,
+          `${generation}.${pose}: eye states must be cropped face patterns`,
         );
       } else {
-        fail(half.width < body.width && half.height < body.height, `${generation}.${pose}: eye patch is not cropped`);
+        fail(half.width < open.width && half.height < open.height, `${generation}.${pose}: eye patch is not cropped`);
+        fail(ps2Body.width === 1 && ps2Body.height === 1, `${generation}.${pose}: helper placeholder must be 1x1`);
       }
       fail(!rgbaEqual(half, closed), `${generation}.${pose}: half and closed eye variants are identical`);
     }
@@ -280,5 +301,5 @@ if (errors.length > 0) {
   for (const error of errors) console.error(`✗ ${error}`);
   process.exitCode = 1;
 } else {
-  console.log(`✓ asset contract: 18 full bodies + 18 eye patches, ${fcColors.size} shared FC colors`);
+  console.log(`✓ asset contract: PS2 body/face patterns + legacy parity guard, ${fcColors.size} shared FC colors`);
 }

@@ -4,7 +4,7 @@
 
 作成日: 2026-08-16
 
-状態: P16のPS2半透明合成停止と9組検証を実装（2026-08-16）
+状態: P17のPS2顔pattern最適化と9組pixel parity検証を実装（2026-08-17）
 
 > **P13履歴仕様:** P9〜P12で作成した9枚のImageGen sourceは保持するが、runtime出力は
 > `open` 3枚だけを全身textureとし、`half / closed` 6枚は顔部分だけのpatchにcropする。
@@ -31,6 +31,12 @@
 > 60 Hz profile上ではleft / center / right / centerを各15 sample保持する離散切替とする。
 > `pose` / `eyes` capture overrideで9組すべてを1554×820で確認済み。半透明合成はOFFのまま維持し、
 > 再導入する場合は9 key frameに加えて全遷移組み合わせのcaptureと自動検査を先に追加する。
+
+> **P17現行仕様・顔pattern最適化:** P16の旧全身表示をpixel parity oracleとして保持し、PS2 runtime出力を
+> 顔領域が透明な開眼body 3枚と、`open / half / closed` の顔pattern 9枚へ分割する。従来の顔cropを10 px拡張した
+> 138×89 parity領域はbody＋patternの再合成結果を旧全身表示とRGBA完全一致させる。その外側4 pxだけを
+> premultiplied-alphaで同poseの開眼frameへ戻し、146×97 pattern最外周を開眼bodyとRGBA一致させる。
+> runtimeでは画面pixelへ1:1整数配置し、texture Tween、拡縮、`source-over` hardware blendを使用しない。
 
 > **適合性メモ:** 2026-08-16に完了したP5/P6は、単一の `character-upper.png` をコードで
 > shear / warpして揺らしと目パチを生成している。この経路は「ImageGenでアニメーション状態ごとの
@@ -213,7 +219,7 @@ Web Audioを作れない環境では `createNullAudioService()` へfallbackす�
 
 ### 4.3 asset
 
-- production入力10枚（ロゴ1枚＋character key pose 9枚）から計40枚の世代別PNGが生成される
+- production入力10枚（ロゴ1枚＋character key pose 9枚）から計52枚の世代別PNGが生成される
 - 9つのcharacter asset IDがそれぞれ同名のImageGen変換元PNGをsourceとして持つ
 - 全出力が `asset-manifest.json` に source hash、recipe hash、世代、寸法、色数、alpha mode とともに記録される
 - FCのロゴと全キャラクターframeの色集合が20色以下で、単色背景を加えても25色以内に収まる
@@ -376,7 +382,7 @@ builderの責務はImageGen変換元frameに同じ世代変換を適用するこ
 asset pipelineの `asset-manifest.json` はbuild追跡用であり、ブラウザrendererの
 `RenderAssetManifest` とは別の契約として扱う。
 
-`src/render-manifest.ts` は40枚の生成済みURLを `textures` へ登録し、世代別・姿勢別・目frame別のURL表を
+`src/render-manifest.ts` は52出力からruntimeで使う重複なしの43 URLを `textures` へ登録し、世代別・姿勢別・目frame別のURL表を
 `defineGenerationVariant()` で公開する。全spriteはtextureを明示するため、
 `fallbackTextures` はrenderer契約を満たす保険として各世代のロゴURLを指定する。
 
@@ -466,8 +472,8 @@ PS1/PS2はImageGen key poseを選び、runtimeへ渡す角度を
 `tests/asset-contract.test.ts` と `tools/check-assets.ts` で次を検査する。
 
 - `console-chaos-assets check` が差分なしで成功する
-- asset IDは `title-logo` と9つの `character-*` だけである
-- 各assetに4世代の出力があり、計40枚である
+- asset IDは `title-logo`、9つの `character-{pose}-{eyes}`、3つの `character-{pose}-body` である
+- 各assetに4世代の出力があり、計52枚である。PS2以外のbody helperは1×1透明placeholderとする
 - manifestのsource pathが `art/source/title-logo.png` と9つの同名character sourceを指す
 - 9つのcharacter asset IDとsource pathが1対1であり、`character-upper.png` を変換入力として再利用しない
 - 9つのcharacter source hashが一致せず、provenanceのSHA-256とmanifestのsource hashが対応する
@@ -475,7 +481,9 @@ PS1/PS2はImageGen key poseを選び、runtimeへ渡す角度を
 - FCの全可視RGBがEngineのmaster paletteに所属する
 - SFCの全可視RGBがRGB555で表現できる
 - FCのロゴと全キャラクターframeの色集合の和が20色以下である
-- 透明画素のRGBがclear blackへ正規化されている
+- 透明画素のRGBがclear blackへ正規化されている。ただしPS2 bodyのくり抜き領域だけはlinear filterの暗線を防ぐため開眼RGBをbleedとして保持する
+- PS2 bodyの顔領域＋10 pxが透明で、3姿勢×3眼状態のbody＋pattern再合成が旧全身表示とpixel完全一致する
+- PS2 pattern外側4 pxの最外周が同poseの開眼frameとRGBA完全一致する
 - 全character frameのopaque boundsが空でなく、意図しない四辺の切れがない
 - sourceとFC/SFC出力のleft/center/rightがdecode後RGBAで異なる
 - sourceと全世代出力のopen/half/closedがdecode後RGBAで異なる
@@ -719,12 +727,12 @@ console-chaos-assets build \
 | FCの画面全体色数が25色を超える | ロゴ4色＋キャラクター16色を上限とし、背景は単色に限定する |
 | frameごとの減色結果でFCの色集合が増える | canonical frameから共通paletteを作り9frameへ適用する |
 | 目パチで顔全体が変化する | 各poseのopen画像を直接参照してhalf/closedを生成し、目周辺以外の差を目視比較する |
-| 顔patchの上端に暗い矩形線が出る | PS2は顔patchを使用せず、眼状態ごとの全身frameを1枚だけ描画する。FC/SFC/PS1はbinary alpha patchを維持する |
-| 目パチで顔が薄く二重化する | PS2の `tweenTexture` / `textureMix` / 追加目sprite / `source-over` を禁止し、9組の固定captureを確認する |
+| 顔patchの上端に暗い矩形線が出る | PS2は旧全身frameと一致する顔領域＋10 px guardを保ち、その外側4 pxだけをpremultiplied-alphaで開眼bodyへ戻す。最外周が開眼bodyとRGBA一致することを自動検査する |
+| 目パチで顔が薄く二重化する | PS2 bodyのparity領域を透明化し、顔patternを1枚だけ不透明置換する。`tweenTexture` / `textureMix` / runtime半透明blendは使用しない |
 | 回転で腰が横滑りする | 下端中央pivotからsprite中心を逆算し、座標不変をunit testする |
 | sourceの姿勢とPS1/PS2回転が二重になる | `authoredPoseAngle` を宣言し、runtimeは目標角との差分だけを回転する。端点角と切替連続性をtest / captureで確認する |
 | transitionで片方の世代画像が消える | 4世代commandを常時frameへ積み、generation maskでrendererに選ばせる |
-| PS2の半透明合成を早期に再導入する | 9 key frameと全遷移組み合わせの自動検査・captureが揃うまでOFFを維持する |
+| PS2の顔差し替えが旧全身表示から変わる | 3姿勢×3眼状態についてbody＋patternを再合成し、顔領域の外周10 pxまで旧全身変換版とpixel完全一致させる |
 | autoplay制限で無音になる | 最初のpointer/keyboard操作でunlockし、失敗時は画面を止めずnull audioへfallbackする |
 | 世代切替でBGMが曲頭へ戻る | profileとarrangementを分離し、切替時は `useScore()` だけを呼ぶ |
 | asset pipelineがbrowser bundleへ混入する | src/tool tsconfig分離、boundary検査、build output検査を行う |
@@ -737,7 +745,7 @@ console-chaos-assets build \
 - ImageGen由来のproduction入力10枚（ロゴ1＋character 9）と参照anchor、完全なprovenanceが存在する
 - 9つのcharacter asset IDが同名の異なるImageGen sourceへ1対1で対応する
 - 姿勢、ポニーテール、目パチを作るコードwarp / shearがbuilderに存在しない
-- 10枚のproduction入力から `@console-chaos/asset-pipeline` だけで40個の世代別PNGを生成できる
+- 10枚のproduction入力から `@console-chaos/asset-pipeline` だけで52個の世代別PNGを生成できる
 - 生成済みPNGを直接編集していないことを `assets:check` で確認できる
 - 4世代のロゴ、キャラクター、背景、animationが§4の完成条件を満たす
 - 第1・第2・第4世代はImageGen姿勢assetの離散パターン、第3世代は同じkey pose間のTweenとして目視で区別できる
@@ -747,6 +755,14 @@ console-chaos-assets build \
 - asset、unit、lifecycle、build、boundaryの全検査が成功する
 - 4世代captureと実行手順が保存される
 - root `npm run verify` が成功する
+
+### 13.1 PS2顔pattern最適化の追加条件（2026-08-17）
+
+- PS2は眼状態ごとの全身textureをruntimeへ渡さず、顔領域を透明化した開眼body 3枚と顔pattern 9枚を使う
+- 顔patternのparity領域は従来の顔cropを上下左右へ10 px拡張した138×89 pxとし、旧全身差し替え表示とRGBAで完全一致する
+- parity領域の外側4 pxはpremultiplied-alpha補間で開眼bodyへ戻し、146×97 px patternの最外周を開眼frameとRGBA完全一致させる
+- PS2のbody／patternは画面pixelと1:1で整数配置し、runtimeのtexture Tween、拡縮、`source-over` 合成を使わない
+- 3姿勢×3眼状態すべての再合成parityと最外周一致をasset contract testで検査する
 
 ## 14. 旧実装結果と修正判定（2026-08-16）
 

@@ -37,13 +37,25 @@ const EYE_FRAMES = ['open', 'half', 'closed'];
 // Kept in normalized character space so every generation crops the same face area.
 // The patch includes enough surrounding skin/hair to fully cover the open-eye base.
 const EYE_PATCH_REGION = { left: 0.29, top: 0.19, right: 0.71, bottom: 0.39 };
+export const PS2_EYE_PATCH_PARITY_PADDING = 10;
+export const PS2_EYE_PATCH_FEATHER_PIXELS = 4;
 
-function eyePatchRect(size) {
+export function eyePatchRect(size, generation, includeFeather = true) {
   const x0 = Math.floor(size.width * EYE_PATCH_REGION.left);
   const y0 = Math.floor(size.height * EYE_PATCH_REGION.top);
   const x1 = Math.ceil(size.width * EYE_PATCH_REGION.right) - 1;
   const y1 = Math.ceil(size.height * EYE_PATCH_REGION.bottom) - 1;
-  return { x0, y0, x1, y1, width: x1 - x0 + 1, height: y1 - y0 + 1 };
+  const parityPadding = generation === 'PS2' ? PS2_EYE_PATCH_PARITY_PADDING : 0;
+  const feather = generation === 'PS2' && includeFeather ? PS2_EYE_PATCH_FEATHER_PIXELS : 0;
+  const padding = parityPadding + feather;
+  return {
+    x0: x0 - padding,
+    y0: y0 - padding,
+    x1: x1 + padding,
+    y1: y1 + padding,
+    width: x1 - x0 + 1 + padding * 2,
+    height: y1 - y0 + 1 + padding * 2,
+  };
 }
 
 const characterFrames = POSES.flatMap((pose) =>
@@ -60,18 +72,29 @@ const titleLogo = defineAssetClass({
   targetSize: (generation) => generationSizes['title-logo'][generation],
 });
 
-const character = defineAssetClass({
-  id: 'character',
-  colorBudget: { FC: 16, SFC: 48, PS1: 96, PS2: null },
-  targetSize: (generation) => generationSizes.character[generation],
-});
-
 const characterEyeVariant = defineAssetClass({
   id: 'character-eye-variant',
   colorBudget: { FC: 16, SFC: 48, PS1: 96, PS2: null },
+  targetSize: (generation) => eyePatchRect(generationSizes.character[generation], generation),
+});
+
+const characterOpenVariant = defineAssetClass({
+  id: 'character-open-variant',
+  colorBudget: { FC: 16, SFC: 48, PS1: 96, PS2: null },
+  targetSize: (generation) => generation === 'PS2'
+    ? eyePatchRect(generationSizes.character[generation], generation)
+    : generationSizes.character[generation],
+});
+
+const ps2CharacterBody = defineAssetClass({
+  id: 'ps2-character-body',
+  colorBudget: { FC: 1, SFC: 1, PS1: 1, PS2: null },
+  // Asset definitions currently have one output per generation. The three
+  // 1x1 transparent placeholders keep the helper bodies PS2-only without
+  // paying for unused full-size duplicates in FC/SFC/PS1.
   targetSize: (generation) => generation === 'PS2'
     ? generationSizes.character[generation]
-    : eyePatchRect(generationSizes.character[generation]),
+    : { width: 1, height: 1 },
 });
 
 const recipe = {
@@ -146,6 +169,66 @@ function normalizeTransparentPixels(image) {
   return image;
 }
 
+function clearRectAlpha(image, rect) {
+  for (let y = rect.y0; y <= rect.y1; y += 1) {
+    for (let x = rect.x0; x <= rect.x1; x += 1) {
+      image.data[(y * image.width + x) * 4 + 3] = 0;
+    }
+  }
+  return image;
+}
+
+function mixPremultipliedPixel(from, to, amount) {
+  if (amount <= 0) return from;
+  if (amount >= 1) return to;
+  const alpha = from[3] + (to[3] - from[3]) * amount;
+  if (alpha <= 0) return [0, 0, 0, 0];
+  const premultiplied = [0, 1, 2].map((channel) =>
+    from[channel] * from[3] * (1 - amount) + to[channel] * to[3] * amount
+  );
+  return [
+    Math.round(premultiplied[0] / alpha),
+    Math.round(premultiplied[1] / alpha),
+    Math.round(premultiplied[2] / alpha),
+    Math.round(alpha),
+  ];
+}
+
+function ps2EyePatch(target, open) {
+  const size = generationSizes.character.PS2;
+  const parity = eyePatchRect(size, 'PS2', false);
+  const patchRect = eyePatchRect(size, 'PS2');
+  const patch = crop(target, patchRect.x0, patchRect.y0, patchRect.x1, patchRect.y1);
+  const openPatch = crop(open, patchRect.x0, patchRect.y0, patchRect.x1, patchRect.y1);
+
+  for (let y = 0; y < patch.height; y += 1) {
+    for (let x = 0; x < patch.width; x += 1) {
+      const fullX = patchRect.x0 + x;
+      const fullY = patchRect.y0 + y;
+      const outsideX = fullX < parity.x0
+        ? parity.x0 - fullX
+        : fullX > parity.x1
+          ? fullX - parity.x1
+          : 0;
+      const outsideY = fullY < parity.y0
+        ? parity.y0 - fullY
+        : fullY > parity.y1
+          ? fullY - parity.y1
+          : 0;
+      const outside = Math.max(outsideX, outsideY);
+      if (outside === 0) continue;
+      const progress = 1 - (outside - 1) / (PS2_EYE_PATCH_FEATHER_PIXELS - 1);
+      const eased = Math.min(Math.max(progress, 0), 1);
+      const smooth = eased * eased * (3 - 2 * eased);
+      const index = (y * patch.width + x) * 4;
+      const from = Array.from(openPatch.data.subarray(index, index + 4));
+      const to = Array.from(patch.data.subarray(index, index + 4));
+      patch.data.set(mixPremultipliedPixel(from, to, smooth), index);
+    }
+  }
+  return patch;
+}
+
 function normalizedCharacter(source, spec, activeRecipe) {
   const assetRecipe = activeRecipe.assets.character;
   if (
@@ -199,18 +282,53 @@ function maskEyeWindows(image, options) {
 const canonicalCharacter = readPng(
   resolve(import.meta.dirname, '../art/source/character-center-open.png'),
 );
+const openCharacters = Object.fromEntries(
+  POSES.map((pose) => [
+    pose,
+    readPng(resolve(import.meta.dirname, `../art/source/character-${pose}-open.png`)),
+  ]),
+);
+
+function convertedPs2Character(source, activeRecipe) {
+  const image = normalizedCharacter(source, generationSizes.character.PS2, activeRecipe);
+  applyTone(image, activeRecipe.tone.PS2);
+  const palette = buildPalette(image, { colorCount: null, rgb555: false });
+  const paletteRecipe = activeRecipe.palette.PS2;
+  applyPalette(image, palette, {
+    binaryAlpha: false,
+    alphaThreshold: paletteRecipe.alphaThreshold,
+    dither: paletteRecipe.dither,
+    spread: paletteRecipe.spread,
+  });
+  normalizeTransparentPixels(image);
+  return image;
+}
+
+/** The pre-optimization full-frame conversion, retained as the parity oracle. */
+export function buildLegacyPs2Frame(source, activeRecipe = recipe) {
+  return convertedPs2Character(cloneImage(source), activeRecipe);
+}
+
 const characterAssets = characterFrames.map((frame) => ({
   id: frame.id,
   source: `art/source/${frame.id}.png`,
-  // PS2 uses all nine authored frames as full-body key textures so it never
-  // needs translucent eye-patch composition. Earlier generations keep the
-  // optimized cropped eye variants.
-  assetClass: frame.eyes === 'open' ? character : characterEyeVariant,
+  assetClass: frame.eyes === 'open' ? characterOpenVariant : characterEyeVariant,
   outputs: {
     FC: `public/assets/generated/fc/${frame.id}.png`,
     SFC: `public/assets/generated/sfc/${frame.id}.png`,
     PS1: `public/assets/generated/ps1/${frame.id}.png`,
     PS2: `public/assets/generated/ps2/${frame.id}.png`,
+  },
+}));
+const ps2BodyAssets = POSES.map((pose) => ({
+  id: `character-${pose}-body`,
+  source: `art/source/character-${pose}-open.png`,
+  assetClass: ps2CharacterBody,
+  outputs: {
+    FC: `public/assets/generated/fc/character-${pose}-body.png`,
+    SFC: `public/assets/generated/sfc/character-${pose}-body.png`,
+    PS1: `public/assets/generated/ps1/character-${pose}-body.png`,
+    PS2: `public/assets/generated/ps2/character-${pose}-body.png`,
   },
 }));
 
@@ -231,6 +349,7 @@ export default defineAssetPipeline({
       },
     },
     ...characterAssets,
+    ...ps2BodyAssets,
   ],
   build({ asset, generation, source, spec, recipe: activeRecipe }) {
     const assetRecipe = asset.id === 'title-logo'
@@ -244,12 +363,24 @@ export default defineAssetPipeline({
       const normalized = padToAspect(opaque, spec.width, spec.height, assetRecipe.padding);
       image = resample(normalized, spec.width, spec.height);
       paletteSource = image;
+    } else if (asset.id.endsWith('-body')) {
+      if (generation !== 'PS2') return { image: createImage(1, 1), paletteCount: 0 };
+      image = convertedPs2Character(source, activeRecipe);
+      clearRectAlpha(image, eyePatchRect(generationSizes.character.PS2, 'PS2', false));
+      return { image, paletteCount: null };
+    } else if (generation === 'PS2') {
+      const pose = POSES.find((candidate) => asset.id.startsWith(`character-${candidate}-`));
+      if (!pose) throw new Error(`Unknown PS2 character pose for ${asset.id}`);
+      const target = convertedPs2Character(source, activeRecipe);
+      const open = convertedPs2Character(cloneImage(openCharacters[pose]), activeRecipe);
+      image = ps2EyePatch(target, open);
+      return { image, paletteCount: null };
     } else {
       const fullCharacterSpec = generationSizes.character[generation];
       const isEyePatch = !asset.id.endsWith('-open');
       const normalized = normalizedCharacter(source, fullCharacterSpec, activeRecipe);
-      if (isEyePatch && generation !== 'PS2') {
-        const patch = eyePatchRect(fullCharacterSpec);
+      if (isEyePatch) {
+        const patch = eyePatchRect(fullCharacterSpec, generation);
         image = crop(normalized, patch.x0, patch.y0, patch.x1, patch.y1);
         maskEyeWindows(image, {
           windows: activeRecipe.assets.eyePatch.windows,

@@ -19,11 +19,7 @@ import {
   captureTimeFromSearch,
   initialGenerationFromSearch,
 } from '../src/bootstrap';
-import {
-  TITLE_GENERATION_ASSETS,
-  characterBodyKey,
-  characterFrameKey,
-} from '../src/render-manifest';
+import { TITLE_GENERATION_ASSETS } from '../src/render-manifest';
 
 interface CapturedCharacter {
   readonly id: string;
@@ -91,7 +87,7 @@ describe('title module lifecycle', () => {
     let now = 0;
     host.frame(now);
     host.frame(now += 17);
-    expect(renderer.frames.at(-1)).toMatchObject({ sprites: 8, backgrounds: 4 });
+    expect(renderer.frames.at(-1)).toMatchObject({ sprites: 9, backgrounds: 4 });
     const beforeSwitch = renderer.frames.at(-1)?.timeSeconds ?? 0;
 
     input.set(createDeviceSnapshot(['KeyE']));
@@ -111,14 +107,10 @@ describe('title module lifecycle', () => {
       expect(cycledFrame.characters.find((character) => character.id === `character:${generation}`))
         .toMatchObject({
           rotation: 0,
-          texture: TITLE_GENERATION_ASSETS[generation].characterFrames[
-            characterBodyKey(animation.tween.from)
-          ],
+          texture: TITLE_GENERATION_ASSETS[generation].characterBodies[animation.tween.from],
           tweenTexture: animation.tween.from === animation.tween.to
             ? undefined
-            : TITLE_GENERATION_ASSETS[generation].characterFrames[
-                characterBodyKey(animation.tween.to)
-              ],
+            : TITLE_GENERATION_ASSETS[generation].characterBodies[animation.tween.to],
           textureMix: animation.tween.from === animation.tween.to
             ? undefined
             : animation.tween.progress,
@@ -150,23 +142,17 @@ describe('title module lifecycle', () => {
       if (generation === 'PS2') {
         expect(character).toMatchObject({
           rotation: 0,
-          texture: TITLE_GENERATION_ASSETS.PS2.characterFrames[
-            characterFrameKey(animation.pose, animation.eyes)
-          ],
+          texture: TITLE_GENERATION_ASSETS.PS2.characterBodies[animation.pose],
           tweenTexture: undefined,
           textureMix: undefined,
         });
       } else {
         expect(character).toMatchObject({
           rotation: 0,
-          texture: TITLE_GENERATION_ASSETS[generation].characterFrames[
-            characterBodyKey(animation.tween.from)
-          ],
+          texture: TITLE_GENERATION_ASSETS[generation].characterBodies[animation.tween.from],
           tweenTexture: animation.tween.from === animation.tween.to
             ? undefined
-            : TITLE_GENERATION_ASSETS[generation].characterFrames[
-                characterBodyKey(animation.tween.to)
-              ],
+            : TITLE_GENERATION_ASSETS[generation].characterBodies[animation.tween.to],
           textureMix: animation.tween.from === animation.tween.to
             ? undefined
             : animation.tween.progress,
@@ -197,7 +183,7 @@ describe('title module lifecycle', () => {
     await host.initialize(createTitleModule({ reducedMotion: () => true }));
     host.frame(0);
     host.frame(100);
-    expect(renderer.frames.at(-1)?.sprites).toBe(8);
+    expect(renderer.frames.at(-1)?.sprites).toBe(9);
     host.dispose();
   });
 });
