@@ -22,7 +22,7 @@ interface Snapshot {
 
 const EXPECTED_COMMIT = '628119358e720514a1f17006654f61e82cc4c207';
 const root = resolve(import.meta.dirname, '..');
-const path = resolve(root, 'Docs/REFERENCE_SNAPSHOT.json');
+const path = resolve(root, 'tools/fixtures/reference-snapshot.json');
 const snapshot = JSON.parse(readFileSync(path, 'utf8')) as Snapshot;
 
 function fail(message: string): never {

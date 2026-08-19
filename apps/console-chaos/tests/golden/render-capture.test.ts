@@ -19,7 +19,7 @@ import { loadLevelFile } from '../unit/replay/harness';
 const level = loadLevelFile('area1');
 const GOLDEN_PATH = join(
   dirname(fileURLToPath(import.meta.url)),
-  '../../Docs/measurements/M3_render_command_golden.json',
+  '../fixtures/render-command-golden.json',
 );
 
 function setup(generation: GenerationId, spawn: [number, number, number]) {

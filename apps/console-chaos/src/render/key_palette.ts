@@ -1,5 +1,5 @@
 /**
- * 基準画の色の基準表（KV-01、`Docs/GRAPHICS_KEY_VISUAL_PLAN.md` §1.2）。
+ * 基準画の色の基準表（KV-01、`Docs/development/GRAPHICS_KEY_VISUAL_PLAN.md` §1.2）。
  *
  * **色の出どころを 1 つにする。** 基準画（`Docs/console-chaos-title.png`）から実測した色を
  * ここに置き、`tools/make-textures.ts`（テクスチャの色表）と

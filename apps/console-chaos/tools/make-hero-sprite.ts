@@ -11,7 +11,7 @@
  *   npx tsx tools/make-hero-sprite.ts     （= npm run make:hero-sprite）
  *
  * **世代ごとに処理は分けない。** 素材は同じ工程・同じ寸法で作られており（各 `README.md`）、
- * 実測した癖も一致する（`Docs/measurements/T2-11_hero_gen2_sprite.md` §2）。
+ * 外接矩形の測り方も共通化できることを検証済みである（`Docs/VALIDATION.md`）。
  * 世代の差は絵そのものと、その後段の色量子化が出す。
  *
  * ここで行う変換は 3 つだけで、それぞれ理由がある。
@@ -67,8 +67,7 @@ const COVERAGE_CUTOFF = 128;
  *
  * 外接矩形の中心は「体の中心」の近似でしかないので、
  * **片側だけが大きく動くクリップでは体まで一緒に流れてしまう**。
- * 素材ごとの実測（`Docs/measurements/T2-09_hero_sprite.md` §2 と
- * `Docs/measurements/T2-11_hero_gen2_sprite.md` §2）で使い分ける。
+ * 素材ごとの外接矩形を実測し、clipの動きに応じて使い分ける。
  */
 type HorizontalAnchor =
   /** コマごとに測る。手足が前後へ等しく振れるクリップ（歩き・ジャンプ）はこれで揃う */

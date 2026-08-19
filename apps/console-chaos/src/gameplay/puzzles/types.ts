@@ -114,5 +114,5 @@ export function moveTo(ctx: PuzzleContext, id: string, position: Vec3): void {
  * 実機では表示が消えても存在は残るため、この差分は遊ぶ側の直感と噛み合わなかった
  *（ギミックレビュー F-2）。唯一の利用者だった F-2 が使うのをやめたので、
  * 判定用のヘルパごと削除してある。走査線制限は**描画にだけ**効く。
- * 経緯は `Docs/PHASE2_GIMMICK_PLAN.md` §6 の決定 2。
+ * 経緯は `Docs/development/PHASE2_GIMMICK_PLAN.md` §6 の決定 2。
  */

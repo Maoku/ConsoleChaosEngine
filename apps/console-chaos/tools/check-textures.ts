@@ -34,7 +34,6 @@ import { MATERIALS } from '../src/render/material';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 const TEXTURE_DIR = join(ROOT, 'public/assets/textures');
-const RECORD = join(ROOT, 'Docs/measurements/T1-21_material.md');
 
 /** 軸に沿った直線構造の下限（隣り合う行または列が完全に一致する割合） */
 const MIN_STRAIGHT_RATIO = 0.3;
@@ -440,16 +439,6 @@ for (const material of Object.values(MATERIALS)) {
     if (!images.has(`${set.dir}/${material.topTexture}`)) {
       errors.push(`${set.dir}/${material.topTexture}: 天面テクスチャが揃っていない（SG-04）`);
     }
-  }
-}
-
-// --- 発注仕様が記録に残っているか（§9.3 の最後の行） ---
-if (!existsSync(RECORD)) {
-  errors.push('Docs/measurements/T1-21_material.md が無い（発注仕様の記録は §9.4 の再現性の代わり）');
-} else {
-  const record = readFileSync(RECORD, 'utf8');
-  for (const spec of TEXTURE_SPECS) {
-    if (!record.includes(spec.file)) errors.push(`T1-21_material.md に ${spec.file} の記載が無い（§9.3）`);
   }
 }
 

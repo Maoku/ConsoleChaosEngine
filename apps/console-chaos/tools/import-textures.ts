@@ -1,5 +1,5 @@
 /**
- * 外部素材の取り込み（SG-01。`Docs/GRAPHICS_STAGE_IMPL_PLAN.md` §3 の SG-01）。
+ * 外部素材の取り込み（SG-01。`Docs/development/GRAPHICS_STAGE_IMPL_PLAN.md` §3 の SG-01）。
  *
  * `Docs/concept/source/src_*.png`（発注仕様 `ASSET_REQUEST_STAGE.md` の納品物）を読み、
  * **4 セットぶんの絵**を `public/assets/textures/<セット>/` へ書き出す。

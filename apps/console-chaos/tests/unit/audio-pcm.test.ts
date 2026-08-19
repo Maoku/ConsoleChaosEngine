@@ -9,7 +9,7 @@ import {
 } from '@console-chaos/engine';
 import { arrangeFor } from '@/audio/music';
 import { songOf } from '@/audio/songs';
-import golden from '../../Docs/measurements/M4_pcm_golden.json';
+import golden from '../fixtures/audio-pcm-golden.json';
 // This pure-JS Web Audio implementation intentionally has no bundled TypeScript declarations.
 // @ts-expect-error -- runtime API is narrowed by RenderingContext below.
 import { RenderingAudioContext } from 'web-audio-engine';

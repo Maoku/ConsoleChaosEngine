@@ -8,3 +8,9 @@ apps/*/dist/
 packages/*/node_modules/
 packages/*/dist/
 artifacts/
+
+# Local development evidence and superseded documents are intentionally kept
+# outside version control.  Stable conclusions belong in the tracked Docs files.
+**/Docs/measurement/
+**/Docs/measurements/
+**/Docs/archive/

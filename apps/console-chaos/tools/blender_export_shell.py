@@ -29,7 +29,7 @@ P1-2 の殻を Blender で作り、glTF として書き出す（T1-27）。
 
 破れの強さは板の厚み（`THICKNESS`）で決まる。
 `OVERLAP` が決めるのは「継ぎ目がどれだけ読めるか」で、破れの量ではない
-（採用しなかった候補は `Docs/measurements/T1-27_sort_break.md` §4）。
+不採用候補の生データは Git 管理外へ退避し、採用理由だけを公開検証要約に残す。
 """
 
 import bpy

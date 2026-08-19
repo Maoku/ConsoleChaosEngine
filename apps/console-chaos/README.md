@@ -24,7 +24,7 @@
 4. **実機の挙動と意図的に異なる箇所があります。**
    たとえば CH 1 で斜め移動を禁止しているのは、入力の粗さを遊びに使うために
    本作が意図的に定めた規則です。
-   意図的な差分の一覧は [Docs/GAME_PLAN.md](Docs/GAME_PLAN.md) の §4.1 を参照してください。
+   意図的な差分の一覧は [Docs/development/GAME_PLAN.md](Docs/development/GAME_PLAN.md) の §4.1 を参照してください。
 
 作中・UI では実機名を使わず、「CH 1」〜「CH 4」および「第1世代」〜「第4世代」と表記します。
 ソースコード内部の識別子 `FC` / `SFC` / `PS1` / `PS2` は略号であり、表示名とは
@@ -73,7 +73,7 @@ npm run dev
 ゲームパッドも使えます（接続すると自動で有効）。BGM は開始画面の「はじめる」から鳴り始めます
 （ブラウザの自動再生制限のため）。
 
-試遊（T1-20）の手順は [Docs/measurements/T1-20_playtest_kit.md](Docs/measurements/T1-20_playtest_kit.md) に
+試遊の手順は [Docs/PLAYTEST.md](Docs/PLAYTEST.md) に
 まとめてあります。開始画面が邪魔な開発中は `?playtest=0` で切れます。
 
 ### 検証用シーン
@@ -92,13 +92,10 @@ npm run dev
 
 | 文書 | 内容 |
 |---|---|
-| [Docs/CORE_PLAN.md](Docs/CORE_PLAN.md) | 企画の核 |
-| [Docs/GAME_PLAN.md](Docs/GAME_PLAN.md) | ゲームデザイン（何を作るか） |
-| [Docs/IMPLEMENTATION_PLAN.md](Docs/IMPLEMENTATION_PLAN.md) | 実装計画（どう作るか） |
-| [Docs/GRAPHICS_STAGE_PLAN.md](Docs/GRAPHICS_STAGE_PLAN.md) | 試作ステージのグラフィックス強化計画（SG-01〜SG-11） |
-| [Docs/ASSET_REQUEST_STAGE.md](Docs/ASSET_REQUEST_STAGE.md) | 素材制作依頼リスト（発注仕様の正本） |
 | [Docs/asset-rules.md](Docs/asset-rules.md) | アセット規則（glTF サブセットの対応範囲） |
-| [Docs/measurements/](Docs/measurements/) | 計測記録（日付・機材・ブラウザとセット） |
+| [Docs/VALIDATION.md](Docs/VALIDATION.md) | 検証結果と未実施の人手評価 |
+| [Docs/PLAYTEST.md](Docs/PLAYTEST.md) | 外部プレイテスト手順 |
+| [Docs/development/](Docs/development/) | 企画・実装・レビュー対応の履歴 |
 
 ## ライセンス
 

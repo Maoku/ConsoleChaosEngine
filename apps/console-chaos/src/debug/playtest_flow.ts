@@ -16,7 +16,7 @@
  * 開始画面はキービジュアル 1 枚（`public/assets/title/key_visual.png`）で構成する。
  * 文字による案内は一切持たない。**操作の一覧は `playtest_hud.ts` が遊んでいる間ずっと
  * 画面の隅に出し続ける**ので、ここで重ねて出す必要がない。
- * 目指す絵は `Docs/GRAPHICS_KEY_VISUAL_PLAN.md` の基準そのもので、
+ * 目指す絵は `Docs/development/GRAPHICS_KEY_VISUAL_PLAN.md` の基準そのもので、
  * 開始画面はその基準を試遊者と開発者の双方に見せる場でもある。
  *
  * 併せて、開始ボタンの押下は**ブラウザが音を鳴らすために要求するユーザ操作**を兼ねる。

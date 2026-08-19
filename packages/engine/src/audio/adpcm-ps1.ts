@@ -13,7 +13,7 @@
  * 楽曲ファイルを持つと (a) 4 編曲分の音声アセットが要る (b) 位相同期を
  * ファイル再生位置で合わせる別実装が要る、の 2 点でフェーズ 1 の範囲を超える。
  * **同一 Score を 4 通りに鳴らす**（§9.1 の主眼）ほうを優先した。
- * 差分は Docs/measurements/T1-16_music.md に記録している。
+ * この差分は Console Chaos の公開検証要約に明記する。
  */
 import type { GenerationVoiceSource, PlayRequest, VoiceHandle, VoiceSourceOptions } from './engine';
 import type { TrackRole } from './score';

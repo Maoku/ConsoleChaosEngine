@@ -1,7 +1,7 @@
 /**
  * テクスチャの発注仕様（PHASE1_FEEDBACK_PLAN §9.2 の表をそのままデータにしたもの、T1-21）。
  *
- * 生成（`make-textures.ts`）・検査（`check-textures.ts`）・記録（`T1-21_material.md`）が
+ * 生成（`make-textures.ts`）と検査（`check-textures.ts`）が
  * **同じ 1 つの表**を見る。仕様と実物がずれたら CI が落ちる。
  *
  * §9.1 の共通制約:

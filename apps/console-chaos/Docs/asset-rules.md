@@ -1,7 +1,7 @@
 # アセット規則（glTF サブセットの対応範囲）
 
 > 対象読者：モデル・テクスチャを作る人。
-> 本書は [IMPLEMENTATION_PLAN.md](IMPLEMENTATION_PLAN.md) §8.1 T0-07 の成果物であり、
+> 本書は [development/IMPLEMENTATION_PLAN.md](development/IMPLEMENTATION_PLAN.md) §8.1 T0-07 の成果物であり、
 > `src/render/loader/gltf.ts` が実際に読める範囲を定義する。
 > ここに書かれていない機能は**ローダが明示的に失敗する**（黙って無視しない）。
 >
@@ -108,9 +108,10 @@ GAME_PLAN §11.1.1 の思想（汎用抽象は取り除く対象になる）を�
 | PS2 | PS1 の 4 倍（80,000 三角形）を暫定値とする | フェーズ 1 |
 | FC / SFC | 3D モデルを量子化して表示するため、シルエットが読めることを優先 | T0-19 の所見 |
 
-PS1 の値の根拠は [measurements/T0-09_ps1_triangle_sort.md](measurements/T0-09_ps1_triangle_sort.md) を参照。
-三角形ソート自体は 10 万三角形超まで予算内に収まっており、20,000 は
+三角形ソート自体は2.0 ms換算で146,761三角形まで予算内に収まり、20,000 は
 「最低スペック機で 3〜5 倍遅くても予算内」かつ「第3世代らしい見えを保つ」ための上限である。
+後続の OT12 検証でも20,000三角形は p95 0.598 msだった。公開用の検証要約は
+[VALIDATION.md](VALIDATION.md) にまとめている。
 
 ---
 
@@ -206,8 +207,8 @@ Blender は **Z が上**、glTF とゲーム側は **Y が上**。
 **2D の 2 世代（第1・第2世代）のプレイヤーはモデルではなく絵でできている。**
 深度も動的ライティングも持たず、正射影で真横から見るだけの世代では、
 ポリゴンを量子化して見せるより、最初から絵として描かれたもののほうが実機の見えに近い。
-判断の経緯と実測は [measurements/T2-09_hero_sprite.md](measurements/T2-09_hero_sprite.md)（第1世代）と
-[measurements/T2-11_hero_gen2_sprite.md](measurements/T2-11_hero_gen2_sprite.md)（第2世代）。
+第1世代では背景と sprite の色を別々に量子化し、第2世代では画面全体を RGB555 へ量子化する。
+両世代とも背景と別の sprite 面を使い、binary alpha と画素等倍の規則を共有する。
 
 | 項目 | 規則 |
 |---|---|
@@ -257,6 +258,6 @@ JPEG を避ける）はテクスチャのための規則なので、ここには
 
 - `key_visual.png` … **開始画面のキービジュアル**。原画は `Docs/console-chaos-title.png`。
   目指す画としての基準でもあり、その読み方は
-  [GRAPHICS_KEY_VISUAL_PLAN.md](GRAPHICS_KEY_VISUAL_PLAN.md) が持つ
+  [development/GRAPHICS_KEY_VISUAL_PLAN.md](development/GRAPHICS_KEY_VISUAL_PLAN.md) が持つ
 
 > 読み込み量（1.6 MB）の最適化は **T4-02（初回ロード時間）** の対象として送っている。

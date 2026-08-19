@@ -95,4 +95,4 @@ if (hits.length > 0) {
 }
 
 console.log(`✓ 商標チェック通過（禁止語 ${blocklist.length} 件 / 走査 ${scanned} ファイル、うち中身の検査 ${scannedText} ファイル）`);
-console.log('  ※ ロゴ・固有形状（実機やコントローラの見た目）は自動検査できない。目視確認の記録は Docs/measurements/T1-19_trademark_scan.md');
+console.log('  ※ ロゴ・固有形状（実機やコントローラの見た目）は自動検査できない。目視確認の結論は Docs/VALIDATION.md に反映する');

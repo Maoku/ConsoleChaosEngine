@@ -2,7 +2,7 @@
  * F-1「色の潰れ」（GAME_PLAN §6.1、T1-09 → T2-01 で作り直し）。★ 垂直スライスの 6 件
  *
  * **ツタそのものが橋である。** 谷は 7m あり、どの世代でも跳び越せない
- *（滞空 0.745 秒 × 最高速 5.5m/s + 体幅 = 実効 4.8m。`Docs/PHASE2_GIMMICK_PLAN.md` §2.1）。
+ *（滞空 0.745 秒 × 最高速 5.5m/s + 体幅 = 実効 4.8m。`Docs/development/PHASE2_GIMMICK_PLAN.md` §2.1）。
  * 渡るにはツタに乗るしかない。
  *
  * 世界のルールは **1 つだけ**：
@@ -19,7 +19,7 @@
  * | 3D（CH 3 / CH 4） | 奥行きがあるので緑を選んで乗れる。ただしツタは細く、**揺れる**ので追い続ける必要がある | 難しいが可能 |
  *
  * **「解ける／解けない」だけでなく「どれだけ楽か」で世代差を出す**という方針の第 1 号
- *（`Docs/PHASE2_GIMMICK_PLAN.md` §6 の決定 1）。したがって `solvableIn` は 3 世代を返す。
+ *（`Docs/development/PHASE2_GIMMICK_PLAN.md` §6 の決定 1）。したがって `solvableIn` は 3 世代を返す。
  */
 import type { ConsoleChaosGenerationView } from '@/config/generation';
 import { bodyOf, boxOf, playerTouches, setSolid, type PuzzleContext, type PuzzleDefinition } from './types';

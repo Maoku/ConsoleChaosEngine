@@ -8,7 +8,7 @@ FC/SFC/PS1/PS2 の4つのコンソール世代表現を提供するエンジン
 元々は、4つのコンソール世代表現を渡り歩くことで進められる謎解きアクションを作らせてみようというところからスタートし
 そのゲーム実装から再利用のためのエンジン化を行ったものです。
 
-[`Docs/CORE_PLAN.md`](Docs/CORE_PLAN.md) が起点となった指示です。
+[`Docs/development/CORE_PLAN.md`](Docs/development/CORE_PLAN.md) が起点となった指示です。
 
 - `packages/engine`: エンジン実装
 - `packages/engine-testkit`: browser API を使わない deterministic fake
@@ -50,3 +50,5 @@ npm run verify:distribution
 [`Docs/DISTRIBUTION.md`](Docs/DISTRIBUTION.md)、変更点は
 [`packages/engine/RELEASE_NOTES.md`](packages/engine/RELEASE_NOTES.md) を参照してください。
 
+公開ドキュメントの一覧は [`Docs/README.md`](Docs/README.md)、実装と品質検証の要約は
+[`Docs/VALIDATION.md`](Docs/VALIDATION.md) にまとめています。

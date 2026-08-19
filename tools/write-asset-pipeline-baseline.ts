@@ -5,7 +5,7 @@ import { decodePng, type RgbaImage } from '@console-chaos/asset-pipeline';
 
 const root = resolve(import.meta.dirname, '..');
 const textureRoot = resolve(root, 'apps/console-chaos/public/assets/textures');
-const output = resolve(root, 'Docs/ASSET_PIPELINE_BASELINE.json');
+const output = resolve(root, 'tools/fixtures/asset-pipeline-baseline.json');
 
 function pngFilesBelow(directory: string): string[] {
   return readdirSync(directory, { withFileTypes: true })

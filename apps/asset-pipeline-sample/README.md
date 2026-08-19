@@ -42,7 +42,7 @@ BGMは最初のpointerまたはkeyboard操作で再生可能になり、世代�
 - `src`: Engine公開APIだけを利用するブラウザruntimeとタイトルScore。asset pipelineをimportしません。
 - `tests` / `tools/check-assets.ts`: animation、audio、配置、lifecycle、決定性、palette／alpha契約を検査します。
 
-詳細な設計と完成条件は [Docs/IMPLEMENTATION_PLAN.md](Docs/IMPLEMENTATION_PLAN.md)、原画の生成履歴は [Docs/ASSET_PROVENANCE.md](Docs/ASSET_PROVENANCE.md) を参照してください。
+詳細な設計と完成条件は [Docs/development/IMPLEMENTATION_PLAN.md](Docs/development/IMPLEMENTATION_PLAN.md)、原画の生成履歴は [Docs/ASSET_PROVENANCE.md](Docs/ASSET_PROVENANCE.md) を参照してください。
 
 ## 検証キャプチャ
 
