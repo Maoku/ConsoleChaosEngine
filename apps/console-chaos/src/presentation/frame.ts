@@ -87,10 +87,11 @@ export type ModelJumpPhase = 'base' | 'takeoff' | 'airborne' | 'landing';
 export interface ModelJumpAnimationState {
   phase: ModelJumpPhase;
   seconds: number;
+  takeoffVelocity: number;
 }
 
 export function createModelJumpAnimationState(): ModelJumpAnimationState {
-  return { phase: 'base', seconds: 0 };
+  return { phase: 'base', seconds: 0, takeoffVelocity: 0 };
 }
 
 function jumpTiming(clip: PlayerClipRef): {
@@ -119,21 +120,47 @@ export function updateModelJumpAnimation(
   const timing = jumpTiming(clip);
   if (!timing) return;
   const { fps, airborneStart, airborneEnd, finalFrame } = timing;
+  const takeoffStartTime = 1 / fps;
   const airborneStartTime = airborneStart / fps;
   const airborneHoldTime = Math.round((airborneStart + airborneEnd) / 2) / fps;
 
+  if (state.phase === 'landing') {
+    if (!player.grounded && player.velocity[1] > 0) {
+      state.phase = 'takeoff';
+      state.seconds = takeoffStartTime;
+      state.takeoffVelocity = player.velocity[1];
+      return;
+    }
+    const next = state.seconds + dtSeconds;
+    if (next > finalFrame / fps + 1e-9) {
+      state.phase = 'base';
+      state.seconds = 0;
+      state.takeoffVelocity = 0;
+    } else {
+      state.seconds = next;
+    }
+    return;
+  }
+
   if (!player.grounded) {
-    if (state.phase === 'base' || state.phase === 'landing') {
+    if (state.phase === 'base') {
       state.phase = player.velocity[1] > 0 ? 'takeoff' : 'airborne';
-      state.seconds = state.phase === 'takeoff' ? 1 / fps : airborneHoldTime;
+      state.seconds = state.phase === 'takeoff' ? takeoffStartTime : airborneHoldTime;
+      state.takeoffVelocity = Math.max(player.velocity[1], 0);
       return;
     }
     if (state.phase === 'takeoff') {
-      state.seconds = Math.min(state.seconds + dtSeconds, airborneStartTime);
-      if (state.seconds >= airborneStartTime) {
+      if (player.velocity[1] <= 0) {
         state.phase = 'airborne';
         state.seconds = airborneHoldTime;
+        state.takeoffVelocity = 0;
+        return;
       }
+      const launchVelocity = Math.max(state.takeoffVelocity, player.velocity[1]);
+      const ascentProgress = 1 - player.velocity[1] / launchVelocity;
+      const synchronizedTime = takeoffStartTime
+        + (airborneHoldTime - takeoffStartTime) * ascentProgress;
+      state.seconds = Math.max(state.seconds, Math.min(synchronizedTime, airborneStartTime));
       return;
     }
     state.seconds = airborneHoldTime;
@@ -143,16 +170,7 @@ export function updateModelJumpAnimation(
   if (state.phase === 'takeoff' || state.phase === 'airborne') {
     state.phase = 'landing';
     state.seconds = (airborneEnd + 1) / fps;
-    return;
-  }
-  if (state.phase === 'landing') {
-    const next = state.seconds + dtSeconds;
-    if (next > finalFrame / fps + 1e-9) {
-      state.phase = 'base';
-      state.seconds = 0;
-    } else {
-      state.seconds = next;
-    }
+    state.takeoffVelocity = 0;
   }
 }
 

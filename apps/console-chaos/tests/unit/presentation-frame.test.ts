@@ -64,9 +64,12 @@ describe('Regular_Jump presentation state', () => {
     expect(state.phase).toBe('takeoff');
     expect(state.seconds).toBeCloseTo(1 / 30, 6);
 
-    while (state.phase === 'takeoff') {
-      updateModelJumpAnimation(state, { grounded: false, velocity: [0, -1, 0] }, jump);
-    }
+    updateModelJumpAnimation(state, { grounded: false, velocity: [0, 4, 0] }, jump);
+    expect(state.phase).toBe('takeoff');
+    expect(state.seconds).toBeCloseTo(10.5 / 30, 6);
+
+    updateModelJumpAnimation(state, { grounded: false, velocity: [0, 0, 0] }, jump);
+    expect(state.phase).toBe('airborne');
     expect(state.seconds).toBeCloseTo(20 / 30, 6);
     for (let tick = 0; tick < 600; tick++) {
       updateModelJumpAnimation(state, { grounded: false, velocity: [0, -8, 0] }, jump);
@@ -83,6 +86,17 @@ describe('Regular_Jump presentation state', () => {
     }
     expect(sawLastFrame).toBe(true);
     expect(state.phase).toBe('base');
+  });
+
+  it('does not rewind landing when ground contact briefly drops', () => {
+    const state = createModelJumpAnimationState();
+    updateModelJumpAnimation(state, { grounded: false, velocity: [0, -8, 0] }, jump);
+    updateModelJumpAnimation(state, { grounded: true, velocity: [0, 0, 0] }, jump);
+    expect(state.seconds).toBeCloseTo(22 / 30, 6);
+
+    updateModelJumpAnimation(state, { grounded: false, velocity: [0, -1, 0] }, jump);
+    expect(state.phase).toBe('landing');
+    expect(state.seconds).toBeCloseTo(22 / 30 + TICK_SECONDS, 6);
   });
 
   it('starts at the airborne section when the player only walks off a ledge', () => {
