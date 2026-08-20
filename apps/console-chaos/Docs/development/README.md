@@ -15,3 +15,4 @@
 | [GRAPHICS_STAGE_IMPL_PLAN.md](GRAPHICS_STAGE_IMPL_PLAN.md) | stage graphics 実装計画 |
 | [ASSET_REQUEST_STAGE.md](ASSET_REQUEST_STAGE.md) | stage 素材の発注仕様 |
 | [BUG_REPORT.md](BUG_REPORT.md) / [BUG_FIX_PLAN.md](BUG_FIX_PLAN.md) | graphics 改修時の不具合と修正計画 |
+| [ACTION_REFINE_PLAN.md](ACTION_REFINE_PLAN.md) | 操作・表示・ジャンプ・放置デモの改修計画 |
