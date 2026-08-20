@@ -96,21 +96,21 @@ export function createModelJumpAnimationState(): ModelJumpAnimationState {
 
 function jumpTiming(clip: PlayerClipRef): {
   fps: number;
-  airborneStart: number;
-  airborneEnd: number;
+  airborneFrame: number;
+  landingFrame: number;
   finalFrame: number;
 } | null {
-  const { sourceFps, airborneFrames, frameCount } = clip;
-  if (!sourceFps || !airborneFrames || !frameCount) return null;
+  const { sourceFps, airborneFrame, landingFrame, frameCount } = clip;
+  if (!sourceFps || !airborneFrame || !landingFrame || !frameCount) return null;
   return {
     fps: sourceFps,
-    airborneStart: airborneFrames[0],
-    airborneEnd: airborneFrames[1],
+    airborneFrame,
+    landingFrame,
     finalFrame: frameCount,
   };
 }
 
-/** 物理状態を Regular_Jump の離陸・20フレーム固定・着地区間へ写像する。 */
+/** 物理状態を Regular_Jump の離陸・24フレーム固定・着地区間へ写像する。 */
 export function updateModelJumpAnimation(
   state: ModelJumpAnimationState,
   player: Pick<PlayerBodyData, 'grounded' | 'velocity'>,
@@ -119,10 +119,9 @@ export function updateModelJumpAnimation(
 ): void {
   const timing = jumpTiming(clip);
   if (!timing) return;
-  const { fps, airborneStart, airborneEnd, finalFrame } = timing;
+  const { fps, airborneFrame, landingFrame, finalFrame } = timing;
   const takeoffStartTime = 1 / fps;
-  const airborneStartTime = airborneStart / fps;
-  const airborneHoldTime = Math.round((airborneStart + airborneEnd) / 2) / fps;
+  const airborneHoldTime = airborneFrame / fps;
 
   if (state.phase === 'landing') {
     if (!player.grounded && player.velocity[1] > 0) {
@@ -160,7 +159,7 @@ export function updateModelJumpAnimation(
       const ascentProgress = 1 - player.velocity[1] / launchVelocity;
       const synchronizedTime = takeoffStartTime
         + (airborneHoldTime - takeoffStartTime) * ascentProgress;
-      state.seconds = Math.max(state.seconds, Math.min(synchronizedTime, airborneStartTime));
+      state.seconds = Math.max(state.seconds, Math.min(synchronizedTime, airborneHoldTime));
       return;
     }
     state.seconds = airborneHoldTime;
@@ -169,7 +168,7 @@ export function updateModelJumpAnimation(
 
   if (state.phase === 'takeoff' || state.phase === 'airborne') {
     state.phase = 'landing';
-    state.seconds = (airborneEnd + 1) / fps;
+    state.seconds = landingFrame / fps;
     state.takeoffVelocity = 0;
   }
 }

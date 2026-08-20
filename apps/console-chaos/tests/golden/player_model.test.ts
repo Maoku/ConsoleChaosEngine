@@ -62,13 +62,14 @@ describe('プレイヤーモデル', () => {
       }
     });
 
-    it(`${id}: Regular_Jump の 58 キーと滞空フレーム時刻を固定する`, () => {
+    it(`${id}: Regular_Jump の 58 キーと滞空・着地フレーム時刻を固定する`, () => {
       const model = models.get(player.file)!;
       const jumpRef = player.clips.jump;
       expect(jumpRef).toMatchObject({
         animation: 'Regular_Jump',
         sourceFps: 30,
-        airborneFrames: [19, 21],
+        airborneFrame: 24,
+        landingFrame: 28,
         frameCount: 58,
         loop: false,
       });
@@ -77,9 +78,8 @@ describe('プレイヤーモデル', () => {
       const keyTimes = new Set(animation.channels.flatMap(({ times }) => [...times]));
       expect(keyTimes.size).toBe(58);
       const times = animation.channels.find((channel) => channel.times.length === 58)!.times;
-      expect(times[18]).toBeCloseTo(19 / 30, 5);
-      expect(times[19]).toBeCloseTo(20 / 30, 5);
-      expect(times[20]).toBeCloseTo(21 / 30, 5);
+      expect(times[23]).toBeCloseTo(24 / 30, 5);
+      expect(times[27]).toBeCloseTo(28 / 30, 5);
       expect(animation.durationSeconds).toBeCloseTo(58 / 30, 5);
     });
 

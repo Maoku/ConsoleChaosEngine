@@ -35,8 +35,10 @@ export interface PlayerClipRef {
   loop?: boolean;
   /** 元アニメーションのフレームレート。区間再生するクリップだけが持つ。 */
   sourceFps?: number;
-  /** 1 始まりの滞空フレーム範囲。 */
-  airborneFrames?: readonly [number, number];
+  /** 1 始まりの滞空保持フレーム。 */
+  airborneFrame?: number;
+  /** 1 始まりの着地開始フレーム。 */
+  landingFrame?: number;
   /** 1 始まりの最終フレーム。着地部の終端を決める。 */
   frameCount?: number;
 }
@@ -226,7 +228,8 @@ export const CONSOLE_CHAOS_GENERATION_THEMES: GenerationVariant<ConsoleChaosGene
             freeze: false,
             loop: false,
             sourceFps: 30,
-            airborneFrames: [19, 21],
+            airborneFrame: 24,
+            landingFrame: 28,
             frameCount: 58,
           },
         },
@@ -272,7 +275,8 @@ export const CONSOLE_CHAOS_GENERATION_THEMES: GenerationVariant<ConsoleChaosGene
             freeze: false,
             loop: false,
             sourceFps: 30,
-            airborneFrames: [19, 21],
+            airborneFrame: 24,
+            landingFrame: 28,
             frameCount: 58,
           },
         },
