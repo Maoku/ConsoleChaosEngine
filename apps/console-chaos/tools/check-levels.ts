@@ -15,6 +15,7 @@ import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 import { checkPuzzleGenerations, validateLevel, FC_GRID_WORLD, type ValidationIssue } from '../src/level/schema';
 import { generationChecks } from '../src/gameplay/puzzles/registry';
+import { checkPuzzleCatalog } from '../src/gameplay/puzzles/catalog';
 import { materialFor } from '../src/render/material';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
@@ -59,6 +60,15 @@ for (const file of files) {
   if (puzzleIssues.length > 0) {
     failed = true;
     report(file, puzzleIssues);
+    continue;
+  }
+
+  // 検査 2b：配置された謎は名称と段階 3・4 の固有ヒントを必ず持つ。
+  const catalogIssues: ValidationIssue[] = checkPuzzleCatalog(level.puzzles.map(({ puzzleId }) => puzzleId))
+    .map((issue) => ({ path: `puzzles.${issue.puzzleId}`, message: issue.message }));
+  if (catalogIssues.length > 0) {
+    failed = true;
+    report(file, catalogIssues);
     continue;
   }
 

@@ -24,6 +24,7 @@
  * これは製品のタイトル画面ではない（それはフェーズ 4）。試遊キットの一部として debug/ に置く。
  */
 import type { PlaytestLog } from './playtest_log';
+import { puzzleDisplayLabel } from '@/gameplay/puzzles/catalog';
 
 /** 記録を退避する間隔（ミリ秒）。落ちても直近の状態は残る */
 export const KEEP_INTERVAL_MS = 10_000;
@@ -140,7 +141,8 @@ export function createPlaytestFlow(options: PlaytestFlowOptions): PlaytestFlow {
   const askList = document.createElement('div');
   askList.style.cssText =
     'display:grid;grid-template-columns:auto auto auto;gap:6px 10px;justify-content:center;' +
-    'align-items:center;margin-top:8px;font-size:14px;';
+    'align-items:center;margin-top:8px;font-size:14px;max-height:min(42vh,360px);' +
+    'overflow-y:auto;padding:0 12px;';
 
   const saveButton = button('記録を保存');
   const againButton = button('もう一度');
@@ -154,7 +156,7 @@ export function createPlaytestFlow(options: PlaytestFlowOptions): PlaytestFlow {
   function askRow(puzzleId: string): void {
     const label = document.createElement('div');
     label.style.cssText = 'opacity:.7;text-align:right;';
-    label.textContent = puzzleId;
+    label.textContent = puzzleDisplayLabel(puzzleId);
     const buttons: HTMLButtonElement[] = [];
     for (const [text, value] of [['可', true], ['否', false]] as Array<[string, boolean]>) {
       const choice = button(text);

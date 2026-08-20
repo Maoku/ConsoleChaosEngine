@@ -18,6 +18,7 @@
  */
 import type { GenerationId } from '@console-chaos/engine';
 import { DISPLAY_NAMES } from '@/config/generation';
+import { PUZZLE_CATALOG } from '@/gameplay/puzzles/catalog';
 
 /** 段階 0 → 1、1 → 2、2 → 3 の待ち時間（ミリ秒）。§13.1 の 3 分 / 2 分 / 2 分 */
 export const HINT_DELAYS_MS: readonly [number, number, number] = [180_000, 120_000, 120_000];
@@ -37,41 +38,6 @@ export const NO_PENALTY_NOTE = 'ヒントを見てもクリア記録は変わら
  */
 export const STAGE1_TEXT = 'この場所には、別の世代でしか見えないものがある';
 export const STAGE2_TEMPLATE = '{channels} で見てみよう';
-
-export interface HintCopy {
-  /** 段階 3：使っている制約を明示する（解法は言わない） */
-  stage3: string;
-  /** 段階 4：解法の直接提示 */
-  stage4: string;
-}
-
-/** `{channels}` は対象世代のチャンネル名に置き換わる */
-export const HINT_COPY: Record<string, HintCopy> = {
-  'F-1': {
-    stage3: '色の選択肢が少ない世代では、近い色どうしが同じ 1 色として扱われる。装置はそれを 1 本の物として扱う',
-    stage4: '{channels} ではツタが橋になる。色が潰れる世代では 2 本が撚られて太くなり、いちばん楽に渡って行ける',
-  },
-  'F-2': {
-    stage3: '1 本の走査線に並べられる数には上限がある。あふれた分は表示されない',
-    stage4: '{channels} では群れがあふれてちらつく。裂け目から覗く灯、その真下の石だけを踏む',
-  },
-  'S-1': {
-    stage3: '床を 1 枚の面として回せる世代がある。回るのは模様だけではなく、面の上にあるものすべて',
-    stage4: '{channels} で床が回り、向こう岸の島が近づく。半透明の踏み台から島へ乗って運ばれる',
-  },
-  'P1-1': {
-    stage3: '奥行きが潰れている世代では、手前にある壁を避けようがない',
-    stage4: '{channels} で壁の奥側へ回り込み、裏のスイッチに触れる',
-  },
-  'P1-2': {
-    stage3: '奥行きを描画順で解決している世代では、重なりの矛盾がそのまま通り抜けになる',
-    stage4: '{channels} で殻の継ぎ目に入り、内部の核に触れる',
-  },
-  'P2-1': {
-    stage3: '動く光を持つ世代だけが、暗闇の中で足元を照らせる',
-    stage4: '{channels} では松明が灯る。照らしながら渡り廊下の折れを追い、突き当りの刻印を踏む',
-  },
-};
 
 /** レベルデータから作る、パズル 1 件分のヒント対象 */
 export interface HintTarget {
@@ -120,7 +86,7 @@ function fill(template: string, generations: readonly GenerationId[]): string {
 
 /** 4 段階の文面を組み立てる。レベルデータが真実で、文面はそこから導かれる */
 export function composeHintTexts(target: HintTarget): [string, string, string, string] {
-  const copy = HINT_COPY[target.puzzleId];
+  const copy = PUZZLE_CATALOG[target.puzzleId]?.hints;
   return [
     STAGE1_TEXT,
     fill(STAGE2_TEMPLATE, target.generations),

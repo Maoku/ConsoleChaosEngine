@@ -8,7 +8,6 @@ import {
   channelsLabel,
   composeHintTexts,
   createHintState,
-  HINT_COPY,
   HINT_DELAYS_MS,
   MAX_STAGE,
   requestHint,
@@ -19,6 +18,11 @@ import {
   usedHintCount,
   type HintState,
 } from '@/gameplay/hints';
+import {
+  checkPuzzleCatalog,
+  PUZZLE_CATALOG,
+  puzzleDisplayLabel,
+} from '@/gameplay/puzzles/catalog';
 import { TICK_MS } from '@console-chaos/engine';
 import { loadLevelFile } from './replay/harness';
 import { createTestSession, tickSession } from './session-testkit';
@@ -137,16 +141,32 @@ describe('gameplay/hints の文面', () => {
   });
 
   it('★ パズル 6 件すべてに段階 3・4 の文面がある', () => {
-    for (const id of ['F-1', 'F-2', 'S-1', 'P1-1', 'P1-2', 'P2-1']) {
-      expect(HINT_COPY[id]?.stage3.length ?? 0).toBeGreaterThan(0);
-      expect(HINT_COPY[id]?.stage4.length ?? 0).toBeGreaterThan(0);
+    const area1 = loadLevelFile('area1');
+    const ids = area1.puzzles.map(({ puzzleId }) => puzzleId);
+    expect(checkPuzzleCatalog(ids)).toEqual([]);
+    for (const id of ids) {
+      expect(PUZZLE_CATALOG[id]?.name.length ?? 0).toBeGreaterThan(0);
+      expect(PUZZLE_CATALOG[id]?.hints.stage3.length ?? 0).toBeGreaterThan(0);
+      expect(PUZZLE_CATALOG[id]?.hints.stage4.length ?? 0).toBeGreaterThan(0);
+      expect(composeHintTexts({
+        puzzleId: id,
+        generations: area1.puzzles.find((puzzle) => puzzle.puzzleId === id)!.requiredGenerations,
+      })).toHaveLength(4);
     }
+  });
+
+  it('未登録 ID はカタログ検査で失敗し、表示時は ID を安全に残す', () => {
+    expect(checkPuzzleCatalog(['UNKNOWN'])).toEqual([
+      { puzzleId: 'UNKNOWN', message: '名称・段階 3・4 ヒントがカタログに未登録' },
+    ]);
+    expect(puzzleDisplayLabel('F-1')).toBe('F-1 色の潰れ');
+    expect(puzzleDisplayLabel('UNKNOWN')).toBe('UNKNOWN');
   });
 
   it('段階 1〜3 は解法を書かない（「答え」ではなく「見る場所」）', () => {
     // 段階 4 にだけ操作の指示（「触れる」「踏む」「渡って」など）が現れる
     const verbs = ['触れる', '踏む', '渡って', '走り抜けて', '乗って', '入り'];
-    for (const id of Object.keys(HINT_COPY)) {
+    for (const id of Object.keys(PUZZLE_CATALOG)) {
       const texts = composeHintTexts({ puzzleId: id, generations: ['FC'] });
       for (const stage of [0, 1, 2]) {
         expect(verbs.some((verb) => texts[stage]!.includes(verb))).toBe(false);
