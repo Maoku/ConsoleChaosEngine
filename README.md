@@ -2,6 +2,8 @@
 
 FC/SFC/PS1/PS2 の4つのコンソール世代表現を提供するエンジン
 
+![アクション](./ConsoleChaosAction.jpg)
+
 ゲームの状態は単一で共有、4つの世代の出力を切り替えて遊ぶなどができます。
 厳密なハード制約に準拠するというよりは世代の表現を擬似体験するためのものです。
 
@@ -45,13 +47,15 @@ npm run dev -w @console-chaos/asset-pipeline-sample
 npm run verify:distribution
 ```
 
-生成先は `artifacts/` です。エンジン本体の導入・最小構成・公開APIは
-[`packages/engine/README.md`](packages/engine/README.md)、配布とリリースの詳細は
-[`Docs/DISTRIBUTION.md`](Docs/DISTRIBUTION.md)、変更点は
-[`packages/engine/RELEASE_NOTES.md`](packages/engine/RELEASE_NOTES.md) を参照してください。
+生成先は `artifacts/` です。
+- エンジン本体の導入・最小構成・公開APIは [`packages/engine/README.md`](packages/engine/README.md)
+- 配布とリリースの詳細は [`Docs/DISTRIBUTION.md`](Docs/DISTRIBUTION.md)
+- 変更点は [`packages/engine/RELEASE_NOTES.md`](packages/engine/RELEASE_NOTES.md) を参照してください。
 
-公開ドキュメントの一覧は [`Docs/README.md`](Docs/README.md)、実装と品質検証の要約は
-[`Docs/VALIDATION.md`](Docs/VALIDATION.md) にまとめています。
+- 公開ドキュメントの一覧は [`Docs/README.md`](Docs/README.md)
+- 実装と品質検証の要約は[`Docs/VALIDATION.md`](Docs/VALIDATION.md) 
+
+にまとめています。
 
 ## ライセンス
 
