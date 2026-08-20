@@ -58,6 +58,8 @@ describe('Console presentation parity commands', () => {
       floatAmplitude: 0,
       uvScrollY: 0,
     });
+    expect(frame.materials.find((material) => material.id === 'material:decor_fall_start_0:PS1'))
+      .toMatchObject({ uvScrollY: -0.35 });
     expect(frame.backgrounds.filter((background) => background.generations?.includes('PS1'))).toHaveLength(2);
     expect(frame.sprites.map((sprite) => sprite.generations?.[0])).toEqual(['FC', 'SFC']);
     expect(frame.skinnedMeshes.map((mesh) => mesh.generations?.[0])).toEqual(['PS1', 'PS2']);

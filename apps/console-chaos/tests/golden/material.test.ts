@@ -44,6 +44,10 @@ describe('material content contract', () => {
     expect(Object.values(MATERIALS).some((material) => material.castShadow)).toBe(true);
   });
 
+  it('scrolls the shared waterfall material down the screen in every generation', () => {
+    expect(materialFor('waterfall').uvScrollY).toBe(-0.35);
+  });
+
   it('keeps F-1 vines identical in FC and distinguishable in SFC', () => {
     const fc = CONSOLE_CHAOS_GENERATION_THEMES.FC.art.textureSet;
     const sfc = CONSOLE_CHAOS_GENERATION_THEMES.SFC.art.textureSet;

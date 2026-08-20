@@ -267,8 +267,8 @@ export const MATERIALS: Record<string, Material> = {
   // 語彙を増やさない：新しい絵も新しいモデルも足さず、足場の材質へ decoration を立てるだけ
   sky_cube: { ...grassTopped(surface('background', 'stone_wall.png')), decoration: true, float: 0.5 },
   // 島の縁から落ちる滝（SG-08）。**加算合成を持たない第1世代でも抜きで成立する**ので
-  // `translucent` は立てない。落ち続けて見えるのは UV を縦へ送っているからだけである
-  waterfall: { ...flora('water_fall.png'), uvScrollY: 0.35 },
+  // `translucent` は立てない。負の UV 移動で、模様が画面上から下へ流れて見える
+  waterfall: { ...flora('water_fall.png'), uvScrollY: -0.35 },
   // --- 敵 ---
   enemy: { ...prop('enemy', 'enemy_body.png', 'props_enemy'), alphaCutoff: 0.5 },
   // 谷にたかる同じ生き物の群れ（F-2）。**スプライトなので走査線の上限に掛かる**。
