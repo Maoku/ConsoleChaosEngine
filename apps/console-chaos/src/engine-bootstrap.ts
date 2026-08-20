@@ -151,18 +151,18 @@ const module: GameModule = debugScene
       },
       shouldSimulate: () => flow === null || (flow.started && !flow.finished),
       onFixedUpdate(current) {
-        flow?.update();
         hud?.update(hudModelFromSession(current));
-        playtest?.update();
+        if (flow?.mode === 'manual') playtest?.update();
       },
       onRender(current, currentPresentation) {
+        flow?.update();
         colliderHud?.update(current, currentPresentation.colliderBoxes);
       },
       onDispose(current) {
         if (session === current) session = null;
         audioPresenter = null;
         presentation = null;
-        playtest?.keep();
+        if (flow?.mode === 'manual' || flow?.mode === 'clear') playtest?.keep();
         playtest?.dispose();
         flow?.dispose();
         flow = null;
@@ -181,13 +181,14 @@ const windowResize = (): void => {
 window.addEventListener('resize', windowResize);
 const keydown = (event: KeyboardEvent): void => {
   const key = event.key.toLowerCase();
-  if (key === 'h') session?.requestHint();
+  const manual = flow === null || flow.mode === 'manual';
+  if (key === 'h' && manual) session?.requestHint();
   if (key === 'c') presentation?.toggleColliders();
   if (key === 'b') bgm?.nextSong();
   if (key === 'm') bgm?.toggleMute();
-  if (key === 'p') playtest?.save();
-  if (event.key === 'Escape') flow?.finish();
-  if (key === 'r') {
+  if (key === 'p' && manual) playtest?.save();
+  if (event.key === 'Escape' && manual) flow?.finish();
+  if (key === 'r' && manual) {
     playtest?.keep();
     session?.reset();
     playtest?.reset();
