@@ -16,6 +16,7 @@ import { dirname, join } from 'node:path';
 import { checkPuzzleGenerations, validateLevel, FC_GRID_WORLD, type ValidationIssue } from '../src/level/schema';
 import { generationChecks } from '../src/gameplay/puzzles/registry';
 import { checkPuzzleCatalog } from '../src/gameplay/puzzles/catalog';
+import { demoAnchorIssues } from '../src/gameplay/demo';
 import { materialFor } from '../src/render/material';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
@@ -69,6 +70,14 @@ for (const file of files) {
   if (catalogIssues.length > 0) {
     failed = true;
     report(file, catalogIssues);
+    continue;
+  }
+
+  const anchorIssues: ValidationIssue[] = demoAnchorIssues(level)
+    .map((message) => ({ path: 'demo', message }));
+  if (anchorIssues.length > 0) {
+    failed = true;
+    report(file, anchorIssues);
     continue;
   }
 

@@ -18,12 +18,18 @@ import { createCueTracker, pollCues } from '@/gameplay/audio_cues';
 import { songOf } from '@/audio/songs';
 import type { Session } from '@/gameplay/session';
 import type { Score } from '@console-chaos/engine';
+import type { ConsoleChaosActionSnapshot } from '@/config/actions';
 
 export interface ConsoleChaosModuleHooks {
   initialSong?: Score;
   onCreate?(session: Session, audio: ConsoleAudioPresenter, presentation: ConsoleChaosPresentation): void;
   /** false の間は入力・世代切替・ゲーム世界の固定更新を止め、描画だけを続ける。 */
   shouldSimulate?(session: Session): boolean;
+  /** 通常入力を、デモなどが作る同じ action snapshot 経路へ差し替える。 */
+  overrideActions?(
+    session: Session,
+    sampled: ConsoleChaosActionSnapshot,
+  ): ConsoleChaosActionSnapshot;
   onFixedUpdate?(session: Session): void;
   onRender?(session: Session, presentation: ConsoleChaosPresentation): void;
   onDispose?(session: Session): void;
@@ -63,7 +69,8 @@ export function createConsoleChaosModule(level: LevelFile, hooks: ConsoleChaosMo
             snapshot = createNeutralConsoleChaosActions();
             return;
           }
-          snapshot = actions.sample(context.input.snapshot, context.generation.profile, dtMs);
+          const sampled = actions.sample(context.input.snapshot, context.generation.profile, dtMs);
+          snapshot = hooks.overrideActions?.(session, sampled) ?? sampled;
           if (snapshot.switchPrevious.pressed) context.generation.cycle(-1);
           if (snapshot.switchNext.pressed) context.generation.cycle(1);
           const direct = [snapshot.switch1, snapshot.switch2, snapshot.switch3, snapshot.switch4]

@@ -10,6 +10,7 @@ import {
   createRecordingRenderer,
 } from '@console-chaos/engine-testkit';
 import { createConsoleChaosModule } from '@/app';
+import { createNeutralConsoleChaosActions } from '@/config/actions';
 import type { Session } from '@/gameplay/session';
 import { loadLevelFile } from '../unit/replay/harness';
 
@@ -139,6 +140,30 @@ describe('Console Chaos production-host lifecycle', () => {
     expect(activeSession.tickIndex).toBe(1);
     expect(renderer.frames.length).toBeGreaterThan(2);
 
+    host.dispose();
+  });
+
+  it('routes injected demo actions through the normal fixed-update lifecycle', async () => {
+    const loopHost = createManualLoopHost();
+    let session: Session | null = null;
+    const host = createGameHost({
+      loopHost,
+      renderer: createRecordingRenderer(),
+      input: createMutableInputSource(),
+      initialGeneration: 'FC',
+    });
+    await host.initialize(createConsoleChaosModule(loadLevelFile('mini'), {
+      onCreate(created) {
+        session = created;
+      },
+      overrideActions() {
+        return { ...createNeutralConsoleChaosActions(), move: [1, 0] };
+      },
+    }));
+    const activeSession = session as unknown as Session;
+    const startX = activeSession.player.position[0];
+    for (let frame = 0; frame <= 30; frame++) host.frame(frame * 17);
+    expect(activeSession.player.position[0]).toBeGreaterThan(startX);
     host.dispose();
   });
 });

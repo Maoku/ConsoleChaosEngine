@@ -32,6 +32,7 @@ import type { ConsoleChaosPresentation } from './presentation/frame';
 import { KEY_COLORS } from './render/key_palette';
 import type { Session } from './gameplay/session';
 import { startNewRun } from './gameplay/run';
+import { createDemoController, type DemoController } from './gameplay/demo';
 import { createHud, hudModelFromSession, type Hud } from './ui/hud';
 import { createDisplaySettings, DISPLAY_LABELS, type DisplayOptions } from './ui/settings';
 
@@ -104,6 +105,7 @@ let presentation: ConsoleChaosPresentation | null = null;
 let hud: Hud | null = null;
 let playtest: PlaytestLog | null = null;
 let flow: PlaytestFlow | null = null;
+let demo: DemoController | null = null;
 const bgm = isMini
   ? createBgmControl({
       audio: () => audioPresenter,
@@ -133,6 +135,7 @@ const module: GameModule = debugScene
         bgm?.sync();
         hud = createHud(canvas);
         playtest = createPlaytestLog(created, levelId);
+        demo = createDemoController(level);
         if (params.get('playtest') !== '0') {
           flow = createPlaytestFlow({
             log: playtest,
@@ -146,11 +149,23 @@ const module: GameModule = debugScene
               startNewRun(created);
               playtest?.reset();
             },
+            onDemoStart: () => demo?.start(created) ?? false,
+            onReturnTitle: () => {
+              demo?.stop();
+              startNewRun(created);
+            },
           });
         }
       },
       shouldSimulate: () => flow === null || (flow.started && !flow.finished),
+      overrideActions(current, sampled) {
+        return flow?.mode === 'demo' ? (demo?.actions(current) ?? sampled) : sampled;
+      },
       onFixedUpdate(current) {
+        if (flow?.mode === 'demo') {
+          demo?.afterTick(current);
+          if (demo?.phase === 'finished') flow.returnToTitle();
+        }
         hud?.update(hudModelFromSession(current));
         if (flow?.mode === 'manual') playtest?.update();
       },
@@ -166,6 +181,8 @@ const module: GameModule = debugScene
         playtest?.dispose();
         flow?.dispose();
         flow = null;
+        demo?.stop();
+        demo = null;
         hud?.dispose();
         hud = null;
         playtest = null;
