@@ -99,4 +99,4 @@ npm run dev
 
 ## ライセンス
 
-未定（リリース前に決定する）。
+[MIT License](../../LICENSE)

@@ -52,3 +52,7 @@ npm run verify:distribution
 
 公開ドキュメントの一覧は [`Docs/README.md`](Docs/README.md)、実装と品質検証の要約は
 [`Docs/VALIDATION.md`](Docs/VALIDATION.md) にまとめています。
+
+## ライセンス
+
+[MIT License](LICENSE)
