@@ -58,7 +58,7 @@ if (player.kind !== 'model') throw new Error('PS1 player must be a model');
 const jump = player.clips.jump;
 
 describe('Regular_Jump presentation state', () => {
-  it('plays takeoff, confines a long airtime to frames 19-21, then plays landing once', () => {
+  it('plays takeoff, holds a long airtime on frame 20, then plays landing once', () => {
     const state = createModelJumpAnimationState();
     updateModelJumpAnimation(state, { grounded: false, velocity: [0, 8, 0] }, jump);
     expect(state.phase).toBe('takeoff');
@@ -67,11 +67,10 @@ describe('Regular_Jump presentation state', () => {
     while (state.phase === 'takeoff') {
       updateModelJumpAnimation(state, { grounded: false, velocity: [0, -1, 0] }, jump);
     }
-    expect(state.seconds).toBeCloseTo(19 / 30, 6);
+    expect(state.seconds).toBeCloseTo(20 / 30, 6);
     for (let tick = 0; tick < 600; tick++) {
       updateModelJumpAnimation(state, { grounded: false, velocity: [0, -8, 0] }, jump);
-      expect(state.seconds).toBeGreaterThanOrEqual(19 / 30);
-      expect(state.seconds).toBeLessThanOrEqual(21 / 30);
+      expect(state.seconds).toBeCloseTo(20 / 30, 6);
     }
 
     updateModelJumpAnimation(state, { grounded: true, velocity: [0, 0, 0] }, jump);
@@ -90,6 +89,6 @@ describe('Regular_Jump presentation state', () => {
     const state = createModelJumpAnimationState();
     updateModelJumpAnimation(state, { grounded: false, velocity: [0, -1, 0] }, jump, TICK_SECONDS);
     expect(state.phase).toBe('airborne');
-    expect(state.seconds).toBeCloseTo(19 / 30, 6);
+    expect(state.seconds).toBeCloseTo(20 / 30, 6);
   });
 });

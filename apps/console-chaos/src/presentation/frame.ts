@@ -87,11 +87,10 @@ export type ModelJumpPhase = 'base' | 'takeoff' | 'airborne' | 'landing';
 export interface ModelJumpAnimationState {
   phase: ModelJumpPhase;
   seconds: number;
-  airborneSeconds: number;
 }
 
 export function createModelJumpAnimationState(): ModelJumpAnimationState {
-  return { phase: 'base', seconds: 0, airborneSeconds: 0 };
+  return { phase: 'base', seconds: 0 };
 }
 
 function jumpTiming(clip: PlayerClipRef): {
@@ -110,7 +109,7 @@ function jumpTiming(clip: PlayerClipRef): {
   };
 }
 
-/** 物理状態を Regular_Jump の離陸・滞空・着地区間へ写像する。 */
+/** 物理状態を Regular_Jump の離陸・20フレーム固定・着地区間へ写像する。 */
 export function updateModelJumpAnimation(
   state: ModelJumpAnimationState,
   player: Pick<PlayerBodyData, 'grounded' | 'velocity'>,
@@ -121,26 +120,23 @@ export function updateModelJumpAnimation(
   if (!timing) return;
   const { fps, airborneStart, airborneEnd, finalFrame } = timing;
   const airborneStartTime = airborneStart / fps;
+  const airborneHoldTime = Math.round((airborneStart + airborneEnd) / 2) / fps;
 
   if (!player.grounded) {
     if (state.phase === 'base' || state.phase === 'landing') {
       state.phase = player.velocity[1] > 0 ? 'takeoff' : 'airborne';
-      state.seconds = state.phase === 'takeoff' ? 1 / fps : airborneStartTime;
-      state.airborneSeconds = 0;
+      state.seconds = state.phase === 'takeoff' ? 1 / fps : airborneHoldTime;
       return;
     }
     if (state.phase === 'takeoff') {
       state.seconds = Math.min(state.seconds + dtSeconds, airborneStartTime);
       if (state.seconds >= airborneStartTime) {
         state.phase = 'airborne';
-        state.airborneSeconds = 0;
+        state.seconds = airborneHoldTime;
       }
       return;
     }
-    const airborneFrameCount = airborneEnd - airborneStart + 1;
-    state.airborneSeconds += dtSeconds;
-    const frameOffset = Math.floor((state.airborneSeconds + 1e-9) * fps) % airborneFrameCount;
-    state.seconds = (airborneStart + frameOffset) / fps;
+    state.seconds = airborneHoldTime;
     return;
   }
 
@@ -154,7 +150,6 @@ export function updateModelJumpAnimation(
     if (next > finalFrame / fps + 1e-9) {
       state.phase = 'base';
       state.seconds = 0;
-      state.airborneSeconds = 0;
     } else {
       state.seconds = next;
     }
