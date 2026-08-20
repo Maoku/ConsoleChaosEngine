@@ -18,7 +18,7 @@ describe('legacy debug URL modules', () => {
   it('recognizes every preserved scene route and its initial generation', () => {
     expect(DEBUG_SCENES).toEqual(['ps1', 'fc', 'switch', 'character', 'player', 'blend']);
     for (const scene of DEBUG_SCENES) expect(isConsoleDebugScene(scene)).toBe(true);
-    expect(initialGenerationForScene('mini')).toBe('PS1');
+    expect(initialGenerationForScene('mini')).toBe('FC');
     expect(initialGenerationForScene('ps1')).toBe('PS1');
     expect(initialGenerationForScene('blend')).toBe('PS1');
     expect(initialGenerationForScene('switch')).toBe('FC');

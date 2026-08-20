@@ -17,7 +17,7 @@ export function isConsoleDebugScene(value: string): value is ConsoleDebugScene {
 }
 
 export function initialGenerationForScene(scene: string): GenerationId {
-  return scene === 'mini' || scene === 'ps1' || scene === 'blend' ? 'PS1' : 'FC';
+  return scene === 'ps1' || scene === 'blend' ? 'PS1' : 'FC';
 }
 
 export interface ConsoleDebugModuleOptions {

@@ -31,6 +31,7 @@ import { createConsoleChaosRenderManifest } from './presentation/catalog';
 import type { ConsoleChaosPresentation } from './presentation/frame';
 import { KEY_COLORS } from './render/key_palette';
 import type { Session } from './gameplay/session';
+import { startNewRun } from './gameplay/run';
 import { createHud, hudModelFromSession, type Hud } from './ui/hud';
 import { createDisplaySettings, DISPLAY_LABELS, type DisplayOptions } from './ui/settings';
 
@@ -137,9 +138,12 @@ const module: GameModule = debugScene
             log: playtest,
             tester: params.get('tester') ?? undefined,
             isCleared: () => created.cleared,
-            onStart: () => playtest?.reset(),
+            onStart: () => {
+              startNewRun(created);
+              playtest?.reset();
+            },
             onRestart: () => {
-              created.reset();
+              startNewRun(created);
               playtest?.reset();
             },
           });
