@@ -17,6 +17,16 @@ FC/SFC/PS1/PS2 の4つのコンソール世代表現を提供するエンジン
 - `apps/console-chaos`: 元となった謎解きアクション
 - `apps/asset-pipeline-sample`: 元素材から各世代のアセットを生成するパイプラインの例
 
+## 関連リポジトリ
+
+### ConsoleChaosRacing
+![レースゲーム](https://raw.githubusercontent.com/Maoku/ConsoleChaosRacing/main/preview.jpg)
+
+https://github.com/Maoku/ConsoleChaosRacing
+
+npmパッケージ化した ConsoleChaosEngine から レースゲームを試作(Opus5)
+
+
 ## 4世代のコンソール表現
 
 Engineは同じゲーム状態を維持したまま、映像・音声・入力能力を4つの世代プロファイルで切り替えます。
