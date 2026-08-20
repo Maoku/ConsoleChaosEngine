@@ -954,7 +954,7 @@ async function createGpuBackend(
     const quantized = Math.floor(command.animationTime / step) * step;
     const clipIndex = rig.clips.indexOf(command.clip);
     const animation = rig.model.animations[clipIndex >= 0 ? clipIndex : 0];
-    if (animation) sampleAnimation(animation, quantized, rig.pose);
+    if (animation) sampleAnimation(animation, quantized, rig.pose, command.loop ?? true);
     computeGlobalMatrices(rig.model, rig.pose, rig.globals);
     if (rig.model.skins.length > 0) computeJointMatrices(rig.model, 0, rig.globals, rig.joints);
     mat4.identity(modelMatrix);

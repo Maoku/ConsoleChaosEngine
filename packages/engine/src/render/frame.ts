@@ -50,6 +50,8 @@ export interface SkinnedMeshCommand extends OrderingCommand {
   model: string;
   clip: string;
   animationTime: number;
+  /** 省略時は従来どおりクリップ全体をループする。 */
+  loop?: boolean;
   transform: TransformCommand;
   tint?: Color;
   tintFactor?: readonly [number, number, number, number];

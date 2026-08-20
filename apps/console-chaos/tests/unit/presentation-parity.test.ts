@@ -124,4 +124,17 @@ describe('Console presentation parity commands', () => {
     expect(dark.backgrounds.find((background) => !background.texture && background.generations?.includes('PS2'))?.brightness).toBe(0);
     ps2.host.dispose();
   });
+
+  it('emits Regular_Jump as a non-looping model command on takeoff', () => {
+    const ps1 = setup('PS1');
+    ps1.session.player.grounded = false;
+    ps1.session.player.velocity = [0, 8, 0];
+    ps1.presentation.fixedUpdate(ps1.session);
+    expect(ps1.build().skinnedMeshes.find((mesh) => mesh.id === 'player:PS1')).toMatchObject({
+      clip: 'Regular_Jump',
+      animationTime: 1 / 30,
+      loop: false,
+    });
+    ps1.host.dispose();
+  });
 });

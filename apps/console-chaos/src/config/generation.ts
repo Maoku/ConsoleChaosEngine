@@ -31,6 +31,14 @@ export type PlayerClip = 'idle' | 'walk' | 'jump';
 export interface PlayerClipRef {
   animation: string;
   freeze: boolean;
+  /** 省略時は従来どおりループ再生する。 */
+  loop?: boolean;
+  /** 元アニメーションのフレームレート。区間再生するクリップだけが持つ。 */
+  sourceFps?: number;
+  /** 1 始まりの滞空フレーム範囲。 */
+  airborneFrames?: readonly [number, number];
+  /** 1 始まりの最終フレーム。着地部の終端を決める。 */
+  frameCount?: number;
 }
 
 export interface PlayerModelProfile {
@@ -211,9 +219,16 @@ export const CONSOLE_CHAOS_GENERATION_THEMES: GenerationVariant<ConsoleChaosGene
         file: 'gen3_character.glb',
         front: '+Z',
         clips: {
-          idle: { animation: 'Idle_4', freeze: false },
+          idle: { animation: 'Walking', freeze: true },
           walk: { animation: 'Walking', freeze: false },
-          jump: { animation: '360_Power_Spin_Jump', freeze: false },
+          jump: {
+            animation: 'Regular_Jump',
+            freeze: false,
+            loop: false,
+            sourceFps: 30,
+            airborneFrames: [19, 21],
+            frameCount: 58,
+          },
         },
       },
       art: {
@@ -252,7 +267,14 @@ export const CONSOLE_CHAOS_GENERATION_THEMES: GenerationVariant<ConsoleChaosGene
         clips: {
           idle: { animation: 'Walking', freeze: true },
           walk: { animation: 'Walking', freeze: false },
-          jump: { animation: '360_Power_Spin_Jump', freeze: false },
+          jump: {
+            animation: 'Regular_Jump',
+            freeze: false,
+            loop: false,
+            sourceFps: 30,
+            airborneFrames: [19, 21],
+            frameCount: 58,
+          },
         },
       },
       art: {

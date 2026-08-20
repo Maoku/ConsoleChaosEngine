@@ -12,8 +12,10 @@ import {
 import {
   CONSOLE_CHAOS_GENERATION_THEMES,
   type PlayerClip,
+  type PlayerClipRef,
   type PlayerSpriteProfile,
 } from '@/config/generation';
+import type { PlayerBodyData } from '@/gameplay/player';
 import type { Session } from '@/gameplay/session';
 import { planeAngleAt, S1_PIVOT } from '@/gameplay/puzzles/s1_affine_plane';
 import { collidersOf } from '@/level/loader';
@@ -78,6 +80,85 @@ function clipOf(session: Session): PlayerClip {
 
 function spriteCell(sprite: PlayerSpriteProfile, clip: PlayerClip, seconds: number): number {
   return spriteCellOf(sprite.clips[clip], seconds);
+}
+
+export type ModelJumpPhase = 'base' | 'takeoff' | 'airborne' | 'landing';
+
+export interface ModelJumpAnimationState {
+  phase: ModelJumpPhase;
+  seconds: number;
+  airborneSeconds: number;
+}
+
+export function createModelJumpAnimationState(): ModelJumpAnimationState {
+  return { phase: 'base', seconds: 0, airborneSeconds: 0 };
+}
+
+function jumpTiming(clip: PlayerClipRef): {
+  fps: number;
+  airborneStart: number;
+  airborneEnd: number;
+  finalFrame: number;
+} | null {
+  const { sourceFps, airborneFrames, frameCount } = clip;
+  if (!sourceFps || !airborneFrames || !frameCount) return null;
+  return {
+    fps: sourceFps,
+    airborneStart: airborneFrames[0],
+    airborneEnd: airborneFrames[1],
+    finalFrame: frameCount,
+  };
+}
+
+/** 物理状態を Regular_Jump の離陸・滞空・着地区間へ写像する。 */
+export function updateModelJumpAnimation(
+  state: ModelJumpAnimationState,
+  player: Pick<PlayerBodyData, 'grounded' | 'velocity'>,
+  clip: PlayerClipRef,
+  dtSeconds = TICK_SECONDS,
+): void {
+  const timing = jumpTiming(clip);
+  if (!timing) return;
+  const { fps, airborneStart, airborneEnd, finalFrame } = timing;
+  const airborneStartTime = airborneStart / fps;
+
+  if (!player.grounded) {
+    if (state.phase === 'base' || state.phase === 'landing') {
+      state.phase = player.velocity[1] > 0 ? 'takeoff' : 'airborne';
+      state.seconds = state.phase === 'takeoff' ? 1 / fps : airborneStartTime;
+      state.airborneSeconds = 0;
+      return;
+    }
+    if (state.phase === 'takeoff') {
+      state.seconds = Math.min(state.seconds + dtSeconds, airborneStartTime);
+      if (state.seconds >= airborneStartTime) {
+        state.phase = 'airborne';
+        state.airborneSeconds = 0;
+      }
+      return;
+    }
+    const airborneFrameCount = airborneEnd - airborneStart + 1;
+    state.airborneSeconds += dtSeconds;
+    const frameOffset = Math.floor((state.airborneSeconds + 1e-9) * fps) % airborneFrameCount;
+    state.seconds = (airborneStart + frameOffset) / fps;
+    return;
+  }
+
+  if (state.phase === 'takeoff' || state.phase === 'airborne') {
+    state.phase = 'landing';
+    state.seconds = (airborneEnd + 1) / fps;
+    return;
+  }
+  if (state.phase === 'landing') {
+    const next = state.seconds + dtSeconds;
+    if (next > finalFrame / fps + 1e-9) {
+      state.phase = 'base';
+      state.seconds = 0;
+      state.airborneSeconds = 0;
+    } else {
+      state.seconds = next;
+    }
+  }
 }
 
 function visibleEntity(
@@ -151,6 +232,7 @@ export function createConsoleChaosPresentation(level: LevelFile): ConsoleChaosPr
   let timeSeconds = 0;
   let animationSeconds = 0;
   let clip: PlayerClip = 'idle';
+  const modelJump = createModelJumpAnimationState();
   let backdropBrightness = 1;
   let collidersEnabled = false;
   let colliderBoxes: ColliderBox[] = [];
@@ -184,6 +266,10 @@ export function createConsoleChaosPresentation(level: LevelFile): ConsoleChaosPr
         animationSeconds = 0;
       } else {
         animationSeconds += TICK_SECONDS;
+      }
+      const modelPlayer = CONSOLE_CHAOS_GENERATION_THEMES.PS1.player;
+      if (modelPlayer.kind === 'model') {
+        updateModelJumpAnimation(modelJump, session.player, modelPlayer.clips.jump);
       }
       const sector = sectorAt(level, session.player.position);
       const wanted = sector !== null && interiors.has(sector.id) ? 0 : 1;
@@ -300,14 +386,17 @@ export function createConsoleChaosPresentation(level: LevelFile): ConsoleChaosPr
           });
         } else {
           const halfTurn = visual.front === '+Z' ? Math.PI : 0;
-          const clipRef = visual.clips[clip];
+          const modelClip: PlayerClip = modelJump.phase === 'base' ? clip : 'jump';
+          const clipRef = visual.clips[modelClip];
+          const modelAnimationSeconds = modelJump.phase === 'base' ? animationSeconds : modelJump.seconds;
           const usesOrderingTable = HARDWARE_GENERATION_PROFILES[generation].video.translucency.kind === 'fixed-rate';
           frame.skinnedMeshes.push({
             id: `player:${generation}`,
             generations: [generation],
             model: `assets/models/${visual.file}`,
             clip: clipRef.animation,
-            animationTime: clipRef.freeze ? 0 : animationSeconds,
+            animationTime: clipRef.freeze ? 0 : modelAnimationSeconds,
+            ...(clipRef.loop === undefined ? {} : { loop: clipRef.loop }),
             transform: {
               position: [player.position[0], player.position[1] - FEET_OFFSET, player.position[2]],
               rotationY: session.playerState.facing * yawBase + halfTurn,
