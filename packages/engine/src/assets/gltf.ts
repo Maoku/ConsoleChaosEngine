@@ -178,8 +178,11 @@ function decodeBase64(base64: string): Uint8Array {
 }
 
 function resolveUri(baseUrl: string, uri: string): string {
-  if (/^(data:|https?:|\/)/.test(uri)) return uri;
-  const slash = baseUrl.lastIndexOf('/');
+  if (/^(data:|https?:|\/|[a-z]:[\\/]|\\\\)/i.test(uri)) return uri;
+  // Browser URL は `/`、Windows 上の preflight は `\` を使う。
+  // どちらか一方だけを見ると `C:\...\models\player.gltf` の外部
+  // buffer が cwd 直下の `player.bin` として解決されてしまう。
+  const slash = Math.max(baseUrl.lastIndexOf('/'), baseUrl.lastIndexOf('\\'));
   return slash >= 0 ? `${baseUrl.slice(0, slash + 1)}${uri}` : uri;
 }
 

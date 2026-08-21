@@ -2,36 +2,46 @@ import { mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
-import { spawnSync } from "node:child_process";
+import {
+  createDistributionDiagnostics,
+  exitCodeFor,
+} from "./distribution-diagnostics.mjs";
 
 const root = dirname(dirname(fileURLToPath(import.meta.url)));
 const artifacts = join(root, "artifacts");
 const cache = join(root, "node_modules", ".cache", "npm-distribution-smoke");
-const engine = JSON.parse(
-  await readFile(join(root, "packages/engine/package.json"), "utf8"),
-);
-const testkit = JSON.parse(
-  await readFile(join(root, "packages/engine-testkit/package.json"), "utf8"),
-);
-const assetPipeline = JSON.parse(
-  await readFile(join(root, "packages/asset-pipeline/package.json"), "utf8"),
-);
+const diagnostics = await createDistributionDiagnostics({
+  logPath: join(artifacts, "logs", "verify-distribution.log"),
+  title: "Console Chaos distribution verification started",
+});
 const archiveFor = (manifest) =>
   join(
     artifacts,
     `${manifest.name.replace(/^@/, "").replaceAll("/", "-")}-${manifest.version}.tgz`,
   );
-const consumer = await mkdtemp(join(tmpdir(), "console-chaos-distribution-"));
-
-function run(command, args) {
-  const result = spawnSync(command, args, { cwd: consumer, stdio: "inherit" });
-  if (result.status !== 0)
-    throw new Error(
-      `${command} failed with status ${result.status ?? "unknown"}`,
-    );
-}
+let consumer;
+let succeeded = false;
 
 try {
+  diagnostics.info(`Workspace root: ${root}`);
+  diagnostics.info(`Artifact directory: ${artifacts}`);
+  diagnostics.info(`npm cache: ${cache}`);
+  diagnostics.info("Reading package manifests");
+  const engine = JSON.parse(
+    await readFile(join(root, "packages/engine/package.json"), "utf8"),
+  );
+  const testkit = JSON.parse(
+    await readFile(join(root, "packages/engine-testkit/package.json"), "utf8"),
+  );
+  const assetPipeline = JSON.parse(
+    await readFile(join(root, "packages/asset-pipeline/package.json"), "utf8"),
+  );
+  consumer = await mkdtemp(join(tmpdir(), "console-chaos-distribution-"));
+  diagnostics.info(`Temporary consumer: ${consumer}`);
+  diagnostics.info(
+    `Package versions: engine ${engine.version}, testkit ${testkit.version}, asset-pipeline ${assetPipeline.version}`,
+  );
+  diagnostics.info("Writing isolated consumer package.json");
   await writeFile(
     join(consumer, "package.json"),
     JSON.stringify(
@@ -45,20 +55,25 @@ try {
     ),
   );
 
-  run("npm", [
-    "install",
-    "--ignore-scripts",
-    "--no-audit",
-    "--no-fund",
-    "--offline",
-    "--cache",
-    cache,
-    archiveFor(engine),
-    archiveFor(testkit),
-    archiveFor(assetPipeline),
-    join(root, "node_modules/gl-matrix"),
-  ]);
+  await diagnostics.run(
+    "npm",
+    [
+      "install",
+      "--ignore-scripts",
+      "--no-audit",
+      "--no-fund",
+      "--offline",
+      "--cache",
+      cache,
+      archiveFor(engine),
+      archiveFor(testkit),
+      archiveFor(assetPipeline),
+      join(root, "node_modules/gl-matrix"),
+    ],
+    { cwd: consumer, label: "Install tarballs into isolated consumer" },
+  );
 
+  diagnostics.info("Writing runtime smoke test");
   await writeFile(
     join(consumer, "smoke.mjs"),
     `
@@ -76,8 +91,12 @@ if (createRecordingRenderer().frames.length !== 0) throw new Error('Testkit runt
 writeFileSync('source.png', encodePng(createImage(4, 4, [0, 0, 0, 255])));
 `,
   );
-  run(process.execPath, ["smoke.mjs"]);
+  await diagnostics.run(process.execPath, ["smoke.mjs"], {
+    cwd: consumer,
+    label: "Run public API smoke test",
+  });
 
+  diagnostics.info("Writing asset pipeline CLI fixture");
   await writeFile(
     join(consumer, "art.config.mjs"),
     `
@@ -106,10 +125,22 @@ export default defineAssetPipeline({
 });
 `,
   );
-  const assetCli = join(consumer, "node_modules/@console-chaos/asset-pipeline/dist/cli.js");
-  run(process.execPath, [assetCli, "build", "--config", "art.config.mjs"]);
-  run(process.execPath, [assetCli, "check", "--config", "art.config.mjs"]);
+  const assetCli = join(
+    consumer,
+    "node_modules/@console-chaos/asset-pipeline/dist/cli.js",
+  );
+  await diagnostics.run(
+    process.execPath,
+    [assetCli, "build", "--config", "art.config.mjs"],
+    { cwd: consumer, label: "Build asset pipeline fixture" },
+  );
+  await diagnostics.run(
+    process.execPath,
+    [assetCli, "check", "--config", "art.config.mjs"],
+    { cwd: consumer, label: "Check asset pipeline fixture" },
+  );
 
+  diagnostics.info("Writing NodeNext type smoke test");
   await writeFile(
     join(consumer, "smoke.ts"),
     `
@@ -165,12 +196,33 @@ if (assetClass.specFor('FC').internalWidth !== deriveGenerationAssetSpec('FC').i
       2,
     ),
   );
-  run(process.execPath, [
-    join(root, "node_modules/typescript/bin/tsc"),
-    "-p",
-    "tsconfig.json",
-  ]);
-  console.log("Distribution runtime and type smoke tests passed");
+  await diagnostics.run(
+    process.execPath,
+    [join(root, "node_modules/typescript/bin/tsc"), "-p", "tsconfig.json"],
+    { cwd: consumer, label: "Type-check isolated consumer with NodeNext" },
+  );
+  succeeded = true;
+  diagnostics.success("Distribution runtime and type smoke tests passed");
+} catch (error) {
+  diagnostics.reportFailure(error);
+  process.exitCode = exitCodeFor(error);
 } finally {
-  await rm(consumer, { recursive: true, force: true });
+  try {
+    if (succeeded) {
+      diagnostics.info(`Removing successful temporary consumer: ${consumer}`);
+      await rm(consumer, { recursive: true, force: true });
+    } else if (consumer) {
+      diagnostics.error(`Failed consumer retained for inspection: ${consumer}`);
+    } else {
+      diagnostics.error(
+        "Verification failed before a temporary consumer was created",
+      );
+    }
+  } catch (error) {
+    diagnostics.reportFailure(error);
+    process.exitCode = exitCodeFor(error);
+  } finally {
+    diagnostics.info(`Verification diagnostic log: ${diagnostics.logPath}`);
+    await diagnostics.close();
+  }
 }

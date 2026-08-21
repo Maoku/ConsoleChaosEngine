@@ -4,12 +4,12 @@
 
 `npm run verify:distribution` は次のファイルを `artifacts/` に生成します。
 
-| ファイル                                      | 用途                                                                   |
-| --------------------------------------------- | ---------------------------------------------------------------------- |
-| `console-chaos-engine-0.2.0.tgz`              | ランタイム、レンダリング、入力、音声、アセット、型定義、リリースノート |
-| `console-chaos-engine-testkit-0.2.0.tgz`      | 任意導入の決定論的テストダブルと型定義                                 |
-| `console-chaos-asset-pipeline-0.1.0.tgz`      | Node.js用の世代別画像生成API、CLI、型定義、共通素材規則                 |
-| `SHA256SUMS`                                  | 3 tarballの配布後完全性確認                                             |
+| ファイル                                 | 用途                                                                   |
+| ---------------------------------------- | ---------------------------------------------------------------------- |
+| `console-chaos-engine-0.2.0.tgz`         | ランタイム、レンダリング、入力、音声、アセット、型定義、リリースノート |
+| `console-chaos-engine-testkit-0.2.0.tgz` | 任意導入の決定論的テストダブルと型定義                                 |
+| `console-chaos-asset-pipeline-0.1.0.tgz` | Node.js用の世代別画像生成API、CLI、型定義、共通素材規則                |
+| `SHA256SUMS`                             | 3 tarballの配布後完全性確認                                            |
 
 tarballにはビルド済みESM、TypeScript型定義、パッケージREADMEが入り、Engineとasset pipelineには
 `RELEASE_NOTES.md` も同梱されます。asset pipelineには `ASSET_RULES.md` と設定templateも含まれます。
@@ -36,11 +36,23 @@ npm run verify:distribution
 7. `moduleResolution: NodeNext` でconsumerコードを型検査する
 8. SHA-256チェックサムを生成する
 
+実行中は各工程名、作業ディレクトリ、実行コマンド、所要時間、終了コードをターミナルへ表示します。
+子プロセスの標準出力・標準エラーを含む完全な診断ログは毎回次のファイルへ保存されます。
+
+| コマンド                                     | 診断ログ                                 |
+| -------------------------------------------- | ---------------------------------------- |
+| `npm run pack:distribution`                  | `artifacts/logs/pack-distribution.log`   |
+| `npm run verify:distribution` のconsumer検証 | `artifacts/logs/verify-distribution.log` |
+
+consumer検証が失敗した場合は、一時consumerを削除せず、その絶対パスをターミナルと診断ログへ表示します。
+失敗した `package.json`、導入済みパッケージ、生成fixtureをその場で調査できます。成功時は従来どおり
+一時consumerを自動削除します。再実行すると各診断ログは最新の実行内容で上書きされます。
+
 2026-08-16 の検証済み配布物:
 
-| ファイル | SHA-256 |
-| --- | --- |
-| `console-chaos-engine-0.2.0.tgz` | `4ad52605b1b2057ed59a67f20fdbda281169c9ef8f929d848f61cc3155ba1ca2` |
+| ファイル                                 | SHA-256                                                            |
+| ---------------------------------------- | ------------------------------------------------------------------ |
+| `console-chaos-engine-0.2.0.tgz`         | `4ad52605b1b2057ed59a67f20fdbda281169c9ef8f929d848f61cc3155ba1ca2` |
 | `console-chaos-engine-testkit-0.2.0.tgz` | `f45669fb6f8164150e302f1f74c75137a574a0490d818c5020e713b52932d955` |
 | `console-chaos-asset-pipeline-0.1.0.tgz` | `a6c07c8aae5aab5016406980f960c7df7994c7ff7f6cc4677aba9985dd1d136d` |
 
