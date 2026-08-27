@@ -1,6 +1,8 @@
+import { quat, vec3 } from 'gl-matrix';
 import type { GenerationController } from '../generation/controller';
 import { HARDWARE_GENERATION_PROFILES, type HardwareGenerationProfile } from '../generation/profiles';
 import type { GeometryCommand, MeshCommand, RenderFrame, Vec2, Vec3 } from './frame';
+import { applyCameraCommand, createCamera, projectCameraPoint } from './camera';
 
 export interface FrameRenderer {
   render(frame: RenderFrame, profile: HardwareGenerationProfile, generation: GenerationController): void;
@@ -36,29 +38,28 @@ export function createCanvasCommandRenderer(canvas: HTMLCanvasElement): FrameRen
   const output = canvas.getContext('2d', { alpha: false });
   const context = internal.getContext('2d', { alpha: false, willReadFrequently: true });
   if (!output || !context) throw new Error('Canvas 2D is unavailable');
+  const camera = createCamera();
+  const meshRotation = quat.create();
+  const meshPoint = vec3.create();
 
-  const project = (point: Vec3, frame: RenderFrame): Vec2 => {
-    const width = internal.width;
-    const height = internal.height;
-    const scale = Math.min(width, height) / Math.max(frame.camera.zoom, 1);
-    const yaw = Math.atan2(frame.camera.target[0] - frame.camera.position[0], frame.camera.target[2] - frame.camera.position[2]);
-    const dx = point[0] - frame.camera.target[0];
-    const dz = point[2] - frame.camera.target[2];
-    const rotatedX = dx * Math.cos(yaw) - dz * Math.sin(yaw);
-    const rotatedZ = dx * Math.sin(yaw) + dz * Math.cos(yaw);
-    const perspective = frame.camera.projection === 'perspective' ? Math.max(0.55, 1 - rotatedZ * 0.018) : 1;
-    return [width / 2 + rotatedX * scale * perspective, height / 2 + rotatedZ * scale * perspective];
-  };
+  const project = (point: Vec3): Vec2 | null =>
+    projectCameraPoint(camera, point, internal.width, internal.height) as Vec2 | null;
 
-  const pathGeometry = (geometry: GeometryCommand, mesh: MeshCommand, frame: RenderFrame): void => {
+  const pathGeometry = (geometry: GeometryCommand, mesh: MeshCommand, frame: RenderFrame): boolean => {
     const position = mesh.transform.position;
-    const rotation = mesh.transform.rotationY ?? 0;
     const scale = mesh.transform.scale ?? [1, 1, 1];
-    const transform = (point: Vec2): Vec3 => [
-      position[0] + (point[0] * Math.cos(rotation) - point[1] * Math.sin(rotation)) * scale[0],
-      position[1],
-      position[2] + (point[0] * Math.sin(rotation) + point[1] * Math.cos(rotation)) * scale[2],
-    ];
+    if (mesh.transform.rotation) {
+      quat.set(meshRotation, ...mesh.transform.rotation);
+      if (quat.squaredLength(meshRotation) < 1e-12) quat.identity(meshRotation);
+      else quat.normalize(meshRotation, meshRotation);
+    } else {
+      quat.setAxisAngle(meshRotation, [0, 1, 0], mesh.transform.rotationY ?? 0);
+    }
+    const transform = (point: Vec2): Vec3 => {
+      vec3.set(meshPoint, point[0] * scale[0], 0, point[1] * scale[2]);
+      vec3.transformQuat(meshPoint, meshPoint, meshRotation);
+      return [position[0] + meshPoint[0], position[1] + meshPoint[1], position[2] + meshPoint[2]];
+    };
     const points = geometry.kind === 'polygon' || geometry.kind === 'polyline'
       ? geometry.points
       : geometry.kind === 'box'
@@ -70,20 +71,24 @@ export function createCanvasCommandRenderer(canvas: HTMLCanvasElement): FrameRen
           ? [[-geometry.halfSize[0], -geometry.halfSize[1]], [geometry.halfSize[0], -geometry.halfSize[1]], [geometry.halfSize[0], geometry.halfSize[1]], [-geometry.halfSize[0], geometry.halfSize[1]]] satisfies Vec2[]
         : [];
     if (geometry.kind === 'circle') {
-      const center = project(position, frame);
-      const edge = project([position[0] + geometry.radius * scale[0], position[1], position[2]], frame);
       context.beginPath();
+      const center = project(position);
+      const edge = project([position[0] + geometry.radius * scale[0], position[1], position[2]]);
+      if (!center || !edge) return false;
       context.arc(center[0], center[1], Math.abs(edge[0] - center[0]), 0, Math.PI * 2);
-      return;
+      return true;
     }
+    const screens = points.map((point) => project(transform(point)));
     context.beginPath();
-    points.forEach((point, index) => {
-      const screen = project(transform(point), frame);
+    if (screens.some((screen) => screen === null)) return false;
+    screens.forEach((screen, index) => {
+      if (!screen) return;
       if (index === 0) context.moveTo(...screen);
       else context.lineTo(...screen);
     });
     if (geometry.kind !== 'polyline' || geometry.closed) context.closePath();
     if (geometry.kind === 'polyline') context.lineWidth = Math.max(geometry.width * Math.min(internal.width, internal.height) / frame.camera.zoom, 1);
+    return true;
   };
 
   return {
@@ -92,6 +97,7 @@ export function createCanvasCommandRenderer(canvas: HTMLCanvasElement): FrameRen
         internal.width = profile.video.internalWidth;
         internal.height = profile.video.internalHeight;
       }
+      applyCameraCommand(camera, frame.camera, internal.width / internal.height);
       const palette = profile.video.paletteMode === 'fixed54' ? fixedPaletteColor : (color: string) => color;
       // Textured/parallax layers are optional decorations. The untextured layer
       // remains the clear-color authority even when a backend cannot sample them.
@@ -112,7 +118,7 @@ export function createCanvasCommandRenderer(canvas: HTMLCanvasElement): FrameRen
 
       for (const mesh of frame.meshes.filter(visibleInGeneration).sort((left, right) => (left.layer ?? 0) - (right.layer ?? 0))) {
         if (mesh.visible === false) continue;
-        pathGeometry(mesh.geometry, mesh, frame);
+        if (!pathGeometry(mesh.geometry, mesh, frame)) continue;
         context.fillStyle = palette(mesh.color);
         if (!mesh.wireframe && mesh.geometry.kind !== 'polyline') context.fill();
         if (mesh.wireframe || mesh.stroke || mesh.geometry.kind === 'polyline') {
@@ -123,8 +129,9 @@ export function createCanvasCommandRenderer(canvas: HTMLCanvasElement): FrameRen
 
       for (const sprite of frame.sprites.filter(visibleInGeneration).sort((left, right) => (left.layer ?? 0) - (right.layer ?? 0))) {
         if (sprite.visible === false) continue;
-        const center = project(sprite.position, frame);
-        const scale = Math.min(internal.width, internal.height) / frame.camera.zoom;
+        const center = sprite.screenSpace ? [sprite.position[0], sprite.position[1]] as Vec2 : project(sprite.position);
+        if (!center) continue;
+        const scale = sprite.screenSpace ? 1 : Math.min(internal.width, internal.height) / frame.camera.zoom;
         context.save();
         context.translate(...center);
         context.rotate(sprite.rotation ?? 0);

@@ -1,5 +1,22 @@
-const source = `#version 300 es
+export const DEFAULT_SHADER_DIRECTIONAL_LIGHTS = 4;
+export const DEFAULT_SHADER_POINT_LIGHTS = 4;
+
+function positiveInteger(value: number, label: string): number {
+  if (!Number.isInteger(value) || value < 1) throw new RangeError(`${label} must be a positive integer; received ${value}`);
+  return value;
+}
+
+export function createForwardFragmentShader(
+  maxDirectionalLights = DEFAULT_SHADER_DIRECTIONAL_LIGHTS,
+  maxPointLights = DEFAULT_SHADER_POINT_LIGHTS,
+): string {
+  const directionalCount = positiveInteger(maxDirectionalLights, 'maxDirectionalLights');
+  const pointCount = positiveInteger(maxPointLights, 'maxPointLights');
+  return `#version 300 es
 precision highp float;
+
+const int MAX_DIRECTIONAL_LIGHTS = ${directionalCount};
+const int MAX_POINT_LIGHTS = ${pointCount};
 
 in vec2 vUvW;
 in vec2 vUvCorrect;
@@ -15,12 +32,14 @@ uniform sampler2D uEnvironment;
 uniform vec4 uBaseColorFactor;
 uniform float uTextureMix;
 uniform float uAffineAmount;
-uniform vec3 uLightDirection;
-uniform vec3 uDirectionalColor;
+uniform int uDirectionalLightCount;
+uniform vec3 uLightDirections[MAX_DIRECTIONAL_LIGHTS];
+uniform vec3 uDirectionalLightColors[MAX_DIRECTIONAL_LIGHTS];
 uniform vec3 uAmbient;
 uniform float uDiffuse;
-uniform vec4 uPointLight;
-uniform vec3 uPointLightColor;
+uniform int uPointLightCount;
+uniform vec4 uPointLights[MAX_POINT_LIGHTS];
+uniform vec3 uPointLightColors[MAX_POINT_LIGHTS];
 uniform vec3 uCameraPosition;
 uniform float uEnvironmentStrength;
 uniform float uAlphaCutoff;
@@ -58,16 +77,20 @@ void main() {
   ) * uBaseColorFactor;
   if (base.a < uAlphaCutoff) discard;
 
-  float lambert = max(dot(normal, normalize(uLightDirection)), 0.0);
-  float pointFalloff = 0.0;
-  if (uPointLight.w > 0.0) {
-    float falloff = clamp(1.0 - distance(vWorld, uPointLight.xyz) / uPointLight.w, 0.0, 1.0);
-    pointFalloff = falloff * falloff;
+  vec3 shade = uAmbient;
+  for (int i = 0; i < MAX_DIRECTIONAL_LIGHTS; i++) {
+    if (i >= uDirectionalLightCount) break;
+    float lambert = max(dot(normal, normalize(uLightDirections[i])), 0.0);
+    shade += uDirectionalLightColors[i] * (uDiffuse * lambert);
   }
-  vec3 shade = min(
-    uAmbient + uDirectionalColor * (uDiffuse * lambert) + uPointLightColor * pointFalloff,
-    vec3(1.0)
-  );
+  for (int i = 0; i < MAX_POINT_LIGHTS; i++) {
+    if (i >= uPointLightCount) break;
+    vec4 point = uPointLights[i];
+    if (point.w <= 0.0) continue;
+    float falloff = clamp(1.0 - distance(vWorld, point.xyz) / point.w, 0.0, 1.0);
+    shade += uPointLightColors[i] * falloff * falloff;
+  }
+  shade = min(shade, vec3(1.0));
   vec3 color = base.rgb * shade;
 
   if (uEnvironmentStrength > 0.0) {
@@ -87,5 +110,6 @@ void main() {
   fragColor = vec4(color, blendAlpha);
 }
 `;
+}
 
-export default source;
+export default createForwardFragmentShader();

@@ -1,4 +1,4 @@
-import { mat4, vec3 } from 'gl-matrix';
+import { mat4, quat, vec3 } from 'gl-matrix';
 import type { AssetHandle, AssetManager } from '../assets/manager';
 import {
   computeGlobalMatrices,
@@ -14,7 +14,7 @@ import {
   type GenerationId,
   type HardwareGenerationProfile,
 } from '../generation/profiles';
-import { createCamera } from './camera';
+import { applyCameraCommand, createCamera } from './camera';
 import { createAffineSurfacePass } from './affine/pass';
 import { spriteDepthWrite, writeSpriteModelMatrix } from './billboard';
 import {
@@ -35,6 +35,7 @@ import type {
   RenderFrame,
   SkinnedMeshCommand,
   SpriteCommand,
+  TransformCommand,
   Vec3,
 } from './frame';
 import { billboardMesh, boxMesh, quadMesh } from './geometry';
@@ -66,11 +67,19 @@ import {
   visitOrderingTable,
   type OrderingTableIndex,
 } from './ordering-table';
-import { resolveFrameLighting } from './lighting';
+import {
+  DEFAULT_MAX_DIRECTIONAL_LIGHTS,
+  DEFAULT_MAX_POINT_LIGHTS,
+  resolveFrameLighting,
+  type ResolvedPointLight,
+} from './lighting';
 import type { CrtPreset, CrtQuality } from './postfx/presets';
-import ps1Fragment from './shaders/ps1_forward';
+import { createForwardFragmentShader } from './shaders/ps1_forward';
 import ps1Vertex from './shaders/ps1_vertex';
-import skinnedVertex from './shaders/skinned_test.vert';
+import {
+  DEFAULT_MAX_JOINTS_PER_SKIN,
+  createSkinnedVertexShader,
+} from './shaders/skinned_test.vert';
 import backdropFragment from './shaders/backdrop.frag';
 import backdropVertex from './shaders/backdrop.vert';
 import {
@@ -86,14 +95,11 @@ import { createRasterSurfacePass } from './raster/pass';
 import type { FrameRenderer } from './renderer';
 
 const WHITE_AMBIENT: [number, number, number] = [1, 1, 1];
-const WHITE_LIGHT: [number, number, number] = [1, 1, 1];
-const NO_POINT_LIGHT: [number, number, number, number] = [0, 0, 0, 0];
 const NO_FOG: [number, number, number, number] = [0, 0, 0, 0];
 const NO_UV_SCROLL: [number, number] = [0, 0];
 const NO_LAYER: [number, number, number, number] = [0, 0, 0, 0];
 const NO_BLEND_COLOR: [number, number, number, number] = [0, 0, 0, 0];
 const DEFAULT_BLEND_CONTROL: [number, number] = [0, 1];
-const SHADOW_STRENGTH = 0.72;
 const FLOAT_RATE = 1;
 const DRAW_PACKET_CAPACITY = 8192;
 
@@ -122,6 +128,18 @@ export interface RenderAssetManifest {
   fallbackTextures: Readonly<Record<GenerationId, string>>;
 }
 
+export interface GenerationWebGlRendererLimits {
+  directionalLights: number;
+  pointLights: number;
+  jointsPerSkin: number;
+}
+
+export const DEFAULT_GENERATION_WEBGL_RENDERER_LIMITS: Readonly<GenerationWebGlRendererLimits> = {
+  directionalLights: DEFAULT_MAX_DIRECTIONAL_LIGHTS,
+  pointLights: DEFAULT_MAX_POINT_LIGHTS,
+  jointsPerSkin: DEFAULT_MAX_JOINTS_PER_SKIN,
+};
+
 export interface GenerationWebGlRendererOptions {
   assets: AssetManager;
   manifest: RenderAssetManifest;
@@ -131,6 +149,8 @@ export interface GenerationWebGlRendererOptions {
   glitchAmount?: () => number;
   motionAmount?: () => number;
   crtOverride?: () => Partial<CrtPreset>;
+  /** Shader array capacities, selected once while GPU resources are created. */
+  limits?: Partial<GenerationWebGlRendererLimits>;
   transitionColors?: {
     core: readonly [number, number, number];
     lead: readonly [number, number, number];
@@ -161,12 +181,15 @@ interface Shape {
 
 interface Rig {
   model: GltfModel;
-  parts: Shape[];
-  colors: Array<readonly [number, number, number, number]>;
-  maps: Texture[];
+  parts: Array<{
+    shape: Shape;
+    color: readonly [number, number, number, number];
+    map: Texture;
+    skinIndex: number;
+  }>;
   pose: ReturnType<typeof createPose>;
   globals: Float32Array;
-  joints: Float32Array;
+  joints: Float32Array[];
   clips: string[];
 }
 
@@ -194,7 +217,7 @@ let rendererSequence = 0;
 export function geometryCommandKey(geometry: GeometryCommand): string {
   switch (geometry.kind) {
     case 'box':
-      return `box:${(geometry.halfExtents ?? [0.5, 0.5, 0.5]).join(',')}:${geometry.uvScale ?? 0}`;
+      return `box:${(geometry.halfExtents ?? [0.5, 0.5, 0.5]).join(',')}:${geometry.uvScale ?? 0}:${geometry.density ?? 'default'}:${geometry.maxSegments ?? 'default'}`;
     case 'quad':
       return `quad:${geometry.uvRepeat?.join(',') ?? '1,1'}`;
     case 'circle':
@@ -267,14 +290,56 @@ async function createGpuBackend(
 ): Promise<GpuBackend> {
   unsealShaderCompilation();
   const { gl } = ctx;
+  const limitOf = (value: number | undefined, fallback: number, label: string): number => {
+    const resolved = value ?? fallback;
+    if (!Number.isInteger(resolved) || resolved < 1) {
+      throw new RangeError(`${label} must be a positive integer; received ${resolved}`);
+    }
+    return resolved;
+  };
+  const maxDirectionalLights = limitOf(
+    options.limits?.directionalLights,
+    DEFAULT_GENERATION_WEBGL_RENDERER_LIMITS.directionalLights,
+    'limits.directionalLights',
+  );
+  const maxPointLights = limitOf(
+    options.limits?.pointLights,
+    DEFAULT_GENERATION_WEBGL_RENDERER_LIMITS.pointLights,
+    'limits.pointLights',
+  );
+  const maxJointsPerSkin = limitOf(
+    options.limits?.jointsPerSkin,
+    DEFAULT_GENERATION_WEBGL_RENDERER_LIMITS.jointsPerSkin,
+    'limits.jointsPerSkin',
+  );
+  const reportedVertexUniformVectors = gl.getParameter(gl.MAX_VERTEX_UNIFORM_VECTORS) as number;
+  const vertexUniformVectors = reportedVertexUniformVectors > 0 ? reportedVertexUniformVectors : 256;
+  const maxSupportedJoints = Math.max(Math.floor((vertexUniformVectors - 16) / 4), 1);
+  if (maxJointsPerSkin > maxSupportedJoints) {
+    throw new RangeError(
+      `limits.jointsPerSkin ${maxJointsPerSkin} exceeds this GPU's safe limit ${maxSupportedJoints}`,
+    );
+  }
+  const reportedFragmentUniformVectors = gl.getParameter(gl.MAX_FRAGMENT_UNIFORM_VECTORS) as number;
+  const fragmentUniformVectors = reportedFragmentUniformVectors > 0 ? reportedFragmentUniformVectors : 224;
+  const requiredFragmentUniformVectors = maxDirectionalLights * 2 + maxPointLights * 2 + 24;
+  if (requiredFragmentUniformVectors > fragmentUniformVectors) {
+    throw new RangeError(
+      `Configured lights require about ${requiredFragmentUniformVectors} fragment uniform vectors; this GPU supports ${fragmentUniformVectors}`,
+    );
+  }
   const disposables: Array<{ dispose(): void }> = [];
   const state: StateCache = createStateCache(ctx);
   const camera = createCamera('perspective');
   const modelMatrix = mat4.create();
+  const inverseModelMatrix = mat4.create();
   const spriteProjection = mat4.create();
   const partMatrix = mat4.create();
   const modelViewMatrix = mat4.create();
   const localCamera = new Float32Array(3);
+  const transformRotation = quat.create();
+  const transformPosition = vec3.create();
+  const transformScale = vec3.create();
   const materialById = new Map<string, MaterialCommand>();
   const textures = new Map<string, Texture>();
 
@@ -299,8 +364,14 @@ async function createGpuBackend(
     disposables.push(texture);
   }
 
-  const sceneProgram: Program = createProgram(ctx, 'command-scene', ps1Vertex, ps1Fragment);
-  const skinProgram: Program = createProgram(ctx, 'command-skin', skinnedVertex, ps1Fragment);
+  const forwardFragment = createForwardFragmentShader(maxDirectionalLights, maxPointLights);
+  const sceneProgram: Program = createProgram(ctx, 'command-scene', ps1Vertex, forwardFragment);
+  const skinProgram: Program = createProgram(
+    ctx,
+    'command-skin',
+    createSkinnedVertexShader(maxJointsPerSkin),
+    forwardFragment,
+  );
   const backgroundProgram: Program = createProgram(ctx, 'command-background', backdropVertex, backdropFragment);
   const rasterSurfacePass = createRasterSurfacePass(ctx, state);
   const affineSurfacePass = createAffineSurfacePass(ctx, state);
@@ -382,11 +453,14 @@ async function createGpuBackend(
   const geometries = new Map<string, Shape>();
   for (const geometry of options.manifest.geometries) {
     if (geometry.kind === 'box') {
-      const mesh = boxMesh(geometry.halfExtents ?? [0.5, 0.5, 0.5], { uvScale: geometry.uvScale ?? 0 });
+      const mesh = boxMesh(geometry.halfExtents ?? [0.5, 0.5, 0.5], {
+        uvScale: geometry.uvScale ?? 0,
+        ...(geometry.density === undefined ? {} : { density: geometry.density }),
+        ...(geometry.maxSegments === undefined ? {} : { maxSegments: geometry.maxSegments }),
+      });
       geometries.set(geometryCommandKey(geometry), buildInterleaved(mesh.vertices, mesh.indices));
     } else if (geometry.kind === 'quad') {
-      const repeat = geometry.uvRepeat?.[0] ?? 1;
-      const mesh = quadMesh(repeat);
+      const mesh = quadMesh(geometry.uvRepeat ?? 1);
       geometries.set(geometryCommandKey(geometry), buildInterleaved(mesh.vertices, mesh.indices));
     }
   }
@@ -445,25 +519,37 @@ async function createGpuBackend(
   const rigs = new Map<string, Rig>();
   for (const [url, source] of cpu.models) {
     if (source.skins.length === 0) continue;
+    source.skins.forEach((skin, skinIndex) => {
+      if (skin.joints.length > maxJointsPerSkin) {
+        throw new RangeError(
+          `${url} skin[${skinIndex}] has ${skin.joints.length} joints; renderer capacity is ${maxJointsPerSkin}`,
+        );
+      }
+    });
     const embedded = await embeddedTextures(source, url);
-    const primitives = source.meshes.flatMap((mesh) => mesh.primitives);
     const fallback = textures.get(options.manifest.fallbackTextures.FC)!;
+    const bindings = source.nodes.flatMap((node) => node.mesh === null
+      ? []
+      : (source.meshes[node.mesh]?.primitives ?? []).map((primitive) => ({
+          primitive,
+          skinIndex: node.skin ?? 0,
+        })));
     rigs.set(url, {
       model: source,
-      parts: primitives.map((primitive) => buildPrimitive(primitive, true, false)),
-      colors: primitives.map((primitive) => {
+      parts: bindings.map(({ primitive, skinIndex }) => {
         const material = primitive.material === null ? null : source.materials[primitive.material];
-        return material?.baseColorFactor ?? [1, 1, 1, 1];
-      }),
-      maps: primitives.map((primitive) => {
-        const material = primitive.material === null ? null : source.materials[primitive.material];
-        return (material?.baseColorImage === null || material?.baseColorImage === undefined
-          ? null
-          : embedded[material.baseColorImage]) ?? fallback;
+        return {
+          shape: buildPrimitive(primitive, true, false),
+          color: material?.baseColorFactor ?? [1, 1, 1, 1],
+          map: (material?.baseColorImage === null || material?.baseColorImage === undefined
+            ? null
+            : embedded[material.baseColorImage]) ?? fallback,
+          skinIndex,
+        };
       }),
       pose: createPose(source),
       globals: new Float32Array(source.nodes.length * 16),
-      joints: new Float32Array(Math.max(source.skins[0]?.joints.length ?? 1, 1) * 16),
+      joints: source.skins.map(() => new Float32Array(maxJointsPerSkin * 16)),
       clips: source.animations.map((animation, index) => animation.name || `anim${index}`),
     });
   }
@@ -475,16 +561,19 @@ async function createGpuBackend(
   const occupiedOrderingSlots = new Uint8Array(12);
   const resolvedBlend = createResolvedHardwareBlend();
   const blendControl: [number, number] = [0, 1];
-  const pointLight: [number, number, number, number] = [0, 0, 0, 0];
-  const pointLightColor: [number, number, number] = [1, 1, 1];
-  const directionalLight: [number, number, number] = [0.4, 1, 0.6];
-  const directionalLightColor: [number, number, number] = [1, 1, 1];
+  const pointLights = new Float32Array(maxPointLights * 4);
+  const pointLightColors = new Float32Array(maxPointLights * 3);
+  const directionalLights = new Float32Array(maxDirectionalLights * 3);
+  const directionalLightColors = new Float32Array(maxDirectionalLights * 3);
   const fog: [number, number, number, number] = [0, 0, 0, 0];
   const ambientTint: [number, number, number] = [1, 1, 1];
   const ambient: [number, number, number] = [0, 0, 0];
   const cameraUniformPosition: [number, number, number] = [0, 0, 0];
   const surfaceResolution: [number, number] = [1, 1];
   let appliedFilter: TextureFilter | null = null;
+  let directionalLightCount = 0;
+  let pointLightCount = 0;
+  let resolvedPointLights: readonly ResolvedPointLight[] = [];
   let triangleCount = 0;
   let frame: RenderFrame | null = null;
 
@@ -500,21 +589,30 @@ async function createGpuBackend(
     triangleCount += shape.mode === 'lines' ? 0 : count / 3;
   }
 
-  function ambientOf(material: MaterialCommand): [number, number, number] {
-    for (let axis = 0; axis < 3; axis++) ambient[axis] = (material.ambient ?? 0.45) * ambientTint[axis]!;
+  function ambientOf(material: MaterialCommand | undefined): [number, number, number] {
+    for (let axis = 0; axis < 3; axis++) ambient[axis] = (material?.ambient ?? 0.45) * ambientTint[axis]!;
     return ambient;
   }
 
+  function writeTransform(transform: TransformCommand, yOffset = 0): void {
+    const [x, y, z] = transform.position;
+    vec3.set(transformPosition, x, y + yOffset, z);
+    vec3.set(transformScale, ...(transform.scale ?? [1, 1, 1]));
+    if (transform.rotation) {
+      quat.set(transformRotation, ...transform.rotation);
+      if (quat.squaredLength(transformRotation) < 1e-12) quat.identity(transformRotation);
+      else quat.normalize(transformRotation, transformRotation);
+    } else {
+      quat.setAxisAngle(transformRotation, [0, 1, 0], transform.rotationY ?? 0);
+    }
+    mat4.fromRotationTranslationScale(modelMatrix, transformRotation, transformPosition, transformScale);
+  }
+
   function beginPass(profile: HardwareGenerationProfile, active: RenderFrame): void {
-    camera.projection = active.camera.projection === 'orthographic' ? 'ortho' : 'perspective';
-    camera.orthoHeight = active.camera.orthoHeight ?? active.camera.zoom;
-    camera.fovDegrees = active.camera.fovDegrees ?? 55;
+    applyCameraCommand(camera, active.camera, profile.video.internalWidth / profile.video.internalHeight);
     for (let axis = 0; axis < 3; axis++) {
-      camera.position[axis] = active.camera.position[axis]!;
-      camera.target[axis] = active.camera.target[axis]!;
       cameraUniformPosition[axis] = active.camera.position[axis]!;
     }
-    camera.update(profile.video.internalWidth / profile.video.internalHeight);
     mat4.ortho(
       spriteProjection,
       0,
@@ -588,15 +686,12 @@ async function createGpuBackend(
   }
 
   function transformFor(mesh: MeshCommand, material: MaterialCommand, active: RenderFrame): void {
-    const [x, y, z] = mesh.transform.position;
+    const [x, , z] = mesh.transform.position;
     const motion = options.motionAmount?.() ?? 1;
     const floating = material.floatAmplitude
       ? Math.sin(active.timeSeconds * FLOAT_RATE + x * 0.7 + z * 1.3) * material.floatAmplitude * motion
       : 0;
-    mat4.identity(modelMatrix);
-    mat4.translate(modelMatrix, modelMatrix, [x, y + floating, z]);
-    if (mesh.transform.rotationY) mat4.rotateY(modelMatrix, modelMatrix, mesh.transform.rotationY);
-    if (mesh.transform.scale) mat4.scale(modelMatrix, modelMatrix, mesh.transform.scale);
+    writeTransform(mesh.transform, floating);
     if (mesh.geometry.kind === 'quad') {
       mat4.scale(modelMatrix, modelMatrix, [mesh.geometry.halfSize[0], 1, mesh.geometry.halfSize[1]]);
     }
@@ -628,12 +723,14 @@ async function createGpuBackend(
       uTweenColor: textureOf(material.baseColorTexture, profile.id),
       uTextureMix: 0,
       uBaseColorFactor: material.colorFactor ?? colorFactor(material.color ?? mesh.color),
-      uLightDirection: directionalLight,
-      uDirectionalColor: directionalLightColor,
+      uDirectionalLightCount: directionalLightCount,
+      uLightDirections: directionalLights,
+      uDirectionalLightColors: directionalLightColors,
       uAmbient: ambientOf(material),
       uDiffuse: material.diffuse ?? 0.55,
-      uPointLight: pointLight,
-      uPointLightColor: pointLightColor,
+      uPointLightCount: pointLightCount,
+      uPointLights: pointLights,
+      uPointLightColors: pointLightColors,
       uEnvironment: environment ?? textureOf(undefined, profile.id),
       uEnvironmentStrength: profile.video.environmentMap && environment
         ? Math.min(Math.max(material.environmentStrength ?? 0, 0), 1)
@@ -655,8 +752,11 @@ async function createGpuBackend(
           if (range.count > 0) drawShape(part, range.firstIndex, range.count);
           continue;
         }
-        const scale = mesh.transform.scale ?? [1, 1, 1];
-        for (let axis = 0; axis < 3; axis++) localCamera[axis] = (camera.position[axis]! - mesh.transform.position[axis]!) / scale[axis]!;
+        if (mat4.invert(inverseModelMatrix, modelMatrix)) {
+          vec3.transformMat4(localCamera, camera.position, inverseModelMatrix);
+        } else {
+          vec3.set(localCamera, 0, 0, 0);
+        }
         if (part.local) vec3.transformMat4(localCamera, localCamera, part.local.inverse);
         sortTrianglesByDepth(part.sortable.positions, part.sortable.indices, localCamera, part.sortable.out, part.sortable.workspace);
         part.vao.updateIndices(part.sortable.out);
@@ -884,65 +984,74 @@ async function createGpuBackend(
     half: Vec3,
     groundY: number,
     light: Vec3,
+    maxStretch: number,
+    lift: number,
   ): { center: Vec3; half: Vec3; strength: number } {
     const toObject = light[1] - center[1];
     const toGround = light[1] - groundY;
     if (toObject <= 1e-3 || toGround <= 1e-3) return { center, half, strength: 0 };
-    const stretch = Math.min(toGround / toObject, 3);
+    const stretch = Math.min(toGround / toObject, maxStretch);
     return {
-      center: [light[0] + (center[0] - light[0]) * stretch, groundY + 0.02, light[2] + (center[2] - light[2]) * stretch],
+      center: [light[0] + (center[0] - light[0]) * stretch, groundY + lift, light[2] + (center[2] - light[2]) * stretch],
       half: [half[0] * stretch, 1, half[2] * stretch],
       strength: 1 / stretch,
     };
   }
 
   function drawShadows(profile: HardwareGenerationProfile, active: RenderFrame): void {
-    if (pointLight[3] <= 0) return;
+    if (resolvedPointLights.length === 0) return;
     state.apply({ blend: BLEND_ALPHA, depthWrite: false });
-    for (const mesh of active.meshes) {
-      if (mesh.visible === false || !applies(mesh, profile.id) || !mesh.castShadow || mesh.groundY === undefined) continue;
-      const half = mesh.transform.scale
-        ?? (mesh.geometry.kind === 'box' ? mesh.geometry.halfExtents : undefined)
-        ?? [1, 1, 1];
-      const projected = pointShadow(
-        mesh.transform.position,
-        half,
-        mesh.groundY,
-        [pointLight[0], pointLight[1], pointLight[2]],
-      );
-      if (projected.strength <= 0) continue;
-      mat4.identity(modelMatrix);
-      mat4.translate(modelMatrix, modelMatrix, projected.center);
-      mat4.scale(modelMatrix, modelMatrix, projected.half);
-      const fallback = textureOf(undefined, profile.id);
-      sceneProgram.use();
-      sceneProgram.setUniforms({
-        uModel: modelMatrix as Float32Array,
-        uViewProjection: camera.viewProjection as Float32Array,
-        uResolution: [profile.video.internalWidth, profile.video.internalHeight],
-        uQuantizeStep: profile.video.vertexQuantize,
-        uAffineAmount: profile.video.affineTexture ? 1 : 0,
-        uBaseColor: fallback,
-        uTopColor: fallback,
-        uTweenColor: fallback,
-        uTextureMix: 0,
-        uBaseColorFactor: [0, 0, 0, SHADOW_STRENGTH * projected.strength],
-        uLightDirection: [0, 1, 0],
-        uDirectionalColor: WHITE_LIGHT,
-        uAmbient: WHITE_AMBIENT,
-        uDiffuse: 0,
-        uPointLight: NO_POINT_LIGHT,
-        uPointLightColor: WHITE_LIGHT,
-        uEnvironment: fallback,
-        uEnvironmentStrength: 0,
-        uCameraPosition: cameraUniformPosition,
-        uFog: NO_FOG,
-        uUvScroll: NO_UV_SCROLL,
-        uAlphaCutoff: 0,
-        uBlendColorOverride: NO_BLEND_COLOR,
-        uBlendControl: DEFAULT_BLEND_CONTROL,
-      });
-      drawShape(shadowMesh);
+    for (const light of resolvedPointLights) {
+      if (light.positionRadius[3] <= 0 || light.shadow === null || light.shadow.strength <= 0) continue;
+      for (const mesh of active.meshes) {
+        if (mesh.visible === false || !applies(mesh, profile.id) || !mesh.castShadow || mesh.groundY === undefined) continue;
+        const half = mesh.transform.scale
+          ?? (mesh.geometry.kind === 'box' ? mesh.geometry.halfExtents : undefined)
+          ?? [1, 1, 1];
+        const projected = pointShadow(
+          mesh.transform.position,
+          half,
+          mesh.groundY,
+          [light.positionRadius[0], light.positionRadius[1], light.positionRadius[2]],
+          light.shadow.maxStretch,
+          light.shadow.lift,
+        );
+        if (projected.strength <= 0) continue;
+        mat4.identity(modelMatrix);
+        mat4.translate(modelMatrix, modelMatrix, projected.center);
+        mat4.scale(modelMatrix, modelMatrix, projected.half);
+        const fallback = textureOf(undefined, profile.id);
+        sceneProgram.use();
+        sceneProgram.setUniforms({
+          uModel: modelMatrix as Float32Array,
+          uViewProjection: camera.viewProjection as Float32Array,
+          uResolution: [profile.video.internalWidth, profile.video.internalHeight],
+          uQuantizeStep: profile.video.vertexQuantize,
+          uAffineAmount: profile.video.affineTexture ? 1 : 0,
+          uBaseColor: fallback,
+          uTopColor: fallback,
+          uTweenColor: fallback,
+          uTextureMix: 0,
+          uBaseColorFactor: [0, 0, 0, light.shadow.strength * projected.strength],
+          uDirectionalLightCount: 0,
+          uLightDirections: directionalLights,
+          uDirectionalLightColors: directionalLightColors,
+          uAmbient: WHITE_AMBIENT,
+          uDiffuse: 0,
+          uPointLightCount: 0,
+          uPointLights: pointLights,
+          uPointLightColors: pointLightColors,
+          uEnvironment: fallback,
+          uEnvironmentStrength: 0,
+          uCameraPosition: cameraUniformPosition,
+          uFog: NO_FOG,
+          uUvScroll: NO_UV_SCROLL,
+          uAlphaCutoff: 0,
+          uBlendColorOverride: NO_BLEND_COLOR,
+          uBlendControl: DEFAULT_BLEND_CONTROL,
+        });
+        drawShape(shadowMesh);
+      }
     }
     state.apply({ blend: BLEND_NONE, depthWrite: profile.video.depthBuffer });
   }
@@ -950,17 +1059,23 @@ async function createGpuBackend(
   function drawSkinned(command: SkinnedMeshCommand, profile: HardwareGenerationProfile): void {
     const rig = rigs.get(command.model);
     if (!rig) throw new Error(`Skinned model is not preloaded: ${command.model}`);
+    if (command.skinIndex !== undefined
+      && (!Number.isInteger(command.skinIndex) || !rig.model.skins[command.skinIndex] || !rig.joints[command.skinIndex])) {
+      throw new RangeError(`Skinned model ${command.model} does not contain skin[${command.skinIndex}]`);
+    }
     const step = 1 / profile.video.animationHz;
     const quantized = Math.floor(command.animationTime / step) * step;
     const clipIndex = rig.clips.indexOf(command.clip);
     const animation = rig.model.animations[clipIndex >= 0 ? clipIndex : 0];
     if (animation) sampleAnimation(animation, quantized, rig.pose, command.loop ?? true);
     computeGlobalMatrices(rig.model, rig.pose, rig.globals);
-    if (rig.model.skins.length > 0) computeJointMatrices(rig.model, 0, rig.globals, rig.joints);
-    mat4.identity(modelMatrix);
-    mat4.translate(modelMatrix, modelMatrix, command.transform.position);
-    if (command.transform.rotationY) mat4.rotateY(modelMatrix, modelMatrix, command.transform.rotationY);
-    if (command.transform.scale) mat4.scale(modelMatrix, modelMatrix, command.transform.scale);
+    const skinIndices = command.skinIndex === undefined
+      ? rig.model.skins.map((_, index) => index)
+      : [command.skinIndex];
+    for (const skinIndex of skinIndices) {
+      computeJointMatrices(rig.model, skinIndex, rig.globals, rig.joints[skinIndex]!);
+    }
+    writeTransform(command.transform);
     skinProgram.use();
     const tint = command.tintFactor ?? colorFactor(command.tint);
     const material = command.material ? materialById.get(command.material) : undefined;
@@ -968,36 +1083,45 @@ async function createGpuBackend(
     if (!blend.visible) return;
     blendControl[0] = blend.premultiplyColor ? 1 : 0;
     blendControl[1] = blend.outputOpacity;
-    rig.parts.forEach((part, index) => {
-      const base = rig.colors[index] ?? [1, 1, 1, 1];
+    const environment = material?.environmentTexture ? textures.get(material.environmentTexture) : undefined;
+    rig.parts.forEach((part) => {
+      const skinIndex = command.skinIndex ?? part.skinIndex;
+      const base = part.color;
+      const baseTexture = material?.baseColorTexture
+        ? textureOf(material.baseColorTexture, profile.id)
+        : part.map;
       skinProgram.setUniforms({
-        uJoints: rig.joints,
+        uJoints: rig.joints[skinIndex]!,
         uModel: modelMatrix as Float32Array,
         uViewProjection: camera.viewProjection as Float32Array,
         uResolution: [profile.video.internalWidth, profile.video.internalHeight],
         uQuantizeStep: profile.video.vertexQuantize,
         uAffineAmount: profile.video.affineTexture ? 1 : 0,
-        uBaseColor: rig.maps[index]!,
-        uTopColor: rig.maps[index]!,
-        uTweenColor: rig.maps[index]!,
+        uBaseColor: baseTexture,
+        uTopColor: material?.topColorTexture ? textureOf(material.topColorTexture, profile.id) : baseTexture,
+        uTweenColor: baseTexture,
         uTextureMix: 0,
         uBaseColorFactor: [base[0] * tint[0], base[1] * tint[1], base[2] * tint[2], base[3] * tint[3]],
-        uLightDirection: directionalLight,
-        uDirectionalColor: directionalLightColor,
-        uAmbient: [0.45 * ambientTint[0], 0.45 * ambientTint[1], 0.45 * ambientTint[2]],
-        uDiffuse: 0.55,
-        uPointLight: pointLight,
-        uPointLightColor: pointLightColor,
-        uEnvironment: textureOf(undefined, profile.id),
-        uEnvironmentStrength: 0,
+        uDirectionalLightCount: directionalLightCount,
+        uLightDirections: directionalLights,
+        uDirectionalLightColors: directionalLightColors,
+        uAmbient: ambientOf(material),
+        uDiffuse: material?.diffuse ?? 0.55,
+        uPointLightCount: pointLightCount,
+        uPointLights: pointLights,
+        uPointLightColors: pointLightColors,
+        uEnvironment: environment ?? textureOf(undefined, profile.id),
+        uEnvironmentStrength: profile.video.environmentMap && environment
+          ? Math.min(Math.max(material?.environmentStrength ?? 0, 0), 1)
+          : 0,
         uCameraPosition: cameraUniformPosition,
         uFog: fog,
         uUvScroll: NO_UV_SCROLL,
-        uAlphaCutoff: 0,
+        uAlphaCutoff: material?.alphaCutoff ?? 0,
         uBlendColorOverride: blend.colorOverride,
         uBlendControl: blendControl,
       });
-      drawShape(part);
+      drawShape(part.shape);
     });
   }
 
@@ -1028,12 +1152,14 @@ async function createGpuBackend(
       uTweenColor: tweenSheet.texture,
       uTextureMix: Math.min(Math.max(command.textureMix ?? 0, 0), 1),
       uBaseColorFactor: colorFactor(command.color),
-      uLightDirection: directionalLight,
-      uDirectionalColor: directionalLightColor,
+      uDirectionalLightCount: directionalLightCount,
+      uLightDirections: directionalLights,
+      uDirectionalLightColors: directionalLightColors,
       uAmbient: WHITE_AMBIENT,
       uDiffuse: 0,
-      uPointLight: pointLight,
-      uPointLightColor: pointLightColor,
+      uPointLightCount: pointLightCount,
+      uPointLights: pointLights,
+      uPointLightColors: pointLightColors,
       uEnvironment: textureOf(undefined, profile.id),
       uEnvironmentStrength: 0,
       uCameraPosition: cameraUniformPosition,
@@ -1059,15 +1185,28 @@ async function createGpuBackend(
       skyLuma === 0 ? 1 : 1 + ((horizon[1]! / skyLuma) - 1) * brightness,
       skyLuma === 0 ? 1 : 1 + ((horizon[2]! / skyLuma) - 1) * brightness,
     ];
-    const lighting = resolveFrameLighting(active.lights, profile.id, profile.video.dynamicLight, fallbackAmbient);
-    for (let axis = 0; axis < 3; axis++) {
-      ambientTint[axis] = lighting.ambient[axis]!;
-      directionalLight[axis] = lighting.directionalDirection[axis]!;
-      directionalLightColor[axis] = lighting.directionalColor[axis]!;
-      pointLight[axis] = lighting.point[axis]!;
-      pointLightColor[axis] = lighting.pointColor[axis]!;
-    }
-    pointLight[3] = lighting.point[3];
+    const lighting = resolveFrameLighting(active.lights, profile.id, profile.video.dynamicLight, fallbackAmbient, {
+      directionalLights: maxDirectionalLights,
+      pointLights: maxPointLights,
+    });
+    for (let axis = 0; axis < 3; axis++) ambientTint[axis] = lighting.ambient[axis]!;
+    directionalLights.fill(0);
+    directionalLightColors.fill(0);
+    pointLights.fill(0);
+    pointLightColors.fill(0);
+    directionalLightCount = lighting.directionalLights.length;
+    pointLightCount = lighting.pointLights.length;
+    resolvedPointLights = lighting.pointLights;
+    lighting.directionalLights.forEach((light, index) => {
+      for (let axis = 0; axis < 3; axis++) {
+        directionalLights[index * 3 + axis] = light.direction[axis]!;
+        directionalLightColors[index * 3 + axis] = light.color[axis]!;
+      }
+    });
+    lighting.pointLights.forEach((light, index) => {
+      for (let axis = 0; axis < 4; axis++) pointLights[index * 4 + axis] = light.positionRadius[axis]!;
+      for (let axis = 0; axis < 3; axis++) pointLightColors[index * 3 + axis] = light.color[axis]!;
+    });
   }
 
   function drawSurfaces(profile: HardwareGenerationProfile, active: RenderFrame): void {

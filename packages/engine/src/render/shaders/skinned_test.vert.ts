@@ -1,3 +1,62 @@
-const source = "#version 300 es\n/**\n * スキニング + 世代ごとの頂点処理（T0-06 / T0-19）。\n *\n * ps1_vertex.glsl と同じ量子化・アフィン UV を行い、その前にスキニングを適用する。\n * フラグメントは ps1_forward.glsl を共用する。\n */\nprecision highp float;\n\nlayout(location = 0) in vec3 aPosition;\nlayout(location = 1) in vec3 aNormal;\nlayout(location = 2) in vec2 aUv;\nlayout(location = 3) in vec4 aJoints;\nlayout(location = 4) in vec4 aWeights;\n\n// 24 は gen3/gen4 のキャラクタが持つジョイント数（Docs/asset-rules.md §5）。\n// mat4 24 本 = 96 vec4 で、GLES3 が保証する頂点ユニフォーム 256 vec4 に収まる\nconst int MAX_JOINTS = 24;\nuniform mat4 uJoints[MAX_JOINTS];\nuniform mat4 uModel;\nuniform mat4 uViewProjection;\nuniform vec2 uResolution;\nuniform float uQuantizeStep;\n\nout vec2 vUvW;\nout vec2 vUvCorrect;\nout float vW;\nout vec3 vNormal;\nout float vDepth;\nout vec3 vWorld;   // 松明（点光源）の距離を測るためのワールド座標（T2-04）\n\nvoid main() {\n  mat4 skin =\n      aWeights.x * uJoints[int(aJoints.x)] +\n      aWeights.y * uJoints[int(aJoints.y)] +\n      aWeights.z * uJoints[int(aJoints.z)] +\n      aWeights.w * uJoints[int(aJoints.w)];\n\n  vec4 world = uModel * (skin * vec4(aPosition, 1.0));\n  vec4 clip = uViewProjection * world;\n\n  if (uQuantizeStep > 0.0) {\n    vec3 ndc = clip.xyz / clip.w;\n    vec2 grid = max(uResolution / uQuantizeStep, vec2(1.0));\n    ndc.xy = floor(ndc.xy * grid + 0.5) / grid;\n    clip = vec4(ndc * clip.w, clip.w);\n  }\n\n  vWorld = world.xyz;\n  vNormal = mat3(uModel) * (mat3(skin) * aNormal);\n  vW = clip.w;\n  vUvW = aUv * clip.w;\n  vUvCorrect = aUv;\n  vDepth = clip.w;\n  gl_Position = clip;\n}\n";
-export default source;
+export const DEFAULT_MAX_JOINTS_PER_SKIN = 24;
 
+export function createSkinnedVertexShader(maxJoints = DEFAULT_MAX_JOINTS_PER_SKIN): string {
+  if (!Number.isInteger(maxJoints) || maxJoints < 1) {
+    throw new RangeError(`maxJoints must be a positive integer; received ${maxJoints}`);
+  }
+  return `#version 300 es
+/**
+ * スキニング + 世代ごとの頂点処理（T0-06 / T0-19）。
+ * ジョイント上限はレンダラー作成時にアセット要件とGPU上限に合わせて注入する。
+ */
+precision highp float;
+
+layout(location = 0) in vec3 aPosition;
+layout(location = 1) in vec3 aNormal;
+layout(location = 2) in vec2 aUv;
+layout(location = 3) in vec4 aJoints;
+layout(location = 4) in vec4 aWeights;
+
+const int MAX_JOINTS = ${maxJoints};
+uniform mat4 uJoints[MAX_JOINTS];
+uniform mat4 uModel;
+uniform mat4 uViewProjection;
+uniform vec2 uResolution;
+uniform float uQuantizeStep;
+
+out vec2 vUvW;
+out vec2 vUvCorrect;
+out float vW;
+out vec3 vNormal;
+out float vDepth;
+out vec3 vWorld;
+
+void main() {
+  mat4 skin =
+      aWeights.x * uJoints[int(aJoints.x)] +
+      aWeights.y * uJoints[int(aJoints.y)] +
+      aWeights.z * uJoints[int(aJoints.z)] +
+      aWeights.w * uJoints[int(aJoints.w)];
+
+  vec4 world = uModel * (skin * vec4(aPosition, 1.0));
+  vec4 clip = uViewProjection * world;
+
+  if (uQuantizeStep > 0.0) {
+    vec3 ndc = clip.xyz / clip.w;
+    vec2 grid = max(uResolution / uQuantizeStep, vec2(1.0));
+    ndc.xy = floor(ndc.xy * grid + 0.5) / grid;
+    clip = vec4(ndc * clip.w, clip.w);
+  }
+
+  vWorld = world.xyz;
+  vNormal = mat3(uModel) * (mat3(skin) * aNormal);
+  vW = clip.w;
+  vUvW = aUv * clip.w;
+  vUvCorrect = aUv;
+  vDepth = clip.w;
+  gl_Position = clip;
+}
+`;
+}
+
+export default createSkinnedVertexShader();

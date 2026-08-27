@@ -54,6 +54,8 @@ export const DEFAULT_MAX_SEGMENTS = 8;
 
 /** 半径から軸ごとの分割数を決める。小さいプロップは分割しない */
 export function segmentsFor(half: Vec3, density = DEFAULT_DENSITY, max = DEFAULT_MAX_SEGMENTS): [number, number, number] {
+  if (!Number.isFinite(density) || density < 0) throw new RangeError(`density must be a finite non-negative number; received ${density}`);
+  if (!Number.isInteger(max) || max < 1) throw new RangeError(`maxSegments must be a positive integer; received ${max}`);
   return half.map((extent) => {
     const segments = Math.round(extent * 2 * density);
     return Math.min(Math.max(segments, 1), max);
@@ -193,14 +195,15 @@ export function billboardMesh(uv: UvRect): BoxMesh {
  * 回る面（S-1、T2-03）の 2 つが使う。後者は大きく引き伸ばすので、
  * 模様が伸び切らないようテクスチャを繰り返す。
  */
-export function quadMesh(uvRepeat = 1): BoxMesh {
+export function quadMesh(uvRepeat: number | readonly [number, number] = 1): BoxMesh {
   const n: Vec3 = [0, 1, 0];
-  const r = uvRepeat;
+  const repeatU = typeof uvRepeat === 'number' ? uvRepeat : uvRepeat[0];
+  const repeatV = typeof uvRepeat === 'number' ? uvRepeat : uvRepeat[1];
   const corners: Array<[number, number, number, number, number]> = [
     [-1, 0, 1, 0, 0],
-    [1, 0, 1, r, 0],
-    [1, 0, -1, r, r],
-    [-1, 0, -1, 0, r],
+    [1, 0, 1, repeatU, 0],
+    [1, 0, -1, repeatU, repeatV],
+    [-1, 0, -1, 0, repeatV],
   ];
   const vertices: number[] = [];
   for (const [x, y, z, u, v] of corners) vertices.push(x, y, z, ...n, u, v);

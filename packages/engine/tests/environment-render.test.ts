@@ -6,10 +6,8 @@ describe('frame lighting and environment contracts', () => {
   it('keeps the legacy light fallback when no commands are supplied', () => {
     expect(resolveFrameLighting([], 'PS2', true, [0.8, 0.9, 1])).toEqual({
       ambient: [0.8, 0.9, 1],
-      directionalDirection: FALLBACK_LIGHT_DIRECTION,
-      directionalColor: [1, 1, 1],
-      point: [0, 0, 0, 0],
-      pointColor: [1, 1, 1],
+      directionalLights: [{ direction: FALLBACK_LIGHT_DIRECTION, color: [1, 1, 1] }],
+      pointLights: [],
     });
   });
 
@@ -22,11 +20,36 @@ describe('frame lighting and environment contracts', () => {
     ];
     const resolved = resolveFrameLighting(lights, 'PS2', true, [1, 1, 1]);
     expect(resolved.ambient).toEqual([128 / 255 * 0.5, 64 / 255 * 0.5, 32 / 255 * 0.5]);
-    expect(resolved.directionalDirection).toEqual([-1, 2, 0]);
-    expect(resolved.directionalColor).toEqual([128 / 255 * 0.75, 192 / 255 * 0.75, 0.75]);
-    expect(resolved.point).toEqual([3, 4, 5, 6]);
-    expect(resolved.pointColor).toEqual([0.8, 128 / 255 * 0.8, 0]);
-    expect(resolveFrameLighting(lights, 'PS1', false, [1, 1, 1]).point[3]).toBe(0);
+    expect(resolved.directionalLights).toEqual([{
+      direction: [-1, 2, 0],
+      color: [128 / 255 * 0.75, 192 / 255 * 0.75, 0.75],
+    }]);
+    expect(resolved.pointLights[0]).toMatchObject({
+      positionRadius: [3, 4, 5, 6],
+      color: [0.8, 128 / 255 * 0.8, 0],
+    });
+    expect(resolveFrameLighting(lights, 'PS1', false, [1, 1, 1]).pointLights).toEqual([]);
+  });
+
+  it('accumulates ambient lights and keeps multiple directional and point lights up to configured limits', () => {
+    const lights = [
+      { id: 'ambient-a', kind: 'ambient' as const, position: [0, 0, 0] as const, color: '#ff0000', intensity: 0.25, radius: 0 },
+      { id: 'ambient-b', kind: 'ambient' as const, position: [0, 0, 0] as const, color: '#0000ff', intensity: 0.5, radius: 0 },
+      { id: 'sun-a', kind: 'directional' as const, position: [0, 0, 0] as const, direction: [1, 0, 0] as const, color: '#ffffff', intensity: 0.8, radius: 0 },
+      { id: 'sun-b', kind: 'directional' as const, position: [0, 0, 0] as const, direction: [0, 1, 0] as const, color: '#ffffff', intensity: 0.4, radius: 0 },
+      { id: 'point-a', kind: 'point' as const, position: [1, 2, 3] as const, color: '#ffffff', intensity: 0.9, radius: 5, shadow: { strength: 0.4, maxStretch: 6, lift: 0.1 } },
+      { id: 'point-b', kind: 'point' as const, position: [4, 5, 6] as const, color: '#ffffff', intensity: 0.3, radius: 7, shadow: false as const },
+    ];
+    const resolved = resolveFrameLighting(lights, 'PS2', true, [1, 1, 1], {
+      directionalLights: 2,
+      pointLights: 2,
+    });
+
+    expect(resolved.ambient).toEqual([0.25, 0, 0.5]);
+    expect(resolved.directionalLights).toHaveLength(2);
+    expect(resolved.pointLights).toHaveLength(2);
+    expect(resolved.pointLights[0]?.shadow).toEqual({ strength: 0.4, maxStretch: 6, lift: 0.1 });
+    expect(resolved.pointLights[1]?.shadow).toBeNull();
   });
 
   it('moves reflection lookup continuously with the camera', () => {
