@@ -5,6 +5,8 @@
 
 | 文書 | 位置づけ |
 |---|---|
+| [FOUR_STAGE_IMPLEMENTATION_PLAN.md](FOUR_STAGE_IMPLEMENTATION_PLAN.md) | 初回15〜30分・4ステージ体験版の実装計画（未着手） |
+| [FOUR_STAGE_RESEARCH.md](FOUR_STAGE_RESEARCH.md) | 体験版企画の現状調査・検証記録 |
 | [CORE_PLAN.md](CORE_PLAN.md) | 企画の核 |
 | [GAME_PLAN.md](GAME_PLAN.md) | ゲームデザイン計画 |
 | [IMPLEMENTATION_PLAN.md](IMPLEMENTATION_PLAN.md) | 初期実装計画 |
