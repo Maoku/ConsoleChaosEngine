@@ -1,0 +1,540 @@
+{
+  "version": 2,
+  "id": "demo_stage3",
+  "title": "3　灯と継ぎ目の坑道",
+  "tagline": "継ぎ目の奥へ。光を向こう岸へ。",
+  "scene": {
+    "version": 1,
+    "id": "demo_stage3",
+    "sectors": [
+      {
+        "id": "mine",
+        "center": [
+          21.0,
+          0,
+          0
+        ],
+        "halfExtents": [
+          27.0,
+          12,
+          8
+        ],
+        "links": []
+      }
+    ],
+    "entities": [
+      {
+        "id": "entry",
+        "type": "platform",
+        "transform": {
+          "position": [
+            7.0,
+            -0.5,
+            0.0
+          ]
+        },
+        "sector": "mine",
+        "collider": {
+          "type": "aabb",
+          "halfExtents": [
+            10.0,
+            0.5,
+            3.0
+          ],
+          "solid": true
+        }
+      },
+      {
+        "id": "exit-bank",
+        "type": "causeway",
+        "transform": {
+          "position": [
+            31.0,
+            -0.5,
+            0.0
+          ]
+        },
+        "sector": "mine",
+        "collider": {
+          "type": "aabb",
+          "halfExtents": [
+            10.0,
+            0.5,
+            3.0
+          ],
+          "solid": true
+        }
+      },
+      {
+        "id": "shell-seam",
+        "type": "seam_panel",
+        "transform": {
+          "position": [
+            9.0,
+            1.5,
+            1.0
+          ]
+        },
+        "sector": "mine",
+        "collider": {
+          "type": "aabb",
+          "halfExtents": [
+            1.0,
+            1.5,
+            0.25
+          ],
+          "solid": true
+        }
+      },
+      {
+        "id": "shell-left",
+        "type": "seam_wall",
+        "transform": {
+          "position": [
+            7.25,
+            2.0,
+            1.0
+          ]
+        },
+        "sector": "mine",
+        "collider": {
+          "type": "aabb",
+          "halfExtents": [
+            0.75,
+            2.0,
+            0.25
+          ],
+          "solid": true
+        }
+      },
+      {
+        "id": "shell-right",
+        "type": "seam_wall",
+        "transform": {
+          "position": [
+            10.75,
+            2.0,
+            1.0
+          ]
+        },
+        "sector": "mine",
+        "collider": {
+          "type": "aabb",
+          "halfExtents": [
+            0.75,
+            2.0,
+            0.25
+          ],
+          "solid": true
+        }
+      },
+      {
+        "id": "shell-side-l",
+        "type": "seam_wall",
+        "transform": {
+          "position": [
+            6.75,
+            1.5,
+            -0.25
+          ]
+        },
+        "sector": "mine",
+        "collider": {
+          "type": "aabb",
+          "halfExtents": [
+            0.25,
+            1.5,
+            1.25
+          ],
+          "solid": true
+        }
+      },
+      {
+        "id": "shell-side-r",
+        "type": "seam_wall",
+        "transform": {
+          "position": [
+            11.25,
+            1.5,
+            -0.25
+          ]
+        },
+        "sector": "mine",
+        "collider": {
+          "type": "aabb",
+          "halfExtents": [
+            0.25,
+            1.5,
+            1.25
+          ],
+          "solid": true
+        }
+      },
+      {
+        "id": "shell-roof",
+        "type": "seam_wall",
+        "transform": {
+          "position": [
+            9.0,
+            3.5,
+            0.0
+          ]
+        },
+        "sector": "mine",
+        "collider": {
+          "type": "aabb",
+          "halfExtents": [
+            2.5,
+            0.5,
+            1.75
+          ],
+          "solid": true
+        }
+      },
+      {
+        "id": "shell-back",
+        "type": "seam_wall",
+        "transform": {
+          "position": [
+            9.0,
+            1.5,
+            -1.5
+          ]
+        },
+        "sector": "mine",
+        "collider": {
+          "type": "aabb",
+          "halfExtents": [
+            2.5,
+            1.5,
+            0.25
+          ],
+          "solid": true
+        }
+      },
+      {
+        "id": "shell-terminal",
+        "type": "signal_terminal",
+        "transform": {
+          "position": [
+            9.0,
+            0.75,
+            -0.5
+          ]
+        },
+        "sector": "mine",
+        "collider": {
+          "type": "aabb",
+          "halfExtents": [
+            0.5,
+            0.75,
+            0.5
+          ],
+          "solid": false
+        }
+      },
+      {
+        "id": "dark-slab-0",
+        "type": "causeway",
+        "transform": {
+          "position": [
+            17.0,
+            -0.5,
+            0.0
+          ]
+        },
+        "sector": "mine",
+        "collider": {
+          "type": "aabb",
+          "halfExtents": [
+            1.25,
+            0.5,
+            1.25
+          ],
+          "solid": true
+        }
+      },
+      {
+        "id": "dark-slab-1",
+        "type": "causeway",
+        "transform": {
+          "position": [
+            19.0,
+            -0.5,
+            0.0
+          ]
+        },
+        "sector": "mine",
+        "collider": {
+          "type": "aabb",
+          "halfExtents": [
+            1.25,
+            0.5,
+            1.25
+          ],
+          "solid": true
+        }
+      },
+      {
+        "id": "dark-slab-2",
+        "type": "causeway",
+        "transform": {
+          "position": [
+            21.0,
+            -0.5,
+            0.0
+          ]
+        },
+        "sector": "mine",
+        "collider": {
+          "type": "aabb",
+          "halfExtents": [
+            1.25,
+            0.5,
+            1.25
+          ],
+          "solid": true
+        }
+      },
+      {
+        "id": "dark-slab-3",
+        "type": "causeway",
+        "transform": {
+          "position": [
+            23.0,
+            -0.5,
+            0.0
+          ]
+        },
+        "sector": "mine",
+        "collider": {
+          "type": "aabb",
+          "halfExtents": [
+            1.25,
+            0.5,
+            1.25
+          ],
+          "solid": true
+        }
+      },
+      {
+        "id": "dark-slab-4",
+        "type": "causeway",
+        "transform": {
+          "position": [
+            25.0,
+            -0.5,
+            0.0
+          ]
+        },
+        "sector": "mine",
+        "collider": {
+          "type": "aabb",
+          "halfExtents": [
+            1.25,
+            0.5,
+            1.25
+          ],
+          "solid": true
+        }
+      },
+      {
+        "id": "dark-slab-5",
+        "type": "causeway",
+        "transform": {
+          "position": [
+            27.0,
+            -0.5,
+            0.0
+          ]
+        },
+        "sector": "mine",
+        "collider": {
+          "type": "aabb",
+          "halfExtents": [
+            1.25,
+            0.5,
+            1.25
+          ],
+          "solid": true
+        }
+      },
+      {
+        "id": "torch-mark",
+        "type": "remote_mark",
+        "transform": {
+          "position": [
+            30.0,
+            3.0,
+            -6.0
+          ]
+        },
+        "sector": "mine",
+        "collider": {
+          "type": "aabb",
+          "halfExtents": [
+            0.75,
+            0.75,
+            0.25
+          ],
+          "solid": false
+        }
+      },
+      {
+        "id": "gate",
+        "type": "signal_gate",
+        "transform": {
+          "position": [
+            37.0,
+            1.75,
+            0.0
+          ]
+        },
+        "sector": "mine",
+        "collider": {
+          "type": "aabb",
+          "halfExtents": [
+            0.25,
+            1.75,
+            4.0
+          ],
+          "solid": true
+        }
+      },
+      {
+        "id": "goal",
+        "type": "goal",
+        "transform": {
+          "position": [
+            39.0,
+            1.25,
+            0.0
+          ]
+        },
+        "sector": "mine",
+        "collider": {
+          "type": "aabb",
+          "halfExtents": [
+            0.5,
+            1.25,
+            1.0
+          ],
+          "solid": false
+        }
+      }
+    ],
+    "spawn": {
+      "position": [
+        1,
+        1,
+        0
+      ],
+      "sector": "mine",
+      "facing": 1
+    },
+    "checkpoints": [
+      {
+        "id": "entry",
+        "position": [
+          1,
+          1,
+          0
+        ],
+        "sector": "mine"
+      },
+      {
+        "id": "shell-entry",
+        "position": [
+          6,
+          1,
+          2.5
+        ],
+        "sector": "mine"
+      },
+      {
+        "id": "dark-entry",
+        "position": [
+          16,
+          1,
+          0
+        ],
+        "sector": "mine"
+      },
+      {
+        "id": "dark-exit",
+        "position": [
+          29,
+          1,
+          0
+        ],
+        "sector": "mine"
+      }
+    ],
+    "puzzles": []
+  },
+  "instances": [
+    {
+      "id": "shell-core",
+      "kind": "P1-2",
+      "variant": "crossing",
+      "bindings": {
+        "seam": "shell-seam",
+        "terminal": "shell-terminal"
+      },
+      "achievement": "shell-restored",
+      "hintGenerations": [
+        "PS1"
+      ],
+      "completionGenerations": [
+        "PS1"
+      ],
+      "settings": {},
+      "hints": [
+        "殻の一枚だけ、見え方が違う。",
+        "同じ入口を3Dの二世代で見比べよう。",
+        "CH 3では継ぎ目が開く。",
+        "手前の開口から奥へ進み、中の端子に触れよう。"
+      ]
+    },
+    {
+      "id": "torch-light",
+      "kind": "P2-1",
+      "variant": "crossing",
+      "bindings": {
+        "slabs": [
+          "dark-slab-0",
+          "dark-slab-1",
+          "dark-slab-2",
+          "dark-slab-3",
+          "dark-slab-4",
+          "dark-slab-5"
+        ],
+        "terminal": "torch-mark"
+      },
+      "achievement": "torch-lit",
+      "hintGenerations": [
+        "PS2"
+      ],
+      "completionGenerations": [
+        "PS2"
+      ],
+      "settings": {
+        "lightThreshold": 0.12
+      },
+      "hints": [
+        "向こう岸の刻印は、触れずに反応する。",
+        "近づくと光が強くなる。",
+        "CH 4で刻印に近い岸へ回ろう。",
+        "奥行き方向に刻印へ近づき、手元の光を届けよう。"
+      ]
+    }
+  ],
+  "exit": {
+    "goal": "goal",
+    "blocker": "gate",
+    "requires": [
+      "shell-restored",
+      "torch-lit"
+    ]
+  }
+}

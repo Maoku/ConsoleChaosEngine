@@ -4,6 +4,7 @@ import { stageCompletionIn } from '@/content/stage-capabilities';
 import { createStageProgress, type StageProgress } from '../stage-progress';
 import { getPuzzle } from './registry';
 import type { PuzzleContext, PuzzleDefinition } from './types';
+import { illuminateMark } from './illuminated-mark';
 import { gardenState, moveGarden, connectGarden, type GardenState } from './affine-garden';
 import { updateFlickerPath } from './flicker-path';
 
@@ -63,7 +64,8 @@ export function createStageRuntime(stage: StageFile, seed: number): StageRuntime
         } else if (instance.kind === 'S-1') {
           if (ctx.initializing) moveGarden(scoped, instance, gardens.get(instance.id)!);
           connectGarden(scoped, instance, gardens.get(instance.id)!);
-        } else definition.update(scoped);
+        } else if (instance.kind === 'P2-1') illuminateMark(scoped, instance);
+        else definition.update(scoped);
       },
     };
   });

@@ -299,6 +299,10 @@ MATERIALS.signal_line = { ...surface('gimmick', 'mark_glyph.png'), decoration: t
  * 「CH 2 以降では明確に別の緑・CH 1 では完全に同一色」は
  * テクスチャ側で保証してある（`tools/check-textures.ts` の F-1 検査）。
  */
+MATERIALS.seam_panel = { ...surface('gimmick', 'shell_plate.png'), hideWhenPassable: true, polygonSort: true };
+MATERIALS.seam_wall = { ...surface('gimmick', 'shell_plate.png'), polygonSort: true };
+MATERIALS.remote_mark = dark(surface('gimmick', 'mark_glyph.png'));
+
 export const ENTITY_MATERIALS: Record<string, Partial<Material>> = {
   f1_vine_a: { texture: 'vine_green.png' },
   f1_vine_b: { texture: 'vine_yellow.png' },

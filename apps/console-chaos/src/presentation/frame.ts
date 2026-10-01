@@ -18,6 +18,7 @@ import {
 import type { PlayerBodyData } from '@/gameplay/player';
 import type { Session } from '@/gameplay/session';
 import { gardenSurface } from './affine-garden';
+import { torchPosition, TORCH_RADIUS } from '@/gameplay/torch';
 import { planeAngleAt, S1_PIVOT } from '@/gameplay/puzzles/s1_affine_plane';
 import { collidersOf } from '@/level/loader';
 import { PIXELS_PER_WORLD_UNIT, type LevelEntity, type LevelFile, type Vec3Tuple } from '@/level/schema';
@@ -296,18 +297,21 @@ export function createConsoleChaosPresentation(level: LevelFile): ConsoleChaosPr
       const currentTheme = CONSOLE_CHAOS_GENERATION_THEMES[context.generation.generation];
       const player = session.player;
       const forward = currentTheme.camera.forward;
+      const camera = session.runtime && hardware.video.projection === 'perspective3d'
+        ? { ...currentTheme.camera, distance: 8, height: 3, lookAhead: 2, targetHeight: 0.8 }
+        : currentTheme.camera;
       frame.timeSeconds = timeSeconds;
       frame.camera = {
         projection: hardware.video.projection === 'ortho2d' ? 'orthographic' : 'perspective',
         position: [
-          player.position[0] - forward[0] * currentTheme.camera.distance,
-          player.position[1] + currentTheme.camera.height,
-          player.position[2] - forward[1] * currentTheme.camera.distance,
+          player.position[0] - forward[0] * camera.distance,
+          player.position[1] + camera.height,
+          player.position[2] - forward[1] * camera.distance,
         ],
         target: [
-          player.position[0] + forward[0] * currentTheme.camera.lookAhead,
-          player.position[1] + currentTheme.camera.targetHeight,
-          player.position[2] + forward[1] * currentTheme.camera.lookAhead,
+          player.position[0] + forward[0] * camera.lookAhead,
+          player.position[1] + camera.targetHeight,
+          player.position[2] + forward[1] * camera.lookAhead,
         ],
         zoom: hardware.video.internalHeight / PIXELS_PER_WORLD_UNIT,
         orthoHeight: hardware.video.internalHeight / PIXELS_PER_WORLD_UNIT,
@@ -354,6 +358,8 @@ export function createConsoleChaosPresentation(level: LevelFile): ConsoleChaosPr
           puzzle.bindings.terminal === entity.id || puzzle.signals?.includes(entity.id));
         const material = instance ? {
           ...baseMaterial,
+          ...(instance.kind === 'P2-1' && session.runtime!.progress.completed.has(instance.achievement)
+            ? { ambient: 1, diffuse: 0 } : {}),
           color: (session.runtime!.progress.completed.has(instance.achievement)
             ? [0.35, 1, 0.65, 1] : [0.65, 0.45, 0.3, 1]) as [number, number, number, number],
         } : baseMaterial;
@@ -443,10 +449,10 @@ export function createConsoleChaosPresentation(level: LevelFile): ConsoleChaosPr
         id: 'carried-light',
         generations: ['PS2'],
         kind: 'point',
-        position: [player.position[0], player.position[1] + 0.6, player.position[2]],
+        position: torchPosition(player.position),
         color: '#ffffff',
         intensity: 1,
-        radius: 7,
+        radius: TORCH_RADIUS,
       });
       colliderBoxes = collidersEnabled ? collectColliderBoxes(session, frame) : [];
       if (colliderBoxes.length > 0) appendColliderCommands(frame, colliderBoxes);
