@@ -1,13 +1,9 @@
-import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import { createGenerationController } from '@console-chaos/engine';
-import { parseStage } from '@/content/stage-schema';
+import { demoStage } from './demo-stage-loader';
 import { createStageSession } from '@/gameplay/stage-session';
 import { createNeutralConsoleChaosActions } from '@/config/actions';
 
-export function demoStage(index: number) {
-  return parseStage(JSON.parse(readFileSync(new URL('../../public/assets/levels/demo_stage' + index + '.json', import.meta.url), 'utf8')));
-}
 
 describe('authored demo routes', () => {
   it('crosses the merged bridge, walks around the wall in depth and reaches the powered exit', () => {

@@ -17,6 +17,7 @@ import {
 } from '@/config/generation';
 import type { PlayerBodyData } from '@/gameplay/player';
 import type { Session } from '@/gameplay/session';
+import { gardenSurface } from './affine-garden';
 import { planeAngleAt, S1_PIVOT } from '@/gameplay/puzzles/s1_affine_plane';
 import { collidersOf } from '@/level/loader';
 import { PIXELS_PER_WORLD_UNIT, type LevelEntity, type LevelFile, type Vec3Tuple } from '@/level/schema';
@@ -312,6 +313,13 @@ export function createConsoleChaosPresentation(level: LevelFile): ConsoleChaosPr
         orthoHeight: hardware.video.internalHeight / PIXELS_PER_WORLD_UNIT,
         fovDegrees: 55,
       };
+      const garden = session.runtime && [...session.runtime.gardens].find(([, pose]) => Math.abs(pose.center[0] - player.position[0]) < 11);
+      if (garden) {
+        const pose = garden[1];
+        frame.camera = { projection: 'orthographic', position: [pose.center[0], 2.75, 18],
+          target: [pose.center[0], 2.75, 0], orthoHeight: 15, zoom: 15 };
+        frame.affineSurfaces.push(gardenSurface(garden[0], pose, frame.camera));
+      }
       const backdropOffset = frame.camera.position[0] * -forward[1] + frame.camera.position[2] * forward[0];
 
       for (const generation of GENERATION_IDS) {
@@ -372,7 +380,7 @@ export function createConsoleChaosPresentation(level: LevelFile): ConsoleChaosPr
       }
 
       const pivot = bodies.get(S1_PIVOT);
-      if (hardware.video.affinePlane && pivot) for (const generation of GENERATION_IDS) {
+      if (!session.runtime && hardware.video.affinePlane && pivot) for (const generation of GENERATION_IDS) {
         const material = materialFor('affine_floor');
         frame.meshes.push({
           id: `affine-plane:${generation}`,

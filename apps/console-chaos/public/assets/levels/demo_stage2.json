@@ -1,0 +1,813 @@
+{
+  "version": 2,
+  "id": "demo_stage2",
+  "title": "2　回転の庭園",
+  "tagline": "灯を覚え、盤に運ばれる。",
+  "scene": {
+    "version": 1,
+    "id": "demo_stage2",
+    "sectors": [
+      {
+        "id": "garden",
+        "center": [
+          24.0,
+          0,
+          0
+        ],
+        "halfExtents": [
+          30.0,
+          12,
+          8
+        ],
+        "links": []
+      }
+    ],
+    "entities": [
+      {
+        "id": "entry",
+        "type": "platform",
+        "transform": {
+          "position": [
+            3.0,
+            -0.5,
+            0.0
+          ]
+        },
+        "sector": "garden",
+        "collider": {
+          "type": "aabb",
+          "halfExtents": [
+            6.0,
+            0.5,
+            3.0
+          ],
+          "solid": true
+        }
+      },
+      {
+        "id": "mid-bank",
+        "type": "platform",
+        "transform": {
+          "position": [
+            24.0,
+            -0.5,
+            0.0
+          ]
+        },
+        "sector": "garden",
+        "collider": {
+          "type": "aabb",
+          "halfExtents": [
+            6.0,
+            0.5,
+            3.0
+          ],
+          "solid": true
+        }
+      },
+      {
+        "id": "exit-bank",
+        "type": "platform",
+        "transform": {
+          "position": [
+            43.0,
+            -0.5,
+            0.0
+          ]
+        },
+        "sector": "garden",
+        "collider": {
+          "type": "aabb",
+          "halfExtents": [
+            5.0,
+            0.5,
+            3.0
+          ],
+          "solid": true
+        }
+      },
+      {
+        "id": "stone-0",
+        "type": "tile",
+        "transform": {
+          "position": [
+            10.5,
+            -0.25,
+            0.0
+          ]
+        },
+        "sector": "garden",
+        "collider": {
+          "type": "aabb",
+          "halfExtents": [
+            0.5,
+            0.25,
+            1.0
+          ],
+          "solid": true
+        }
+      },
+      {
+        "id": "stone-1",
+        "type": "tile",
+        "transform": {
+          "position": [
+            12.0,
+            -0.25,
+            0.0
+          ]
+        },
+        "sector": "garden",
+        "collider": {
+          "type": "aabb",
+          "halfExtents": [
+            0.5,
+            0.25,
+            1.0
+          ],
+          "solid": true
+        }
+      },
+      {
+        "id": "stone-2",
+        "type": "tile",
+        "transform": {
+          "position": [
+            13.5,
+            -0.25,
+            0.0
+          ]
+        },
+        "sector": "garden",
+        "collider": {
+          "type": "aabb",
+          "halfExtents": [
+            0.5,
+            0.25,
+            1.0
+          ],
+          "solid": true
+        }
+      },
+      {
+        "id": "stone-3",
+        "type": "tile",
+        "transform": {
+          "position": [
+            15.0,
+            -0.25,
+            0.0
+          ]
+        },
+        "sector": "garden",
+        "collider": {
+          "type": "aabb",
+          "halfExtents": [
+            0.5,
+            0.25,
+            1.0
+          ],
+          "solid": true
+        }
+      },
+      {
+        "id": "stone-4",
+        "type": "tile",
+        "transform": {
+          "position": [
+            16.5,
+            -0.25,
+            0.0
+          ]
+        },
+        "sector": "garden",
+        "collider": {
+          "type": "aabb",
+          "halfExtents": [
+            0.5,
+            0.25,
+            1.0
+          ],
+          "solid": true
+        }
+      },
+      {
+        "id": "stone-5",
+        "type": "tile",
+        "transform": {
+          "position": [
+            18.0,
+            -0.25,
+            0.0
+          ]
+        },
+        "sector": "garden",
+        "collider": {
+          "type": "aabb",
+          "halfExtents": [
+            0.5,
+            0.25,
+            1.0
+          ],
+          "solid": true
+        }
+      },
+      {
+        "id": "lamp-0",
+        "type": "lamp",
+        "transform": {
+          "position": [
+            11.0,
+            1.5,
+            -0.5
+          ]
+        },
+        "sector": "garden",
+        "collider": {
+          "type": "aabb",
+          "halfExtents": [
+            0.25,
+            0.25,
+            0.25
+          ],
+          "solid": false
+        }
+      },
+      {
+        "id": "lamp-1",
+        "type": "lamp",
+        "transform": {
+          "position": [
+            11.0,
+            1.5,
+            -0.5
+          ]
+        },
+        "sector": "garden",
+        "collider": {
+          "type": "aabb",
+          "halfExtents": [
+            0.25,
+            0.25,
+            0.25
+          ],
+          "solid": false
+        }
+      },
+      {
+        "id": "lamp-2",
+        "type": "lamp",
+        "transform": {
+          "position": [
+            11.0,
+            1.5,
+            -0.5
+          ]
+        },
+        "sector": "garden",
+        "collider": {
+          "type": "aabb",
+          "halfExtents": [
+            0.25,
+            0.25,
+            0.25
+          ],
+          "solid": false
+        }
+      },
+      {
+        "id": "curtain-0",
+        "type": "swarm",
+        "transform": {
+          "position": [
+            11.0,
+            1.5,
+            1.0
+          ]
+        },
+        "sector": "garden",
+        "collider": {
+          "type": "aabb",
+          "halfExtents": [
+            0.75,
+            1.0,
+            0.5
+          ],
+          "solid": false
+        }
+      },
+      {
+        "id": "curtain-1",
+        "type": "swarm",
+        "transform": {
+          "position": [
+            12.5,
+            1.5,
+            1.0
+          ]
+        },
+        "sector": "garden",
+        "collider": {
+          "type": "aabb",
+          "halfExtents": [
+            0.75,
+            1.0,
+            0.5
+          ],
+          "solid": false
+        }
+      },
+      {
+        "id": "curtain-2",
+        "type": "swarm",
+        "transform": {
+          "position": [
+            14.0,
+            1.5,
+            1.0
+          ]
+        },
+        "sector": "garden",
+        "collider": {
+          "type": "aabb",
+          "halfExtents": [
+            0.75,
+            1.0,
+            0.5
+          ],
+          "solid": false
+        }
+      },
+      {
+        "id": "curtain-3",
+        "type": "swarm",
+        "transform": {
+          "position": [
+            15.5,
+            1.5,
+            1.0
+          ]
+        },
+        "sector": "garden",
+        "collider": {
+          "type": "aabb",
+          "halfExtents": [
+            0.75,
+            1.0,
+            0.5
+          ],
+          "solid": false
+        }
+      },
+      {
+        "id": "curtain-4",
+        "type": "swarm",
+        "transform": {
+          "position": [
+            17.0,
+            1.5,
+            1.0
+          ]
+        },
+        "sector": "garden",
+        "collider": {
+          "type": "aabb",
+          "halfExtents": [
+            0.75,
+            1.0,
+            0.5
+          ],
+          "solid": false
+        }
+      },
+      {
+        "id": "curtain-5",
+        "type": "swarm",
+        "transform": {
+          "position": [
+            18.5,
+            1.5,
+            1.0
+          ]
+        },
+        "sector": "garden",
+        "collider": {
+          "type": "aabb",
+          "halfExtents": [
+            0.75,
+            1.0,
+            0.5
+          ],
+          "solid": false
+        }
+      },
+      {
+        "id": "curtain-6",
+        "type": "swarm",
+        "transform": {
+          "position": [
+            11.0,
+            1.5,
+            1.0
+          ]
+        },
+        "sector": "garden",
+        "collider": {
+          "type": "aabb",
+          "halfExtents": [
+            0.75,
+            1.0,
+            0.5
+          ],
+          "solid": false
+        }
+      },
+      {
+        "id": "curtain-7",
+        "type": "swarm",
+        "transform": {
+          "position": [
+            12.5,
+            1.5,
+            1.0
+          ]
+        },
+        "sector": "garden",
+        "collider": {
+          "type": "aabb",
+          "halfExtents": [
+            0.75,
+            1.0,
+            0.5
+          ],
+          "solid": false
+        }
+      },
+      {
+        "id": "curtain-8",
+        "type": "swarm",
+        "transform": {
+          "position": [
+            14.0,
+            1.5,
+            1.0
+          ]
+        },
+        "sector": "garden",
+        "collider": {
+          "type": "aabb",
+          "halfExtents": [
+            0.75,
+            1.0,
+            0.5
+          ],
+          "solid": false
+        }
+      },
+      {
+        "id": "curtain-9",
+        "type": "swarm",
+        "transform": {
+          "position": [
+            15.5,
+            1.5,
+            1.0
+          ]
+        },
+        "sector": "garden",
+        "collider": {
+          "type": "aabb",
+          "halfExtents": [
+            0.75,
+            1.0,
+            0.5
+          ],
+          "solid": false
+        }
+      },
+      {
+        "id": "curtain-10",
+        "type": "swarm",
+        "transform": {
+          "position": [
+            17.0,
+            1.5,
+            1.0
+          ]
+        },
+        "sector": "garden",
+        "collider": {
+          "type": "aabb",
+          "halfExtents": [
+            0.75,
+            1.0,
+            0.5
+          ],
+          "solid": false
+        }
+      },
+      {
+        "id": "curtain-11",
+        "type": "swarm",
+        "transform": {
+          "position": [
+            18.5,
+            1.5,
+            1.0
+          ]
+        },
+        "sector": "garden",
+        "collider": {
+          "type": "aabb",
+          "halfExtents": [
+            0.75,
+            1.0,
+            0.5
+          ],
+          "solid": false
+        }
+      },
+      {
+        "id": "path-terminal",
+        "type": "signal_terminal",
+        "transform": {
+          "position": [
+            21.0,
+            0.75,
+            0.0
+          ]
+        },
+        "sector": "garden",
+        "collider": {
+          "type": "aabb",
+          "halfExtents": [
+            0.5,
+            0.75,
+            0.5
+          ],
+          "solid": false
+        }
+      },
+      {
+        "id": "disc-pivot",
+        "type": "switch",
+        "transform": {
+          "position": [
+            34.0,
+            -0.25,
+            0.0
+          ]
+        },
+        "sector": "garden",
+        "collider": {
+          "type": "aabb",
+          "halfExtents": [
+            0.25,
+            0.25,
+            0.25
+          ],
+          "solid": false
+        }
+      },
+      {
+        "id": "disc-island",
+        "type": "island",
+        "transform": {
+          "position": [
+            30.0,
+            -0.25,
+            0.0
+          ]
+        },
+        "sector": "garden",
+        "collider": {
+          "type": "aabb",
+          "halfExtents": [
+            1.0,
+            0.25,
+            1.25
+          ],
+          "solid": true
+        }
+      },
+      {
+        "id": "disc-step",
+        "type": "platform",
+        "transform": {
+          "position": [
+            39.75,
+            -0.5,
+            0.0
+          ]
+        },
+        "sector": "garden",
+        "collider": {
+          "type": "aabb",
+          "halfExtents": [
+            1.25,
+            0.5,
+            2.0
+          ],
+          "solid": true
+        }
+      },
+      {
+        "id": "disc-terminal",
+        "type": "signal_terminal",
+        "transform": {
+          "position": [
+            39.5,
+            0.75,
+            0.0
+          ]
+        },
+        "sector": "garden",
+        "collider": {
+          "type": "aabb",
+          "halfExtents": [
+            0.5,
+            0.75,
+            0.5
+          ],
+          "solid": false
+        }
+      },
+      {
+        "id": "gate",
+        "type": "signal_gate",
+        "transform": {
+          "position": [
+            45.0,
+            1.75,
+            0.0
+          ]
+        },
+        "sector": "garden",
+        "collider": {
+          "type": "aabb",
+          "halfExtents": [
+            0.25,
+            1.75,
+            4.0
+          ],
+          "solid": true
+        }
+      },
+      {
+        "id": "goal",
+        "type": "goal",
+        "transform": {
+          "position": [
+            47.0,
+            1.25,
+            0.0
+          ]
+        },
+        "sector": "garden",
+        "collider": {
+          "type": "aabb",
+          "halfExtents": [
+            0.5,
+            1.25,
+            1.0
+          ],
+          "solid": false
+        }
+      }
+    ],
+    "spawn": {
+      "position": [
+        1,
+        1,
+        0
+      ],
+      "sector": "garden",
+      "facing": 1
+    },
+    "checkpoints": [
+      {
+        "id": "entry",
+        "position": [
+          1,
+          1,
+          0
+        ],
+        "sector": "garden"
+      },
+      {
+        "id": "disc-entry",
+        "position": [
+          28.8,
+          1,
+          0
+        ],
+        "sector": "garden"
+      },
+      {
+        "id": "disc-exit",
+        "position": [
+          40,
+          1,
+          0
+        ],
+        "sector": "garden"
+      }
+    ],
+    "puzzles": []
+  },
+  "instances": [
+    {
+      "id": "path",
+      "kind": "F-2",
+      "variant": "crossing",
+      "bindings": {
+        "tiles": [
+          "stone-0",
+          "stone-1",
+          "stone-2",
+          "stone-3",
+          "stone-4",
+          "stone-5"
+        ],
+        "lamps": [
+          "lamp-0",
+          "lamp-1",
+          "lamp-2"
+        ],
+        "swarm": [
+          "curtain-0",
+          "curtain-1",
+          "curtain-2",
+          "curtain-3",
+          "curtain-4",
+          "curtain-5",
+          "curtain-6",
+          "curtain-7",
+          "curtain-8",
+          "curtain-9",
+          "curtain-10",
+          "curtain-11"
+        ],
+        "terminal": "path-terminal"
+      },
+      "achievement": "path-connected",
+      "hintGenerations": [
+        "FC"
+      ],
+      "completionGenerations": [
+        "FC",
+        "SFC",
+        "PS1",
+        "PS2"
+      ],
+      "settings": {
+        "safeCount": 3
+      },
+      "hints": [
+        "群れの切れ目に灯が見える。",
+        "消える群れの奥を見比べよう。",
+        "CH 1で灯の下の石を覚えよう。",
+        "灯のある石だけを跳んで渡ろう。道は落ちても変わらない。"
+      ]
+    },
+    {
+      "id": "disc-relay",
+      "kind": "S-1",
+      "variant": "crossing",
+      "bindings": {
+        "pivot": "disc-pivot",
+        "island": "disc-island",
+        "step": "disc-step",
+        "terminal": "disc-terminal"
+      },
+      "achievement": "disc-transported",
+      "hintGenerations": [
+        "SFC"
+      ],
+      "completionGenerations": [
+        "FC",
+        "SFC",
+        "PS1",
+        "PS2"
+      ],
+      "settings": {
+        "periodTicks": 720,
+        "scaleAmplitude": 0.03
+      },
+      "hints": [
+        "盤上の島は、どう動く？",
+        "平面が回る世代では島も回る。",
+        "CH 2で島に乗り、対岸で止めよう。",
+        "島に乗ったまま半周し、右の端子へ降りよう。"
+      ]
+    }
+  ],
+  "exit": {
+    "goal": "goal",
+    "blocker": "gate",
+    "requires": [
+      "path-connected",
+      "disc-transported"
+    ]
+  }
+}

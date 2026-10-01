@@ -359,7 +359,9 @@ export function createSession(options: SessionOptions): Session {
       ctx.profile = profile;
       if (!runtime || isPlayable(checkpoints)) puzzle.update(ctx);
     }
+    const previousCheckpoint = checkpoints.active.join();
     updateCheckpoints(checkpoints, level.checkpoints, player.position, player.halfExtents, projection.mode);
+    if (runtime && previousCheckpoint !== checkpoints.active.join()) runtime.checkpoint();
 
     // ヒント（T1-17）。取り組んでいるパズルの滞在時間だけが進む
     activePuzzleId = nearestUnsolvedPuzzle();
@@ -371,7 +373,7 @@ export function createSession(options: SessionOptions): Session {
       player.position = [...target.position] as Vec3;
       player.velocity = [...target.velocity] as Vec3;
       player.grounded = false;
-      if (runtime) restoreTransient();
+      if (runtime) { runtime.retry(); restoreTransient(); }
       projection.safePosition = [...target.position] as Vec3;
       clearGroundAnchor(projection);
       slide.z = null;

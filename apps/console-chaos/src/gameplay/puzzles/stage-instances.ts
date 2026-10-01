@@ -4,6 +4,7 @@ import { stageCompletionIn } from '@/content/stage-capabilities';
 import { createStageProgress, type StageProgress } from '../stage-progress';
 import { getPuzzle } from './registry';
 import type { PuzzleContext, PuzzleDefinition } from './types';
+import { gardenState, moveGarden, connectGarden, type GardenState } from './affine-garden';
 import { updateFlickerPath } from './flicker-path';
 
 const LEGACY_ROLES: Record<StagePuzzle['kind'], Record<string, string>> = {
@@ -18,6 +19,9 @@ export interface StageRuntime {
   readonly stage: StageFile;
   readonly progress: StageProgress;
   readonly definitions: readonly PuzzleDefinition[];
+  readonly gardens: ReadonlyMap<string, GardenState>;
+  checkpoint(): void;
+  retry(): void;
   scope(id: string, entities: ReadonlyMap<string, Entity>): ReadonlyMap<string, Entity>;
   seed(id: string): number;
   canClear(goal: string): boolean;
@@ -31,6 +35,8 @@ export function stableIdSeed(seed: number, id: string): number {
 /** Reuse the legacy families through isolated bindings, without exposing sibling entities. */
 export function createStageRuntime(stage: StageFile, seed: number): StageRuntime {
   const progress = createStageProgress(stage.instances.map((instance) => instance.achievement));
+  const gardens = new Map(stage.instances.filter((p) => p.kind === 'S-1').map((p) => [p.id, gardenState()]));
+  let safeGardens = new Map<string, GardenState>();
   const byId = new Map(stage.instances.map((instance) => [instance.id, instance]));
   const definitions = stage.instances.map((instance): PuzzleDefinition => {
     const definition = getPuzzle(instance.kind);
@@ -39,6 +45,9 @@ export function createStageRuntime(stage: StageFile, seed: number): StageRuntime
       ...definition,
       id: instance.id,
       solvableIn: (profile) => stageCompletionIn(instance, profile.hardware),
+      beforePhysics(ctx) {
+        if (instance.kind === 'S-1') moveGarden(ctx, instance, gardens.get(instance.id)!);
+      },
       update(ctx: PuzzleContext) {
         const scoped: PuzzleContext = {
           ...ctx,
@@ -51,12 +60,17 @@ export function createStageRuntime(stage: StageFile, seed: number): StageRuntime
         if (instance.kind === 'F-2') {
           updateFlickerPath(scoped, (instance.bindings.tiles as string[]).length,
             instance.settings.safeCount!, (instance.bindings.swarm as string[]).length);
+        } else if (instance.kind === 'S-1') {
+          if (ctx.initializing) moveGarden(scoped, instance, gardens.get(instance.id)!);
+          connectGarden(scoped, instance, gardens.get(instance.id)!);
         } else definition.update(scoped);
       },
     };
   });
   return {
-    stage, progress, definitions,
+    stage, progress, definitions, gardens,
+    checkpoint() { safeGardens = new Map([...gardens].map(([id, state]) => [id, structuredClone(state)])); },
+    retry() { for (const [id, state] of gardens) Object.assign(state, safeGardens.get(id) ?? gardenState()); },
     scope(id, entities) {
       const instance = byId.get(id)!;
       const aliases = new Map<string, Entity>();
