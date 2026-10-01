@@ -45,6 +45,10 @@ export interface PuzzleContext {
   readonly memory: Map<string, number>;
   markSolved(): void;
   readonly solved: boolean;
+  /** v2 moving platforms use support before physics; legacy puzzles ignore these fields. */
+  readonly transitioning?: boolean;
+  readonly support?: Entity | null;
+  readonly initializing?: boolean;
 }
 
 export interface PuzzleDefinition {
@@ -57,6 +61,7 @@ export interface PuzzleDefinition {
    */
   solvableIn(profile: ConsoleChaosGenerationView): boolean;
   update(ctx: PuzzleContext): void;
+  beforePhysics?(ctx: PuzzleContext): void;
 }
 
 // --- パズル作者向けのヘルパ（世界の触り方をここに集約する） ---

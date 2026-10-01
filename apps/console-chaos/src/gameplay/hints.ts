@@ -41,6 +41,7 @@ export const STAGE2_TEMPLATE = '{channels} で見てみよう';
 
 /** レベルデータから作る、パズル 1 件分のヒント対象 */
 export interface HintTarget {
+  texts?: readonly [string, string, string, string];
   puzzleId: string;
   /** レベルの `requiredGenerations`。段階 2 以降の文面を組み立てるのに使う */
   generations: readonly GenerationId[];
@@ -63,6 +64,7 @@ interface HintEntry {
 }
 
 export interface HintState {
+  readonly delaysMs: readonly [number, number, number];
   /** オフにすると、タイマーも進まず、表示も消える（§13.1） */
   enabled: boolean;
   readonly entries: Map<string, HintEntry>;
@@ -86,6 +88,7 @@ function fill(template: string, generations: readonly GenerationId[]): string {
 
 /** 4 段階の文面を組み立てる。レベルデータが真実で、文面はそこから導かれる */
 export function composeHintTexts(target: HintTarget): [string, string, string, string] {
+  if (target.texts) return [...target.texts];
   const copy = PUZZLE_CATALOG[target.puzzleId]?.hints;
   return [
     STAGE1_TEXT,
@@ -96,6 +99,7 @@ export function composeHintTexts(target: HintTarget): [string, string, string, s
 }
 
 export interface HintOptions {
+  delaysMs?: readonly [number, number, number];
   /** 既定は有効。設定で完全にオフにできる（§13.1） */
   enabled?: boolean;
 }
@@ -107,6 +111,7 @@ export function createHintState(targets: readonly HintTarget[], options: HintOpt
   }
   return {
     enabled: options.enabled ?? true,
+    delaysMs: options.delaysMs ?? HINT_DELAYS_MS,
     entries,
     message: null,
     activePuzzleId: null,
@@ -114,9 +119,9 @@ export function createHintState(targets: readonly HintTarget[], options: HintOpt
 }
 
 /** 段階 n（1..4）に到達するまでの累計待ち時間 */
-export function thresholdMs(stage: HintStage): number {
+export function thresholdMs(stage: HintStage, delays: readonly number[] = HINT_DELAYS_MS): number {
   let total = 0;
-  for (let i = 0; i < stage && i < HINT_DELAYS_MS.length; i++) total += HINT_DELAYS_MS[i]!;
+  for (let i = 0; i < stage && i < delays.length; i++) total += delays[i]!;
   return total;
 }
 
@@ -177,7 +182,7 @@ export function updateHints(state: HintState, update: HintUpdate): void {
 
   entry.elapsedMs += update.dtMs;
   // 自動提示は段階 3 まで。段階 4 は requestHint からしか到達しない
-  while (entry.stage < AUTO_MAX_STAGE && entry.elapsedMs >= thresholdMs((entry.stage + 1) as HintStage)) {
+  while (entry.stage < AUTO_MAX_STAGE && entry.elapsedMs >= thresholdMs((entry.stage + 1) as HintStage, state.delaysMs)) {
     entry.stage = (entry.stage + 1) as HintStage;
     state.message = messageOf(id, entry, false);
   }
@@ -194,7 +199,7 @@ export function requestHint(state: HintState, puzzleId: string | null = state.ac
 
   if (entry.stage < MAX_STAGE) entry.stage = (entry.stage + 1) as HintStage;
   // 手で進めた段階まで自動提示が追いつかないよう、滞在時間も合わせる
-  entry.elapsedMs = Math.max(entry.elapsedMs, thresholdMs(entry.stage));
+  entry.elapsedMs = Math.max(entry.elapsedMs, thresholdMs(entry.stage, state.delaysMs));
   state.message = messageOf(puzzleId, entry, true);
   return state.message;
 }

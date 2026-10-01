@@ -64,6 +64,7 @@ import {
 } from './projection';
 import { allPuzzles } from './puzzles/registry';
 import type { PuzzleContext, PuzzleDefinition } from './puzzles/types';
+import type { StageRuntime } from './puzzles/stage-instances';
 
 /** 走査線制限の対象になるレベル要素の種別（動くもの＝スプライト） */
 const SPRITE_TYPES = new Set(['enemy', 'swarm']);
@@ -75,6 +76,7 @@ const SPRITE_TYPES = new Set(['enemy', 'swarm']);
 export const HINT_ENGAGE_RADIUS = 10;
 
 export interface SessionOptions {
+  runtime?: StageRuntime;
   level: LevelFile;
   /** GameHost 利用時は context 所有の World を注入する。ヘッドレス replay は省略できる。 */
   world?: World;
@@ -101,6 +103,7 @@ export interface SessionSprite {
 }
 
 export interface Session {
+  readonly runtime?: StageRuntime;
   readonly level: LevelFile;
   readonly world: World;
   readonly player: PlayerBodyData;
@@ -130,6 +133,7 @@ export interface Session {
   /** 段階 9 の結果を次ティックへ書き戻す（描画側が呼ぶ） */
   commitCulled(culled: readonly Entity[]): void;
   reset(): void;
+  retryCheckpoint(): void;
   dispose(): void;
 }
 
@@ -169,15 +173,20 @@ function distanceSquared(a: Vec3, b: Vec3): number {
 
 export function createSession(options: SessionOptions): Session {
   const { level } = options;
+  const runtime = options.runtime;
+  let initializing = false;
   const generation = options.generation;
   const world: World = options.world ?? createWorld();
   const entities = new Map<string, Entity>();
+  const owned = new Set<Entity>();
+  let disposed = false;
   const bodyById = new Map<string, StaticBodyData>();
   const sprites: SessionSprite[] = [];
 
   for (const entity of level.entities) {
     if (!entity.collider) continue;
     const id = world.create();
+    owned.add(id);
     const body = world.add(id, StaticBody, {
       position: [...entity.transform.position] as Vec3,
       halfExtents: [...entity.collider.halfExtents] as Vec3,
@@ -193,6 +202,7 @@ export function createSession(options: SessionOptions): Session {
   const fallLimitY = options.fallLimitY ?? lowestPoint(level) - 4;
 
   const playerEntity = world.create();
+  owned.add(playerEntity);
   const player: PlayerBodyData = world.add(playerEntity, PlayerBody);
   player.position = [...spawn] as Vec3;
   const playerState: PlayerStateData = world.add(playerEntity, PlayerState);
@@ -243,7 +253,7 @@ export function createSession(options: SessionOptions): Session {
     physicsSystem(() => ({ mode: frame.profile.hardware.video.projection, projection }), () => [player]),
   );
 
-  const puzzles: PuzzleDefinition[] = allPuzzles();
+  const puzzles: readonly PuzzleDefinition[] = runtime?.definitions ?? allPuzzles();
   const solved = new Set<string>();
   const goals = level.entities.filter((entity) => entity.type === 'goal' && entity.collider !== undefined);
   let cleared = false;
@@ -252,6 +262,7 @@ export function createSession(options: SessionOptions): Session {
   const hintTargets: HintTarget[] = level.puzzles.map((placement) => ({
     puzzleId: placement.puzzleId,
     generations: placement.requiredGenerations,
+    ...(runtime ? { texts: runtime.stage.instances.find((instance) => instance.id === placement.puzzleId)!.hints } : {}),
   }));
   const hints: HintState = createHintState(hintTargets, options.hints);
   const centers = puzzleCenters(level);
@@ -271,7 +282,7 @@ export function createSession(options: SessionOptions): Session {
     contexts.set(puzzle.id, {
       world,
       profile: generationView(startGeneration),
-      entities,
+      entities: runtime ? runtime.scope(puzzle.id, entities) : entities,
       player,
       memory,
       get tickIndex() {
@@ -279,12 +290,15 @@ export function createSession(options: SessionOptions): Session {
       },
       // 復帰するたびに変わる。落ちてやり直せば正解ルートも変わる（決定 3）
       get attemptSeed() {
-        return hash32(seed, checkpoints.respawnCount);
+        return runtime ? runtime.seed(puzzle.id) : hash32(seed, checkpoints.respawnCount);
       },
       markSolved: () => solved.add(puzzle.id),
       get solved() {
         return solved.has(puzzle.id);
       },
+      get transitioning() { return generation.transition.active; },
+      get support() { return player.grounded ? projection.anchor?.entity ?? null : null; },
+      get initializing() { return initializing; },
     });
   }
 
@@ -307,10 +321,19 @@ export function createSession(options: SessionOptions): Session {
   }
 
   function tick(actions: ConsoleChaosActionSnapshot): void {
+    if (disposed) throw new Error('Disposed session cannot tick');
     const profile = generationView(generation.generation);
     const snapshot = isPlayable(checkpoints) ? actions : createNeutralConsoleChaosActions();
     projection.mode = profile.hardware.video.projection;
     frame = { snapshot, profile };
+    if (runtime) {
+      bodyById.get(runtime.stage.exit.blocker)!.solid = !runtime.canClear(runtime.stage.exit.goal);
+      for (const puzzle of puzzles) {
+        const ctx = contexts.get(puzzle.id)!;
+        ctx.profile = profile;
+        if (isPlayable(checkpoints)) puzzle.beforePhysics?.(ctx);
+      }
+    }
 
     // 段階 4・5：プレイヤーの意図 → 物理
     schedule.run(world, tickIndex);
@@ -334,7 +357,7 @@ export function createSession(options: SessionOptions): Session {
     for (const puzzle of puzzles) {
       const ctx = contexts.get(puzzle.id)!;
       ctx.profile = profile;
-      puzzle.update(ctx);
+      if (!runtime || isPlayable(checkpoints)) puzzle.update(ctx);
     }
     updateCheckpoints(checkpoints, level.checkpoints, player.position, player.halfExtents, projection.mode);
 
@@ -348,8 +371,11 @@ export function createSession(options: SessionOptions): Session {
       player.position = [...target.position] as Vec3;
       player.velocity = [...target.velocity] as Vec3;
       player.grounded = false;
+      if (runtime) restoreTransient();
       projection.safePosition = [...target.position] as Vec3;
       clearGroundAnchor(projection);
+      slide.z = null;
+      slide.y = null;
     }
 
     // ゴールは通り抜けるトリガ。移動と復帰が確定した後の位置で判定し、
@@ -357,7 +383,8 @@ export function createSession(options: SessionOptions): Session {
     const playerBox = aabbFromCenter(player.position, player.halfExtents);
     for (const goal of goals) {
       const body = bodyById.get(goal.id);
-      if (body && overlaps(playerBox, aabbFromCenter(body.position, body.halfExtents), projection.mode)) {
+      if (body && (!runtime || runtime.canClear(goal.id)) &&
+          overlaps(playerBox, aabbFromCenter(body.position, body.halfExtents), projection.mode)) {
         cleared = true;
         break;
       }
@@ -366,7 +393,32 @@ export function createSession(options: SessionOptions): Session {
     tickIndex++;
   }
 
+  function restoreTransient(): void {
+    initializing = true;
+    for (const entity of level.entities) {
+      const body = bodyById.get(entity.id);
+      if (body) {
+        body.position = [...entity.transform.position] as Vec3;
+        body.solid = entity.collider?.solid !== false;
+      }
+    }
+    for (const memory of memories.values()) memory.clear();
+    Object.assign(playerState, PlayerState.create!());
+    player.wallDirection = 0;
+    culled = new Set();
+    slide.z = null;
+    slide.y = null;
+    for (const puzzle of puzzles) {
+      const ctx = contexts.get(puzzle.id)!;
+      ctx.profile = generationView(generation.generation);
+      puzzle.update(ctx);
+    }
+    if (runtime) bodyById.get(runtime.stage.exit.blocker)!.solid = !runtime.canClear(runtime.stage.exit.goal);
+    initializing = false;
+  }
+
   return {
+    ...(runtime ? { runtime } : {}),
     level,
     world,
     player,
@@ -401,12 +453,16 @@ export function createSession(options: SessionOptions): Session {
     commitCulled(next): void {
       culled = new Set(next);
     },
+    retryCheckpoint(): void {
+      if (runtime) beginRespawn(checkpoints);
+    },
     reset(): void {
       player.position = [...spawn] as Vec3;
       player.velocity = [0, 0, 0];
       player.grounded = false;
       player.wallDirection = 0;
       solved.clear();
+      runtime?.progress.restore([]);
       cleared = false;
       for (const memory of memories.values()) memory.clear();
       checkpoints.active = [...spawn] as Vec3;
@@ -419,7 +475,11 @@ export function createSession(options: SessionOptions): Session {
       activePuzzleId = null;
     },
     dispose(): void {
+      if (disposed) return;
+      disposed = true;
       disconnectGeneration();
+      for (const id of owned) world.destroy(id);
+      owned.clear();
     },
   };
 }
