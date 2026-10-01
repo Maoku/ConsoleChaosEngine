@@ -341,7 +341,14 @@ export function createConsoleChaosPresentation(level: LevelFile): ConsoleChaosPr
 
       const bodies = session.bodies();
       for (const entity of level.entities) {
-        const material = materialFor(entity.type, entity.id);
+        const baseMaterial = materialFor(entity.type, entity.id);
+        const instance = session.runtime?.stage.instances.find((puzzle) =>
+          puzzle.bindings.terminal === entity.id || puzzle.signals?.includes(entity.id));
+        const material = instance ? {
+          ...baseMaterial,
+          color: (session.runtime!.progress.completed.has(instance.achievement)
+            ? [0.35, 1, 0.65, 1] : [0.65, 0.45, 0.3, 1]) as [number, number, number, number],
+        } : baseMaterial;
         if (material.collisionOnly) continue;
         const body = bodies.get(entity.id);
         const position = (body?.position ?? entity.transform.position) as Vec3Tuple;

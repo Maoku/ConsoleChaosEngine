@@ -18,6 +18,7 @@ import { generationChecks } from '../src/gameplay/puzzles/registry';
 import { checkPuzzleCatalog } from '../src/gameplay/puzzles/catalog';
 import { demoAnchorIssues } from '../src/gameplay/demo';
 import { materialFor } from '../src/render/material';
+import { parseStage } from '../src/content/stage-schema';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 const LEVEL_DIR = join(ROOT, 'public/assets/levels');
@@ -49,6 +50,20 @@ for (const file of files) {
   }
 
   // 検査 1・3・4
+  if ((parsed as { version?: number })?.version === 2) {
+    try {
+      const stage = parseStage(parsed, file);
+      for (const entity of stage.scene.entities) {
+        const material = materialFor(entity.type, entity.id);
+        if (material.decoration === (entity.collider !== undefined)) throw new Error('装飾とcolliderの不一致: ' + entity.id);
+      }
+      console.log('  ✓ ' + file + '  配置 ' + stage.instances.length + ' / 必須成果 ' + stage.exit.requires.length);
+    } catch (error) {
+      failed = true;
+      console.error('  ✗ ' + file + ': ' + (error as Error).message);
+    }
+    continue;
+  }
   const { level, issues } = validateLevel(parsed);
   if (!level) {
     failed = true;

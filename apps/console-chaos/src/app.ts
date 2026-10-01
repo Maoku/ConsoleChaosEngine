@@ -11,6 +11,8 @@ import {
 import { adaptConsoleChaosLevel } from '@/content/level-adapter';
 import type { LevelFile } from '@/level/schema';
 import { createSession } from '@/gameplay/session';
+import { createStageSession } from '@/gameplay/stage-session';
+import { stageLevel, type StageFile } from '@/content/stage-schema';
 import { createConsoleChaosPresentation, type ConsoleChaosPresentation } from '@/presentation/frame';
 import { createConsoleAudioPresenter } from '@/audio/presenter';
 import type { ConsoleAudioPresenter } from '@/audio/presenter';
@@ -37,6 +39,14 @@ export interface ConsoleChaosModuleHooks {
 
 /** Console Chaos の決定的セッションと presentation を engine lifecycle へ載せる。 */
 export function createConsoleChaosModule(level: LevelFile, hooks: ConsoleChaosModuleHooks = {}): GameModule {
+  return createModule(level, hooks);
+}
+
+export function createConsoleChaosStageModule(stage: StageFile, hooks: ConsoleChaosModuleHooks = {}): GameModule {
+  return createModule(stageLevel(stage), hooks, stage);
+}
+
+function createModule(level: LevelFile, hooks: ConsoleChaosModuleHooks, stage?: StageFile): GameModule {
   return {
     id: 'console-chaos',
     async create(context) {
@@ -46,11 +56,11 @@ export function createConsoleChaosModule(level: LevelFile, hooks: ConsoleChaosMo
       if (sceneIssues.length > 0) {
         throw new Error(`Console Chaos scene has ${sceneIssues.length} invalid reference(s)`);
       }
-      const session = createSession({
-        level,
+      const sessionOptions = {
         world: context.world,
         generation: context.generation,
-      });
+      };
+      const session = stage ? createStageSession(stage, sessionOptions) : createSession({ level, ...sessionOptions });
       const audio = createConsoleAudioPresenter(context.audio, hooks.initialSong ?? songOf(null).score);
       const presentation = createConsoleChaosPresentation(level);
       const cues = createCueTracker();

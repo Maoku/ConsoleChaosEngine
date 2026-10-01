@@ -23,6 +23,7 @@ export interface StagePuzzle {
   hintGenerations: GenerationId[];
   completionGenerations: GenerationId[];
   hints: [string, string, string, string];
+  signals?: string[];
 }
 export interface StageFile {
   version: typeof STAGE_VERSION;
@@ -69,7 +70,11 @@ export function parseStage(data: unknown, source = '(inline)'): StageFile {
   for (const [index, raw] of (Array.isArray(data.instances) ? data.instances : []).entries()) {
     const path = 'instances[' + index + ']';
     if (!record(raw)) { fail(path, '配置がオブジェクトではない'); continue; }
-    keys(raw, ['id', 'kind', 'variant', 'bindings', 'settings', 'achievement', 'hintGenerations', 'completionGenerations', 'hints'], path);
+    keys(raw, ['id', 'kind', 'variant', 'bindings', 'settings', 'achievement', 'hintGenerations', 'completionGenerations', 'hints', 'signals'], path);
+    if (raw.signals !== undefined) {
+      if (!strings(raw.signals)) fail(path + '.signals', '導線entityの参照が必要');
+      else for (const id of raw.signals) if (!entities.has(id)) fail(path + '.signals', '未知の導線: ' + id);
+    }
     for (const [key, used] of [['id', ids], ['achievement', achievements]] as const) {
       const value = raw[key];
       if (typeof value !== 'string' || value.trim() === '' || used.has(value)) fail(path + '.' + key, '空または重複したID');

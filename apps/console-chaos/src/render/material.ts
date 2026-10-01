@@ -284,6 +284,13 @@ export const MATERIALS: Record<string, Material> = {
   core: prop('goal', 'pedestal_top.png', 'props_caster'),
 };
 
+// Stage roles carry their appearance independently of legacy entity names.
+MATERIALS.vine_green = { ...MATERIALS.vine!, texture: 'vine_green.png' };
+MATERIALS.vine_yellow = { ...MATERIALS.vine!, texture: 'vine_yellow.png' };
+MATERIALS.signal_gate = { ...surface('gimmick', 'metal_grate.png'), hideWhenPassable: true };
+MATERIALS.signal_terminal = { ...MATERIALS.switch!, ambient: 1, diffuse: 0 };
+MATERIALS.signal_line = { ...surface('gimmick', 'mark_glyph.png'), decoration: true, ambient: 1, diffuse: 0 };
+
 /**
  * 要素 id ごとの上書き。
  *

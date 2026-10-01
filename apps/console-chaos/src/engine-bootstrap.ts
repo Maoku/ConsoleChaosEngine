@@ -12,7 +12,8 @@ import {
   type CrtQuality,
   type GameModule,
 } from '@console-chaos/engine';
-import { createConsoleChaosModule } from './app';
+import { createConsoleChaosModule, createConsoleChaosStageModule, type ConsoleChaosModuleHooks } from './app';
+import { loadStage, stageLevel } from './content/stage-schema';
 import type { ConsoleAudioPresenter } from './audio/presenter';
 import { songOf } from './audio/songs';
 import { bgmStatusText, createBgmControl } from './debug/bgm_control';
@@ -57,11 +58,13 @@ function fitCanvasToStage(): void {
 }
 
 const params = new URLSearchParams(location.search);
-const levelId = params.get('level') ?? 'area1';
+const stageId = params.get('stage');
+const levelId = stageId ?? params.get('level') ?? 'area1';
 const requestedScene = params.get('scene') ?? 'mini';
 const debugScene = isConsoleDebugScene(requestedScene) ? requestedScene : null;
 const isMini = debugScene === null;
-const level = await loadLevel(`${import.meta.env.BASE_URL}assets/levels/${levelId}.json`);
+const stageFile = stageId ? await loadStage(import.meta.env.BASE_URL + 'assets/levels/' + stageId + '.json') : null;
+const level = stageFile ? stageLevel(stageFile) : await loadLevel(`${import.meta.env.BASE_URL}assets/levels/${levelId}.json`);
 const display = createDisplaySettings();
 const crtQualities: readonly CrtQuality[] = ['full', 'light', 'off'];
 let crtQualityIndex = 0;
@@ -124,9 +127,12 @@ const host = createGameHost({
   seed: 0x436861,
 });
 
+const createGameplay = (hooks: ConsoleChaosModuleHooks): GameModule => stageFile
+  ? createConsoleChaosStageModule(stageFile, hooks) : createConsoleChaosModule(level, hooks);
+
 const module: GameModule = debugScene
   ? createConsoleDebugModule(debugScene, { cycleQuality: cycleCrtQuality })
-  : createConsoleChaosModule(level, {
+  : createGameplay({
       initialSong: initialSong.score,
       onCreate(created, presenter, createdPresentation) {
         session = created;

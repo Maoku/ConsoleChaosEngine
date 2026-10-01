@@ -25,6 +25,8 @@ import { createChannelIndicator, type ChannelView } from './channel_indicator';
 export const BAR_HEIGHT_PX = 40;
 
 export interface HudModel {
+  stageTitle?: string;
+  instruction?: string;
   channel: ChannelView;
   /** 解けたパズル数 / 配置されたパズル数 */
   solvedCount: number;
@@ -38,6 +40,10 @@ export interface HudModel {
 export function hudModelFromSession(session: Session): HudModel {
   const switcher = session.generation;
   return {
+    ...(session.runtime ? {
+      stageTitle: session.runtime.stage.title,
+      instruction: '移動 WASD / 矢印　ジャンプ Space　切替 1〜4　ヒント H　' + session.runtime.stage.tagline,
+    } : {}),
     channel: {
       generation: switcher.generation,
       from: switcher.transition.active ? switcher.transition.from : null,
@@ -151,8 +157,8 @@ export function createHud(canvas: HTMLCanvasElement, slots: HudSlots = {}): Hud 
   return {
     update(model): void {
       indicator.update(model.channel);
-      progress.textContent = progressText(model);
-      hint.textContent = hintText(model.hint);
+      progress.textContent = (model.stageTitle ? model.stageTitle + '　' : '') + progressText(model);
+      hint.textContent = model.hint ? hintText(model.hint) : model.instruction ?? '';
       note.style.display = model.hint ? 'block' : 'none';
       fade.style.opacity = String(model.fade);
     },
