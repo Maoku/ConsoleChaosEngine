@@ -1,3 +1,4 @@
+import { createFdsSource } from './fds';
 import type { HardwareGenerationProfile } from '../generation/profiles';
 import { createPs1Source } from './adpcm-ps1';
 import { createAudioEngine, type AudioEngine, type GenerationVoiceSource, type PlayRequest, type VoiceSourceOptions } from './engine';
@@ -47,6 +48,9 @@ export interface AudioService {
   readonly clock: TransportClock;
   readonly currentSourceKey: string | null;
   readonly barPosition: number;
+  setPaused?(paused: boolean, reason?: string): void;
+  setGen1Expansion?(enabled: boolean): void;
+  setMix?(bgm: number, sfx: number, silent: boolean): void;
   unlock(): Promise<void>;
   setGenerationVoiceLimit(limit: number): void;
   setGenerationProfile(profile: HardwareGenerationProfile): void;
@@ -182,20 +186,51 @@ export function createGenerationAudioService(
   master.connect(destination);
   const engine = createAudioEngine(context, initialScore);
   const registered = new Set<string>();
+  const bgm = context.createGain();
+  const sfx = context.createGain();
+  bgm.connect(master); sfx.connect(master);
+  let expansion = false;
+  let profileInUse: HardwareGenerationProfile | null = null;
   const clock = createTransportClock(initialScore.bpm, initialScore.beatsPerBar);
   clock.start(context.currentTime);
   let muted = false;
   let pausedAtTick = 0;
+  let started = false;
+  const pauses = new Set<string>();
+  const blocked = () => muted || pauses.size > 0;
+  const changePause = (change: () => void) => {
+    const wasBlocked = blocked();
+    if (!wasBlocked && started) pausedAtTick = engine.clock.tickAt(context.currentTime);
+    change();
+    if (blocked()) engine.stopMusic();
+    else if (wasBlocked && started) engine.startMusic(engine.clock.score, pausedAtTick);
+  };
 
   const setGenerationProfile = (profile: HardwareGenerationProfile): void => {
-    const key = profile.audio.synth;
+    profileInUse = profile;
+    const synth = profile.audio.synth;
+    const enhanced = profile.id === 'FC' && expansion;
+    const key = enhanced ? 'psg-fds' : synth;
     if (!registered.has(key)) {
-      engine.registerSource(key, GENERATION_SOURCE_FACTORIES[key](context, master, {
+      const options = {
         voiceLimit: profile.audio.channels,
         sampleRate: profile.audio.sampleRate,
         reverb: profile.audio.reverb,
         positional: profile.audio.positional,
-      }));
+      };
+      const musicSource = GENERATION_SOURCE_FACTORIES[synth](context, bgm, options);
+      const effectSource = GENERATION_SOURCE_FACTORIES[synth](context, sfx, options);
+      const fds = enhanced ? createFdsSource(context, bgm) : null;
+      engine.registerSource(key, {
+        voiceLimit: options.voiceLimit,
+        play(request) {
+          if (!request.music) return effectSource.play(request);
+          const base = musicSource.play(request);
+          const extra = request.role === 'lead' ? fds?.play(request) : null;
+          return { stop(when) { base.stop(when); extra?.stop(when); } };
+        },
+        dispose() { musicSource.dispose(); effectSource.dispose(); fds?.dispose(); },
+      });
       registered.add(key);
     }
     if (engine.currentSourceKey !== key) engine.useSource(key);
@@ -203,6 +238,13 @@ export function createGenerationAudioService(
 
   return {
     engine,
+    setPaused(paused, reason = 'game') { changePause(() => { if (paused) pauses.add(reason); else pauses.delete(reason); }); },
+    setGen1Expansion(enabled) { expansion = enabled; if (profileInUse) setGenerationProfile(profileInUse); },
+    setMix(music, effects, silent) {
+      const clamp = (v: number) => Number.isFinite(v) ? Math.min(1, Math.max(0, v)) : 0;
+      bgm.gain.setTargetAtTime(silent ? 0 : clamp(music), context.currentTime, 0.01);
+      sfx.gain.setTargetAtTime(silent ? 0 : clamp(effects), context.currentTime, 0.01);
+    },
     get currentTime() {
       return context.currentTime;
     },
@@ -217,12 +259,13 @@ export function createGenerationAudioService(
     setGenerationVoiceLimit: () => {},
     setGenerationProfile,
     playScore(score, fromTick = 0): void {
+      started = true;
       pausedAtTick = fromTick;
       engine.useArrangement(score);
-      if (!muted) engine.startMusic(score, fromTick);
+      if (!blocked()) engine.startMusic(score, fromTick);
     },
     useScore: (score) => engine.useArrangement(score),
-    playOneShot: (request) => engine.playOneShot(request),
+    playOneShot: (request) => { if (pauses.size === 0) engine.playOneShot(request); },
     playTone(frequency, durationSeconds, gain = 0.04): void {
       engine.playOneShot({
         role: 'fx',
@@ -234,10 +277,7 @@ export function createGenerationAudioService(
     },
     setMuted(value): void {
       if (value === muted) return;
-      if (value) pausedAtTick = engine.clock.tickAt(context.currentTime);
-      muted = value;
-      if (muted) engine.stopMusic();
-      else engine.startMusic(engine.clock.score, pausedAtTick);
+      changePause(() => { muted = value; });
     },
     setVolume(value): void {
       master.gain.value = Math.min(Math.max(value, 0), 1);
@@ -245,7 +285,7 @@ export function createGenerationAudioService(
     update: () => engine.update(),
     dispose(): void {
       engine.dispose();
-      master.disconnect();
+      master.disconnect(); bgm.disconnect(); sfx.disconnect();
       registered.clear();
       void context.close();
     },

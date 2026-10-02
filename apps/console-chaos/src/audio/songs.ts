@@ -1,3 +1,4 @@
+import { JOURNEY_SCORES } from './journey';
 /**
  * 曲の目録（選曲）。
  *
@@ -13,7 +14,7 @@
 import { AREA1_SONG_CALM, AREA1_SONG_POP } from './music';
 import type { Score } from '@console-chaos/engine';
 
-export type SongId = 'pop' | 'calm';
+export type SongId = 'pop' | 'calm' | 'journey';
 
 export interface SongEntry {
   id: SongId;
@@ -24,11 +25,12 @@ export interface SongEntry {
 
 /** 並び順がそのまま切替の巡回順になる */
 export const SONGS: readonly SongEntry[] = [
+  { id: 'journey', title: '境界の鼓動（探索・緊張・展開）', score: JOURNEY_SCORES[0]! },
   { id: 'pop', title: 'パレットの回廊（ポップ）', score: AREA1_SONG_POP },
   { id: 'calm', title: 'パレットの回廊（原曲）', score: AREA1_SONG_CALM },
 ];
 
-export const DEFAULT_SONG_ID: SongId = 'pop';
+export const DEFAULT_SONG_ID: SongId = 'journey';
 
 /** 目録から引く。未知の ID は既定の曲に落とす（URL パラメータなど外から来る値のため） */
 export function songOf(id: string | null | undefined): SongEntry {

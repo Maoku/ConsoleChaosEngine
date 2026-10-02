@@ -1,3 +1,4 @@
+import { JOURNEY_SCORES } from './audio/journey';
 import {
   GENERATION_IDS,
   validateSceneReferences,
@@ -66,7 +67,11 @@ function createModule(level: LevelFile, hooks: ConsoleChaosModuleHooks, stage?: 
       };
       const session = stage ? createStageSession(stage, sessionOptions) : createSession({ level, ...sessionOptions });
       if (hooks.restore) session.restore(hooks.restore);
-      const audio = createConsoleAudioPresenter(context.audio, hooks.initialSong ?? songOf(null).score);
+      const chosen = hooks.initialSong ?? songOf(null).score;
+      const stageIndex = stage ? Number(stage.id.replace('demo_stage', '')) - 1 : 0;
+      const stageScore = JOURNEY_SCORES[stageIndex] ?? JOURNEY_SCORES[0]!;
+      const resolveSong = (song: Score): Score => song === JOURNEY_SCORES[0] ? stageScore : song;
+      const audio = createConsoleAudioPresenter(context.audio, resolveSong(chosen), resolveSong);
       const presentation = createConsoleChaosPresentation(level);
       const cues = createCueTracker();
       if (hooks.restore) pollCues(cues, session);

@@ -124,6 +124,7 @@ export function createFcSynth(ctx: BaseAudioContext, destination: AudioNode): Fc
         source = oscillator;
       }
 
+      source.onended = () => { source.disconnect(); gain.disconnect(); };
       source.connect(gain);
       source.start(when);
       source.stop(when + durationSeconds + 0.05);

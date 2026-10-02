@@ -86,3 +86,5 @@ export {
 } from './render/geometry';
 export * from './runtime/game-host';
 export * from './scene/schema';
+
+export * from './audio/fds';

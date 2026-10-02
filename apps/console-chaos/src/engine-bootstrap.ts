@@ -1,3 +1,4 @@
+import { installAudioOptions } from './audio/options';
 import {
   createBrowserLoopHost,
   createAssetManager,
@@ -103,6 +104,8 @@ if (isMini) {
   }
 }
 
+const disposeAudioOptions = installAudioOptions(audio, 'chaos.audio.v1');
+window.addEventListener('pagehide', disposeAudioOptions, { once: true });
 const resize = observeCanvasResize(canvas, () => renderer.resize());
 const unlock = installAudioUnlock(document, () => audio.unlock());
 const playtestHud = isMini && (!campaignEnabled || params.get('playtest') === '1') ? createPlaytestHud() : null;

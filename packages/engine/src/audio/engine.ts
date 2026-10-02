@@ -20,6 +20,7 @@ export const SCHEDULE_INTERVAL_SECONDS = 0.05;
 
 export interface PlayRequest {
   role: TrackRole;
+  music?: boolean;
   frequency: number;
   when: number;
   durationSeconds: number;
@@ -125,6 +126,7 @@ export function createAudioEngine(context: BaseAudioContext, score: Score): Audi
           const { stolen } = allocator.allocate(
             active.play({
               role: track.role,
+              music: true,
               frequency: pitchToFrequency(note.pitch),
               when,
               durationSeconds: note.durationTicks * spt,
@@ -174,6 +176,7 @@ export function createAudioEngine(context: BaseAudioContext, score: Score): Audi
       stolen?.handle.stop(request.when);
     },
     startMusic(nextScore, fromTick = 0): void {
+      for (const voice of allocator.releaseAll()) voice.handle.stop(context.currentTime);
       clock.rebind(nextScore);
       clock.start(context.currentTime, fromTick);
       startTick = fromTick;

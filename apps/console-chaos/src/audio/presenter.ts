@@ -11,7 +11,7 @@ export interface ConsoleAudioPresenter {
   setMuted(muted: boolean): void;
 }
 
-export function createConsoleAudioPresenter(audio: AudioService, initialSong: Score): ConsoleAudioPresenter {
+export function createConsoleAudioPresenter(audio: AudioService, initialSong: Score, resolveSong: (score: Score) => Score = score => score): ConsoleAudioPresenter {
   let song = initialSong;
   let hardware: HardwareGenerationProfile | null = null;
   const arrangements = new Map<string, Score>();
@@ -38,6 +38,7 @@ export function createConsoleAudioPresenter(audio: AudioService, initialSong: Sc
       }
     },
     changeSong(next): void {
+      next = resolveSong(next);
       if (next === song) return;
       song = next;
       arrangements.clear();

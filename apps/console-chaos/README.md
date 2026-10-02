@@ -88,6 +88,8 @@ npm run dev
 | `/?scene=mini` | レベルを遊ぶ（`&level=area1` / `mini` / `puzzle_lab`） |
 | `/?scene=player` | Blender 出力のプレイヤーモデルを 4 世代で表示 |
 
+右下の「音声設定」から第1世代の通常音源／拡張音源、BGM・効果音音量、全音声ミュートを選択・保存できます。詳細は [音源実装メモ](../../Docs/FDS_AUDIO.md) を参照してください。
+
 ## ドキュメント
 
 | 文書 | 内容 |

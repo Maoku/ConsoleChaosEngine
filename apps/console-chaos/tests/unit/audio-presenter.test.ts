@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { JOURNEY_SCORES } from '@/audio/journey';
 import { HARDWARE_GENERATION_PROFILES } from '@console-chaos/engine';
 import { createRecordingAudioService } from '@console-chaos/engine-testkit';
 import { createConsoleAudioPresenter } from '@/audio/presenter';
@@ -7,6 +8,18 @@ import { songOf, type SongId } from '@/audio/songs';
 import type { AudioService, Score } from '@console-chaos/engine';
 
 describe('Console generic audio presenter', () => {
+  it('keeps stage-specific music when legacy BGM controls synchronize', () => {
+    const starts: Score[] = [];
+    const service = { ...createRecordingAudioService(), playScore: (score: Score) => { starts.push(score); } };
+    const stageScore = JOURNEY_SCORES[2]!;
+    const presenter = createConsoleAudioPresenter(service, stageScore,
+      score => score === JOURNEY_SCORES[0] ? stageScore : score);
+    presenter.start(HARDWARE_GENERATION_PROFILES.FC);
+    createBgmControl({ audio: () => presenter }).sync();
+    expect(starts).toHaveLength(1);
+    expect(starts[0]!.bpm).toBe(108);
+  });
+
   it('maps Console song/SFX content onto the engine AudioService API', () => {
     const service = createRecordingAudioService();
     const presenter = createConsoleAudioPresenter(service, songOf(null).score);

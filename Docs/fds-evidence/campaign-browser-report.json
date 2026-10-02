@@ -1,0 +1,467 @@
+{
+  "routes": [
+    {
+      "stage": "demo_stage1",
+      "mode": "stageComplete",
+      "position": [
+        35.47499999999989,
+        0.8,
+        1.2833333333333332
+      ],
+      "solved": [
+        "route",
+        "backside"
+      ],
+      "falls": 0,
+      "generation": "PS1",
+      "tick": 192,
+      "forward": [
+        0,
+        -1
+      ],
+      "frame": {
+        "generation": "PS1",
+        "affineSurfaces": 0,
+        "visibleMeshes": 92,
+        "lights": 1
+      },
+      "checkpoint": "backside"
+    },
+    {
+      "stage": "demo_stage2",
+      "mode": "stageComplete",
+      "position": [
+        46.17500000000025,
+        0.8,
+        0
+      ],
+      "solved": [
+        "path",
+        "disc-relay"
+      ],
+      "falls": 0,
+      "generation": "FC",
+      "tick": 1163,
+      "forward": [
+        0,
+        -1
+      ],
+      "frame": {
+        "generation": "FC",
+        "affineSurfaces": 0,
+        "visibleMeshes": 96,
+        "lights": 1
+      },
+      "checkpoint": "disc-exit"
+    },
+    {
+      "stage": "demo_stage3",
+      "mode": "stageComplete",
+      "position": [
+        38.158333333333424,
+        0.8,
+        -0.06666666666666611
+      ],
+      "solved": [
+        "shell-core",
+        "torch-light"
+      ],
+      "falls": 0,
+      "generation": "PS2",
+      "tick": 711,
+      "forward": [
+        1,
+        0
+      ],
+      "frame": {
+        "generation": "PS2",
+        "affineSurfaces": 0,
+        "visibleMeshes": 72,
+        "lights": 1
+      },
+      "checkpoint": "dark-exit"
+    },
+    {
+      "stage": "demo_stage4",
+      "mode": "finished",
+      "position": [
+        66.23333333333346,
+        0.8,
+        -0.06666666666666611
+      ],
+      "solved": [
+        "merge",
+        "relay-relay",
+        "heart-core",
+        "beam-light"
+      ],
+      "falls": 0,
+      "generation": "PS2",
+      "tick": 1381,
+      "forward": [
+        1,
+        0
+      ],
+      "frame": {
+        "generation": "PS2",
+        "affineSurfaces": 0,
+        "visibleMeshes": 120,
+        "lights": 1
+      },
+      "checkpoint": "beam-entry"
+    }
+  ],
+  "pageErrors": [],
+  "failedRequests": [],
+  "saveReload": "checkpoint and both achieved outcomes restored",
+  "input": "keyboard through GameHost; no player teleport or achievement injection",
+  "timing": "fixed-step automated route; does not measure first-time human duration",
+  "playtest": {
+    "version": 1,
+    "device": "keyboard",
+    "elapsedSeconds": 57.449999999999996,
+    "stages": [
+      {
+        "stageId": "demo_stage1",
+        "elapsedSeconds": 3.2,
+        "idleSeconds": 0.05,
+        "falls": 0,
+        "switches": 0,
+        "cleared": true,
+        "resumedAchievements": [
+          "route-connected",
+          "back-connected"
+        ],
+        "instances": [
+          {
+            "id": "route",
+            "kind": "F-1",
+            "achievement": "route-connected",
+            "solvedAtSeconds": 0,
+            "hintStage": 0
+          },
+          {
+            "id": "backside",
+            "kind": "P1-1",
+            "achievement": "back-connected",
+            "solvedAtSeconds": 0,
+            "hintStage": 0
+          }
+        ],
+        "events": [
+          {
+            "seconds": 3.2,
+            "kind": "exit",
+            "target": "demo_stage1"
+          }
+        ]
+      },
+      {
+        "stageId": "demo_stage2",
+        "elapsedSeconds": 19.383333333333333,
+        "idleSeconds": 3.6333333333333253,
+        "falls": 0,
+        "switches": 5,
+        "cleared": true,
+        "resumedAchievements": [],
+        "instances": [
+          {
+            "id": "path",
+            "kind": "F-2",
+            "achievement": "path-connected",
+            "solvedAtSeconds": 7.9,
+            "hintStage": 0
+          },
+          {
+            "id": "disc-relay",
+            "kind": "S-1",
+            "achievement": "disc-transported",
+            "solvedAtSeconds": 16.483333333333334,
+            "hintStage": 0
+          }
+        ],
+        "events": [
+          {
+            "seconds": 1.9,
+            "kind": "switch",
+            "target": "SFC"
+          },
+          {
+            "seconds": 7.9,
+            "kind": "achievement",
+            "target": "path-connected"
+          },
+          {
+            "seconds": 8.1,
+            "kind": "switch",
+            "target": "FC"
+          },
+          {
+            "seconds": 9.933333333333334,
+            "kind": "checkpoint",
+            "target": "disc-entry"
+          },
+          {
+            "seconds": 10.7,
+            "kind": "switch",
+            "target": "SFC"
+          },
+          {
+            "seconds": 16.483333333333334,
+            "kind": "checkpoint",
+            "target": "disc-exit"
+          },
+          {
+            "seconds": 16.483333333333334,
+            "kind": "achievement",
+            "target": "disc-transported"
+          },
+          {
+            "seconds": 16.95,
+            "kind": "switch",
+            "target": "PS2"
+          },
+          {
+            "seconds": 17.516666666666666,
+            "kind": "switch",
+            "target": "FC"
+          },
+          {
+            "seconds": 19.383333333333333,
+            "kind": "exit",
+            "target": "demo_stage2"
+          }
+        ]
+      },
+      {
+        "stageId": "demo_stage3",
+        "elapsedSeconds": 11.85,
+        "idleSeconds": 1.35,
+        "falls": 0,
+        "switches": 3,
+        "cleared": true,
+        "resumedAchievements": [],
+        "instances": [
+          {
+            "id": "shell-core",
+            "kind": "P1-2",
+            "achievement": "shell-restored",
+            "solvedAtSeconds": 2.9833333333333334,
+            "hintStage": 0
+          },
+          {
+            "id": "torch-light",
+            "kind": "P2-1",
+            "achievement": "torch-lit",
+            "solvedAtSeconds": 9.75,
+            "hintStage": 0
+          }
+        ],
+        "events": [
+          {
+            "seconds": 0.85,
+            "kind": "checkpoint",
+            "target": "shell-entry"
+          },
+          {
+            "seconds": 1.1166666666666667,
+            "kind": "switch",
+            "target": "PS1"
+          },
+          {
+            "seconds": 2.9833333333333334,
+            "kind": "achievement",
+            "target": "shell-restored"
+          },
+          {
+            "seconds": 4.633333333333334,
+            "kind": "switch",
+            "target": "FC"
+          },
+          {
+            "seconds": 5.166666666666667,
+            "kind": "checkpoint",
+            "target": "dark-entry"
+          },
+          {
+            "seconds": 8.066666666666666,
+            "kind": "checkpoint",
+            "target": "dark-exit"
+          },
+          {
+            "seconds": 8.6,
+            "kind": "switch",
+            "target": "PS2"
+          },
+          {
+            "seconds": 9.75,
+            "kind": "achievement",
+            "target": "torch-lit"
+          },
+          {
+            "seconds": 11.85,
+            "kind": "exit",
+            "target": "demo_stage3"
+          }
+        ]
+      },
+      {
+        "stageId": "demo_stage4",
+        "elapsedSeconds": 23.016666666666666,
+        "idleSeconds": 2.033333333333331,
+        "falls": 0,
+        "switches": 5,
+        "cleared": true,
+        "resumedAchievements": [],
+        "instances": [
+          {
+            "id": "merge",
+            "kind": "F-1",
+            "achievement": "merge-connected",
+            "solvedAtSeconds": 4.516666666666667,
+            "hintStage": 0
+          },
+          {
+            "id": "relay-relay",
+            "kind": "S-1",
+            "achievement": "relay-transported",
+            "solvedAtSeconds": 11.8,
+            "hintStage": 0
+          },
+          {
+            "id": "heart-core",
+            "kind": "P1-2",
+            "achievement": "heart-restored",
+            "solvedAtSeconds": 15.85,
+            "hintStage": 0
+          },
+          {
+            "id": "beam-light",
+            "kind": "P2-1",
+            "achievement": "beam-lit",
+            "solvedAtSeconds": 21.283333333333335,
+            "hintStage": 0
+          }
+        ],
+        "events": [
+          {
+            "seconds": 4.516666666666667,
+            "kind": "achievement",
+            "target": "merge-connected"
+          },
+          {
+            "seconds": 5.183333333333334,
+            "kind": "checkpoint",
+            "target": "relay-entry"
+          },
+          {
+            "seconds": 6.016666666666667,
+            "kind": "switch",
+            "target": "SFC"
+          },
+          {
+            "seconds": 11.8,
+            "kind": "checkpoint",
+            "target": "relay-exit"
+          },
+          {
+            "seconds": 11.8,
+            "kind": "achievement",
+            "target": "relay-transported"
+          },
+          {
+            "seconds": 12.25,
+            "kind": "switch",
+            "target": "FC"
+          },
+          {
+            "seconds": 13.733333333333333,
+            "kind": "checkpoint",
+            "target": "shell-entry"
+          },
+          {
+            "seconds": 14,
+            "kind": "switch",
+            "target": "PS1"
+          },
+          {
+            "seconds": 15.85,
+            "kind": "achievement",
+            "target": "heart-restored"
+          },
+          {
+            "seconds": 17.5,
+            "kind": "switch",
+            "target": "FC"
+          },
+          {
+            "seconds": 19.583333333333332,
+            "kind": "checkpoint",
+            "target": "beam-entry"
+          },
+          {
+            "seconds": 20.133333333333333,
+            "kind": "switch",
+            "target": "PS2"
+          },
+          {
+            "seconds": 21.283333333333335,
+            "kind": "achievement",
+            "target": "beam-lit"
+          },
+          {
+            "seconds": 23.016666666666666,
+            "kind": "exit",
+            "target": "demo_stage4"
+          }
+        ]
+      }
+    ]
+  },
+  "captures": [
+    {
+      "name": "title",
+      "panelText": "Console Chaos世代を切り替え、技術の違いを使って進む、4ステージの謎解きアクション。移動 WASD / 矢印、ジャンプ Space、切替 1〜4、ヒント H。最初から"
+    },
+    {
+      "name": "stage1-merged",
+      "panelText": "準備中…足場と装置を準備しています。タイトルへ"
+    },
+    {
+      "name": "demo_stage1-clear",
+      "panelText": "信号が次の場所へ届いた1　色をほどく回廊　復旧完了次のステージへタイトルへ"
+    },
+    {
+      "name": "stage2-curtain",
+      "panelText": "準備中…足場と装置を準備しています。タイトルへ"
+    },
+    {
+      "name": "stage2-affine",
+      "panelText": "準備中…足場と装置を準備しています。タイトルへ"
+    },
+    {
+      "name": "stage2-ch4-dismount",
+      "panelText": "準備中…足場と装置を準備しています。タイトルへ"
+    },
+    {
+      "name": "demo_stage2-clear",
+      "panelText": "信号が次の場所へ届いた2　回転の庭園　復旧完了次のステージへタイトルへ"
+    },
+    {
+      "name": "stage3-seam",
+      "panelText": "準備中…足場と装置を準備しています。タイトルへ"
+    },
+    {
+      "name": "stage3-light",
+      "panelText": "準備中…足場と装置を準備しています。タイトルへ"
+    },
+    {
+      "name": "demo_stage3-clear",
+      "panelText": "信号が次の場所へ届いた3　灯と継ぎ目の坑道　復旧完了次のステージへタイトルへ"
+    },
+    {
+      "name": "ending",
+      "panelText": "四つの時代が、ひとつにつながった色の合流、回転の中継、継ぎ目の復旧、光の反応。異なる技術の成果が、終端の心臓を動かした。もう一度タイトルへ"
+    }
+  ]
+}
