@@ -18,6 +18,7 @@ import {
 import type { PlayerBodyData } from '@/gameplay/player';
 import type { Session } from '@/gameplay/session';
 import { gardenSurface } from './affine-garden';
+import { activeGarden } from '@/gameplay/stage-camera';
 import { torchPosition, TORCH_RADIUS } from '@/gameplay/torch';
 import { planeAngleAt, S1_PIVOT } from '@/gameplay/puzzles/s1_affine_plane';
 import { collidersOf } from '@/level/loader';
@@ -294,7 +295,7 @@ export function createConsoleChaosPresentation(level: LevelFile): ConsoleChaosPr
 
     build(frame, session, context): void {
       const hardware = context.generation.profile;
-      const currentTheme = CONSOLE_CHAOS_GENERATION_THEMES[context.generation.generation];
+      const currentTheme = session.profile.theme;
       const player = session.player;
       const forward = currentTheme.camera.forward;
       const camera = session.runtime && hardware.video.projection === 'perspective3d'
@@ -317,7 +318,7 @@ export function createConsoleChaosPresentation(level: LevelFile): ConsoleChaosPr
         orthoHeight: hardware.video.internalHeight / PIXELS_PER_WORLD_UNIT,
         fovDegrees: 55,
       };
-      const garden = session.runtime && [...session.runtime.gardens].find(([, pose]) => Math.abs(pose.center[0] - player.position[0]) < 11);
+      const garden = activeGarden(session.runtime, player.position);
       if (garden) {
         const pose = garden[1];
         frame.camera = { projection: 'orthographic', position: [pose.center[0], 2.75, 18],

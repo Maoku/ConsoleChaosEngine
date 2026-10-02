@@ -8,7 +8,8 @@ import { demoStage } from './demo-stage-loader';
 function driver(session: Session) {
   const neutral = createNeutralConsoleChaosActions();
   function step(x = 0, z = 0, jump = false, pressed = false) {
-    const move: [number, number] = session.generation.generation === 'PS2' ? [z, -x] : [x, z];
+    const [fx, fz] = session.profile.theme.camera.forward;
+    const move: [number, number] = [-fz * x + fx * z, -fx * x - fz * z];
     session.tick({ ...neutral, move, jump: { ...neutral.jump, down: jump, pressed, value: jump ? 1 : 0 } });
   }
   function move(axis: 0 | 2, target: number) {

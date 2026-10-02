@@ -64,6 +64,7 @@ import {
 } from './projection';
 import { allPuzzles } from './puzzles/registry';
 import type { PuzzleContext, PuzzleDefinition } from './puzzles/types';
+import { stageCameraProfile } from './stage-camera';
 import type { StageSnapshot } from './stage-snapshot';
 import type { StageRuntime } from './puzzles/stage-instances';
 
@@ -325,7 +326,7 @@ export function createSession(options: SessionOptions): Session {
 
   function tick(actions: ConsoleChaosActionSnapshot): void {
     if (disposed) throw new Error('Disposed session cannot tick');
-    const profile = generationView(generation.generation);
+    const profile = stageCameraProfile(generationView(generation.generation), runtime, player.position);
     const snapshot = isPlayable(checkpoints) ? actions : createNeutralConsoleChaosActions();
     projection.mode = profile.hardware.video.projection;
     frame = { snapshot, profile };
@@ -449,7 +450,7 @@ export function createSession(options: SessionOptions): Session {
     },
     requestHint: () => requestHint(hints, activePuzzleId),
     get profile() {
-      return generationView(generation.generation);
+      return stageCameraProfile(generationView(generation.generation), runtime, player.position);
     },
     get tickIndex() {
       return tickIndex;

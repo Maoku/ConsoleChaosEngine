@@ -39,7 +39,11 @@ export function stableIdSeed(seed: number, id: string): number {
 /** Reuse the legacy families through isolated bindings, without exposing sibling entities. */
 export function createStageRuntime(stage: StageFile, seed: number): StageRuntime {
   const progress = createStageProgress(stage.instances.map((instance) => instance.achievement));
-  const gardens = new Map(stage.instances.filter((p) => p.kind === 'S-1').map((p) => [p.id, gardenState()]));
+  const gardens = new Map(stage.instances.filter((p) => p.kind === 'S-1').map((p) => {
+    const state = gardenState();
+    state.center = [...stage.scene.entities.find((entity) => entity.id === p.bindings.pivot)!.transform.position];
+    return [p.id, state] as const;
+  }));
   let safeGardens = new Map<string, GardenState>();
   const byId = new Map(stage.instances.map((instance) => [instance.id, instance]));
   const definitions = stage.instances.map((instance): PuzzleDefinition => {

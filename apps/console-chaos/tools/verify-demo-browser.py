@@ -44,7 +44,7 @@ with sync_playwright() as p:
     def state():
         return page.evaluate('''() => {const a=window.__consoleChaos,s=a.session;return {
             stage:s.level.id,mode:a.campaign.mode,position:[...s.player.position],solved:[...s.solved],
-            falls:s.checkpoints.respawnCount,generation:s.generation.generation,tick:s.tickIndex,
+            falls:s.checkpoints.respawnCount,generation:s.generation.generation,tick:s.tickIndex,forward:s.profile.theme.camera.forward,
             frame:window.__lastFrame,checkpoint:s.snapshot().checkpointId};}''')
 
     def capture(name):
@@ -65,8 +65,10 @@ with sync_playwright() as p:
         delta = target-current['position'][axis]
         if abs(delta) < .08: return
         direction = 1 if delta > 0 else -1
-        if axis == 0: key = ('ArrowUp' if direction > 0 else 'ArrowDown') if current['generation']=='PS2' else ('ArrowRight' if direction > 0 else 'ArrowLeft')
-        else: key = ('ArrowRight' if direction > 0 else 'ArrowLeft') if current['generation']=='PS2' else ('ArrowDown' if direction > 0 else 'ArrowUp')
+        fx,fz=current['forward']
+        mx=(-fz if axis==0 else fx)*direction
+        my=(-fx if axis==0 else -fz)*direction
+        key=('ArrowRight' if mx>0 else 'ArrowLeft') if mx else ('ArrowDown' if my>0 else 'ArrowUp')
         page.keyboard.down(key)
         ticks = page.evaluate('''({axis,target,direction}) => {
             let ticks=0;
@@ -113,7 +115,7 @@ with sync_playwright() as p:
     for stone in stones: jump(stone-.75);move(0,stone+.5)
     jump(18.5);move(0,21);channel(1);move(0,30.85);channel(2);step(175);capture('stage2-affine');step(175)
     assert state()['frame']['affineSurfaces']>0
-    channel(1);move(0,39.5);move(0,47);next_stage()
+    channel(4);move(0,39.5);assert state()['forward']==[0,-1];capture('stage2-ch4-dismount');channel(1);move(0,47);next_stage()
 
     move(0,5.75);channel(3);move(2,2.5);move(0,9);capture('stage3-seam');move(2,-.5)
     move(2,2.5);move(0,14);channel(1);move(0,30);channel(4);move(2,-2.5);capture('stage3-light')
