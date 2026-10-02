@@ -17,7 +17,7 @@ import { checkPuzzleGenerations, validateLevel, FC_GRID_WORLD, type ValidationIs
 import { generationChecks } from '../src/gameplay/puzzles/registry';
 import { checkPuzzleCatalog } from '../src/gameplay/puzzles/catalog';
 import { demoAnchorIssues } from '../src/gameplay/demo';
-import { materialFor } from '../src/render/material';
+import { materialFor, MATERIALS } from '../src/render/material';
 import { parseStage } from '../src/content/stage-schema';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
@@ -54,6 +54,7 @@ for (const file of files) {
     try {
       const stage = parseStage(parsed, file);
       for (const entity of stage.scene.entities) {
+        if (!Object.hasOwn(MATERIALS, entity.type)) throw new Error('未知の材質種別: ' + entity.type);
         const material = materialFor(entity.type, entity.id);
         if (material.decoration === (entity.collider !== undefined)) throw new Error('装飾とcolliderの不一致: ' + entity.id);
       }

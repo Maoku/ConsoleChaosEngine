@@ -13,6 +13,7 @@ describe('v2 stage contracts and runtime', () => {
     for (const mutate of [
       (data: typeof stage) => { data.instances[0]!.bindings.terminal = 'missing'; },
       (data: typeof stage) => { data.instances[1]!.id = 'a'; },
+      (data: typeof stage) => { data.instances[1]!.bindings.wall = data.instances[0]!.bindings.wall!; },
       (data: typeof stage) => { data.exit.requires.push('missing'); },
       (data: typeof stage) => { data.instances[0]!.completionGenerations = ['FC']; },
       (data: typeof stage) => { Object.assign(data.instances[0]!.settings, { unknown: 1 }); },

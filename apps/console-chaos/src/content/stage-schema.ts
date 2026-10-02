@@ -66,6 +66,7 @@ export function parseStage(data: unknown, source = '(inline)'): StageFile {
   const entities = new Map(scene?.entities.map((entity) => [entity.id, entity]) ?? []);
   const ids = new Set<string>();
   const achievements = new Set<string>();
+  const boundEntities = new Map<string, string>();
   if (!Array.isArray(data.instances) || data.instances.length === 0) fail('instances', '一つ以上の配置が必要');
   for (const [index, raw] of (Array.isArray(data.instances) ? data.instances : []).entries()) {
     const path = 'instances[' + index + ']';
@@ -92,15 +93,21 @@ export function parseStage(data: unknown, source = '(inline)'): StageFile {
         const refs = typeof value === 'string' ? [value] : strings(value) ? value : [];
         if (refs.length === 0 || listRole !== Array.isArray(value)) fail(path + '.bindings.' + role, 'roleの形式が不正');
         if (new Set(refs).size !== refs.length) fail(path + '.bindings.' + role, '参照が重複');
-        for (const ref of refs) if (!entities.get(ref)?.collider) fail(path + '.bindings.' + role, 'collider付きentityが必要: ' + ref);
+        for (const ref of refs) {
+          if (!entities.get(ref)?.collider) fail(path + '.bindings.' + role, 'collider付きentityが必要: ' + ref);
+          const owner = boundEntities.get(ref);
+          if (owner) fail(path + '.bindings.' + role, '別roleへ重複した実体: ' + ref + ' (' + owner + ')');
+          else boundEntities.set(ref, path + '.' + role);
+        }
       }
       if (kind === 'F-2') {
         const tiles = raw.bindings.tiles;
         const lamps = raw.bindings.lamps;
+        const swarm = raw.bindings.swarm;
         const safe = record(raw.settings) ? raw.settings.safeCount : undefined;
-        if (!Array.isArray(tiles) || !Array.isArray(lamps) || !Number.isInteger(safe) || Number(safe) < 1 ||
+        if (!Array.isArray(swarm) || swarm.length <= 8 || !Array.isArray(tiles) || !Array.isArray(lamps) || !Number.isInteger(safe) || Number(safe) < 1 ||
             Number(safe) >= tiles.length || lamps.length !== safe || tiles.length + 1 > (Number(safe) + 1) * 3) {
-          fail(path, '石数・正解数・灯数が一致し、3石以内の跳躍で経路が成立する必要がある');
+          fail(path, '群れは9体以上、石数・正解数・灯数が一致し、3石以内の跳躍で経路が成立する必要がある');
         }
       }
     }
