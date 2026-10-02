@@ -64,6 +64,7 @@ import {
 } from './projection';
 import { allPuzzles } from './puzzles/registry';
 import type { PuzzleContext, PuzzleDefinition } from './puzzles/types';
+import type { StageSnapshot } from './stage-snapshot';
 import type { StageRuntime } from './puzzles/stage-instances';
 
 /** 走査線制限の対象になるレベル要素の種別（動くもの＝スプライト） */
@@ -134,6 +135,8 @@ export interface Session {
   commitCulled(culled: readonly Entity[]): void;
   reset(): void;
   retryCheckpoint(): void;
+  snapshot(): StageSnapshot;
+  restore(snapshot: StageSnapshot): void;
   dispose(): void;
 }
 
@@ -454,6 +457,26 @@ export function createSession(options: SessionOptions): Session {
     tick,
     commitCulled(next): void {
       culled = new Set(next);
+    },
+    snapshot() {
+      if (!runtime) throw new Error('Snapshots require a v2 stage');
+      return { checkpointId: level.checkpoints.find((point) => point.position.every((v, axis) => v === checkpoints.active[axis]))?.id ?? null,
+        achievements: [...runtime.progress.completed], gardens: runtime.safety() };
+    },
+    restore(snapshot) {
+      if (!runtime) throw new Error('Snapshots require a v2 stage');
+      runtime.restoreSafety(snapshot.gardens);
+      runtime.progress.restore(snapshot.achievements);
+      solved.clear();
+      for (const instance of runtime.stage.instances) if (runtime.progress.completed.has(instance.achievement)) solved.add(instance.id);
+      const point = level.checkpoints.find((cp) => cp.id === snapshot.checkpointId);
+      checkpoints.active = [...(point?.position ?? spawn)] as Vec3;
+      checkpoints.reached.length = 0;
+      if (point) checkpoints.reached.push(point.id);
+      checkpoints.phase = 'playing'; checkpoints.remainingTicks = 0;
+      player.position = [...checkpoints.active] as Vec3; player.velocity = [0, 0, 0]; player.grounded = false;
+      runtime.retry(); restoreTransient();
+      projection.safePosition = [...player.position] as Vec3; clearGroundAnchor(projection);
     },
     retryCheckpoint(): void {
       if (runtime) beginRespawn(checkpoints);

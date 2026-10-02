@@ -13,6 +13,10 @@ import {
   type GameModule,
 } from '@console-chaos/engine';
 import { createConsoleChaosModule, createConsoleChaosStageModule, type ConsoleChaosModuleHooks } from './app';
+import { loadCampaign } from './content/stages';
+import { createCampaignModule, type CampaignController } from './gameplay/campaign';
+import { createCampaignStorage } from './gameplay/save';
+import { createCampaignFlow } from './ui/campaign-flow';
 import { loadStage, stageLevel } from './content/stage-schema';
 import type { ConsoleAudioPresenter } from './audio/presenter';
 import { songOf } from './audio/songs';
@@ -28,7 +32,7 @@ import {
 import { createPlaytestLog, saveStoredRecords, storedRecords, type PlaytestLog } from './debug/playtest_log';
 import { createPlaytestHud } from './debug/playtest_hud';
 import { loadLevel } from './level/loader';
-import { createConsoleChaosRenderManifest } from './presentation/catalog';
+import { createConsoleChaosRenderManifest, createCampaignRenderManifest } from './presentation/catalog';
 import type { ConsoleChaosPresentation } from './presentation/frame';
 import { KEY_COLORS } from './render/key_palette';
 import type { Session } from './gameplay/session';
@@ -59,12 +63,14 @@ function fitCanvasToStage(): void {
 
 const params = new URLSearchParams(location.search);
 const stageId = params.get('stage');
+const campaignEnabled = params.get('campaign') === '1' || (!stageId && !params.has('level') && !params.has('scene'));
+const campaignStages = campaignEnabled ? await loadCampaign(import.meta.env.BASE_URL) : null;
 const levelId = stageId ?? params.get('level') ?? 'area1';
 const requestedScene = params.get('scene') ?? 'mini';
 const debugScene = isConsoleDebugScene(requestedScene) ? requestedScene : null;
 const isMini = debugScene === null;
 const stageFile = stageId ? await loadStage(import.meta.env.BASE_URL + 'assets/levels/' + stageId + '.json') : null;
-const level = stageFile ? stageLevel(stageFile) : await loadLevel(`${import.meta.env.BASE_URL}assets/levels/${levelId}.json`);
+const level = campaignStages ? stageLevel(campaignStages[0]!) : stageFile ? stageLevel(stageFile) : await loadLevel(`${import.meta.env.BASE_URL}assets/levels/${levelId}.json`);
 const display = createDisplaySettings();
 const crtQualities: readonly CrtQuality[] = ['full', 'light', 'off'];
 let crtQualityIndex = 0;
@@ -76,7 +82,7 @@ const unit = (color: readonly [number, number, number]): [number, number, number
   [color[0] / 255, color[1] / 255, color[2] / 255];
 const renderer = await createGenerationWebGlRenderer(canvas, {
   assets,
-  manifest: createConsoleChaosRenderManifest(level),
+  manifest: campaignStages ? createCampaignRenderManifest(campaignStages.map(stageLevel)) : createConsoleChaosRenderManifest(level),
   quality: () => crtQualities[crtQualityIndex]!,
   crtOverride: () => display.crtOverride(),
   transitionColors: {
@@ -109,6 +115,8 @@ let hud: Hud | null = null;
 let playtest: PlaytestLog | null = null;
 let flow: PlaytestFlow | null = null;
 let demo: DemoController | null = null;
+let campaign: CampaignController | null = null;
+let campaignFlow: ReturnType<typeof createCampaignFlow> | null = null;
 const bgm = isMini
   ? createBgmControl({
       audio: () => audioPresenter,
@@ -130,7 +138,29 @@ const host = createGameHost({
 const createGameplay = (hooks: ConsoleChaosModuleHooks): GameModule => stageFile
   ? createConsoleChaosStageModule(stageFile, hooks) : createConsoleChaosModule(level, hooks);
 
-const module: GameModule = debugScene
+let storage: Storage | null = null;
+if (campaignStages) { try { storage = localStorage; } catch { /* Play remains available without storage. */ } }
+const campaignStorage = campaignStages ? createCampaignStorage(campaignStages, storage,
+  () => notice.show('進行を保存できませんでした。プレイは続けられます。')) : null;
+
+const module: GameModule = campaignStages && campaignStorage ? createCampaignModule({
+  stages: campaignStages, saved: campaignStorage.read(), save: (value) => { campaignStorage.write(value); },
+  onReady(controller) { campaign = controller; campaignFlow = createCampaignFlow(controller); },
+  onState() { campaignFlow?.update(); },
+  hooks: {
+    initialSong: initialSong.score,
+    onCreate(created, presenter, createdPresentation) {
+      session = created; audioPresenter = presenter; presentation = createdPresentation;
+      hud = createHud(canvas); bgm?.sync();
+    },
+    onFixedUpdate(current) { hud?.update(hudModelFromSession(current)); },
+    onRender(current, currentPresentation) { colliderHud?.update(current, currentPresentation.colliderBoxes); },
+    onDispose(current) {
+      if (session === current) session = null;
+      hud?.dispose(); hud = null; audioPresenter = null; presentation = null;
+    },
+  },
+}) : debugScene
   ? createConsoleDebugModule(debugScene, { cycleQuality: cycleCrtQuality })
   : createGameplay({
       initialSong: initialSong.score,
@@ -204,14 +234,15 @@ const windowResize = (): void => {
 window.addEventListener('resize', windowResize);
 const keydown = (event: KeyboardEvent): void => {
   const key = event.key.toLowerCase();
-  const manual = flow === null || flow.mode === 'manual';
+  const manual = campaign ? campaign.mode === 'playing' : flow === null || flow.mode === 'manual';
   if (key === 'h' && manual) session?.requestHint();
   if (key === 'c') presentation?.toggleColliders();
   if (key === 'b') bgm?.nextSong();
   if (key === 'm') bgm?.toggleMute();
   if (key === 'p' && manual) playtest?.save();
-  if (event.key === 'Escape' && manual) flow?.finish();
-  if (key === 'r' && manual) {
+  if (event.key === 'Escape' && manual) { if (campaign) campaign.returnTitle(); else flow?.finish(); }
+  if (key === 'r' && manual && campaign) campaign.retry();
+  if (key === 'r' && manual && !campaign) {
     playtest?.keep();
     session?.reset();
     playtest?.reset();
@@ -229,6 +260,7 @@ const pagehide = (): void => {
   window.removeEventListener('resize', windowResize);
   resize.dispose();
   unlock.dispose();
+  campaignFlow?.dispose();
   notice.dispose();
   playtestHud?.dispose();
   colliderHud?.dispose();
@@ -244,6 +276,7 @@ if (import.meta.env.DEV) {
     get session() {
       return session;
     },
+    get campaign() { return campaign; },
     get flow() {
       return flow;
     },

@@ -69,3 +69,8 @@ export function createConsoleChaosRenderManifest(level: LevelFile): RenderAssetM
     fallbackTextures,
   };
 }
+
+export function createCampaignRenderManifest(levels: readonly LevelFile[]): RenderAssetManifest {
+  if (!levels.length) throw new Error('Campaign has no stages');
+  return createConsoleChaosRenderManifest({ ...levels[0]!, entities: levels.flatMap((level) => level.entities) });
+}

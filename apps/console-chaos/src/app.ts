@@ -20,10 +20,13 @@ import { createCueTracker, pollCues } from '@/gameplay/audio_cues';
 import { songOf } from '@/audio/songs';
 import type { Session } from '@/gameplay/session';
 import type { Score } from '@console-chaos/engine';
+import type { StageSnapshot } from '@/gameplay/stage-snapshot';
 import type { ConsoleChaosActionSnapshot } from '@/config/actions';
 
 export interface ConsoleChaosModuleHooks {
   initialSong?: Score;
+  seed?: number;
+  restore?: StageSnapshot;
   onCreate?(session: Session, audio: ConsoleAudioPresenter, presentation: ConsoleChaosPresentation): void;
   /** false の間は入力・世代切替・ゲーム世界の固定更新を止め、描画だけを続ける。 */
   shouldSimulate?(session: Session): boolean;
@@ -59,11 +62,14 @@ function createModule(level: LevelFile, hooks: ConsoleChaosModuleHooks, stage?: 
       const sessionOptions = {
         world: context.world,
         generation: context.generation,
+        ...(hooks.seed === undefined ? {} : { seed: hooks.seed }),
       };
       const session = stage ? createStageSession(stage, sessionOptions) : createSession({ level, ...sessionOptions });
+      if (hooks.restore) session.restore(hooks.restore);
       const audio = createConsoleAudioPresenter(context.audio, hooks.initialSong ?? songOf(null).score);
       const presentation = createConsoleChaosPresentation(level);
       const cues = createCueTracker();
+      if (hooks.restore) pollCues(cues, session);
       audio.start(context.generation.profile);
       const disconnectAudio = context.events.on('generationSwitch', (event) => {
         audio.applyGeneration(event.toProfile);

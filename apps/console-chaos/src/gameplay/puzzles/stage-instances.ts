@@ -1,4 +1,5 @@
 import { hash32, type Entity } from '@console-chaos/engine';
+import type { GardenSafety } from '../stage-snapshot';
 import type { StageFile, StagePuzzle } from '@/content/stage-schema';
 import { stageCompletionIn } from '@/content/stage-capabilities';
 import { createStageProgress, type StageProgress } from '../stage-progress';
@@ -23,6 +24,8 @@ export interface StageRuntime {
   readonly gardens: ReadonlyMap<string, GardenState>;
   checkpoint(): void;
   retry(): void;
+  safety(): Record<string, GardenSafety>;
+  restoreSafety(safety: Record<string, GardenSafety>): void;
   scope(id: string, entities: ReadonlyMap<string, Entity>): ReadonlyMap<string, Entity>;
   seed(id: string): number;
   canClear(goal: string): boolean;
@@ -73,6 +76,14 @@ export function createStageRuntime(stage: StageFile, seed: number): StageRuntime
     stage, progress, definitions, gardens,
     checkpoint() { safeGardens = new Map([...gardens].map(([id, state]) => [id, structuredClone(state)])); },
     retry() { for (const [id, state] of gardens) Object.assign(state, safeGardens.get(id) ?? gardenState()); },
+    safety() { return Object.fromEntries([...safeGardens].map(([id, state]) => [id, { ticks: state.ticks, carriedTicks: state.carriedTicks }])); },
+    restoreSafety(safety) {
+      for (const [id, phase] of Object.entries(safety)) {
+        if (!gardens.has(id) || !Number.isSafeInteger(phase.ticks) || phase.ticks < 0 ||
+            !Number.isSafeInteger(phase.carriedTicks) || phase.carriedTicks < 0 || phase.carriedTicks > phase.ticks) throw new Error('Invalid garden snapshot');
+      }
+      safeGardens = new Map([...gardens].map(([id]) => [id, { ...gardenState(), ...safety[id] }]));
+    },
     scope(id, entities) {
       const instance = byId.get(id)!;
       const aliases = new Map<string, Entity>();
