@@ -1,0 +1,876 @@
+{
+  "version": 2,
+  "id": "demo_stage4",
+  "title": "4　終端の心臓",
+  "tagline": "四つの技術の成果を、ひとつの信号へ。",
+  "scene": {
+    "version": 1,
+    "id": "demo_stage4",
+    "sectors": [
+      {
+        "id": "heart",
+        "center": [
+          35.0,
+          0,
+          0
+        ],
+        "halfExtents": [
+          41.0,
+          12,
+          8
+        ],
+        "links": []
+      }
+    ],
+    "entities": [
+      {
+        "id": "entry",
+        "type": "platform",
+        "transform": {
+          "position": [
+            4.0,
+            -0.5,
+            0.0
+          ]
+        },
+        "sector": "heart",
+        "collider": {
+          "type": "aabb",
+          "halfExtents": [
+            7.0,
+            0.5,
+            4.0
+          ],
+          "solid": true
+        }
+      },
+      {
+        "id": "relay-bank",
+        "type": "platform",
+        "transform": {
+          "position": [
+            23.0,
+            -0.5,
+            0.0
+          ]
+        },
+        "sector": "heart",
+        "collider": {
+          "type": "aabb",
+          "halfExtents": [
+            4.0,
+            0.5,
+            3.0
+          ],
+          "solid": true
+        }
+      },
+      {
+        "id": "heart-bank",
+        "type": "platform",
+        "transform": {
+          "position": [
+            52.0,
+            -0.5,
+            0.0
+          ]
+        },
+        "sector": "heart",
+        "collider": {
+          "type": "aabb",
+          "halfExtents": [
+            17.0,
+            0.5,
+            3.0
+          ],
+          "solid": true
+        }
+      },
+      {
+        "id": "route-braid",
+        "type": "braid",
+        "transform": {
+          "position": [
+            15.25,
+            -0.25,
+            0
+          ]
+        },
+        "sector": "heart",
+        "collider": {
+          "type": "aabb",
+          "halfExtents": [
+            4.25,
+            0.25,
+            1
+          ],
+          "solid": true
+        }
+      },
+      {
+        "id": "route-green",
+        "type": "vine_green",
+        "transform": {
+          "position": [
+            15.25,
+            -0.25,
+            1
+          ]
+        },
+        "sector": "heart",
+        "collider": {
+          "type": "aabb",
+          "halfExtents": [
+            4.25,
+            0.25,
+            0.25
+          ],
+          "solid": false
+        }
+      },
+      {
+        "id": "route-yellow",
+        "type": "vine_yellow",
+        "transform": {
+          "position": [
+            15.25,
+            -0.25,
+            -1
+          ]
+        },
+        "sector": "heart",
+        "collider": {
+          "type": "aabb",
+          "halfExtents": [
+            4.25,
+            0.25,
+            0.25
+          ],
+          "solid": false
+        }
+      },
+      {
+        "id": "route-terminal",
+        "type": "signal_terminal",
+        "transform": {
+          "position": [
+            22,
+            0.75,
+            0
+          ]
+        },
+        "sector": "heart",
+        "collider": {
+          "type": "aabb",
+          "halfExtents": [
+            0.5,
+            0.75,
+            0.5
+          ],
+          "solid": false
+        }
+      },
+      {
+        "id": "relay-pivot",
+        "type": "switch",
+        "transform": {
+          "position": [
+            31.0,
+            -0.25,
+            0.0
+          ]
+        },
+        "sector": "heart",
+        "collider": {
+          "type": "aabb",
+          "halfExtents": [
+            0.25,
+            0.25,
+            0.25
+          ],
+          "solid": false
+        }
+      },
+      {
+        "id": "relay-island",
+        "type": "island",
+        "transform": {
+          "position": [
+            27.0,
+            -0.25,
+            0.0
+          ]
+        },
+        "sector": "heart",
+        "collider": {
+          "type": "aabb",
+          "halfExtents": [
+            1.0,
+            0.25,
+            1.25
+          ],
+          "solid": true
+        }
+      },
+      {
+        "id": "relay-step",
+        "type": "platform",
+        "transform": {
+          "position": [
+            36.75,
+            -0.5,
+            0.0
+          ]
+        },
+        "sector": "heart",
+        "collider": {
+          "type": "aabb",
+          "halfExtents": [
+            1.25,
+            0.5,
+            2.0
+          ],
+          "solid": true
+        }
+      },
+      {
+        "id": "relay-terminal",
+        "type": "signal_terminal",
+        "transform": {
+          "position": [
+            36.5,
+            0.75,
+            0.0
+          ]
+        },
+        "sector": "heart",
+        "collider": {
+          "type": "aabb",
+          "halfExtents": [
+            0.5,
+            0.75,
+            0.5
+          ],
+          "solid": false
+        }
+      },
+      {
+        "id": "heart-seam",
+        "type": "seam_panel",
+        "transform": {
+          "position": [
+            45.0,
+            1.5,
+            1.0
+          ]
+        },
+        "sector": "heart",
+        "collider": {
+          "type": "aabb",
+          "halfExtents": [
+            1.0,
+            1.5,
+            0.25
+          ],
+          "solid": true
+        }
+      },
+      {
+        "id": "heart-left",
+        "type": "seam_wall",
+        "transform": {
+          "position": [
+            43.25,
+            2.0,
+            1.0
+          ]
+        },
+        "sector": "heart",
+        "collider": {
+          "type": "aabb",
+          "halfExtents": [
+            0.75,
+            2.0,
+            0.25
+          ],
+          "solid": true
+        }
+      },
+      {
+        "id": "heart-right",
+        "type": "seam_wall",
+        "transform": {
+          "position": [
+            46.75,
+            2.0,
+            1.0
+          ]
+        },
+        "sector": "heart",
+        "collider": {
+          "type": "aabb",
+          "halfExtents": [
+            0.75,
+            2.0,
+            0.25
+          ],
+          "solid": true
+        }
+      },
+      {
+        "id": "heart-side-l",
+        "type": "seam_wall",
+        "transform": {
+          "position": [
+            42.75,
+            1.5,
+            -0.25
+          ]
+        },
+        "sector": "heart",
+        "collider": {
+          "type": "aabb",
+          "halfExtents": [
+            0.25,
+            1.5,
+            1.25
+          ],
+          "solid": true
+        }
+      },
+      {
+        "id": "heart-side-r",
+        "type": "seam_wall",
+        "transform": {
+          "position": [
+            47.25,
+            1.5,
+            -0.25
+          ]
+        },
+        "sector": "heart",
+        "collider": {
+          "type": "aabb",
+          "halfExtents": [
+            0.25,
+            1.5,
+            1.25
+          ],
+          "solid": true
+        }
+      },
+      {
+        "id": "heart-roof",
+        "type": "seam_wall",
+        "transform": {
+          "position": [
+            45.0,
+            3.5,
+            0.0
+          ]
+        },
+        "sector": "heart",
+        "collider": {
+          "type": "aabb",
+          "halfExtents": [
+            2.5,
+            0.5,
+            1.75
+          ],
+          "solid": true
+        }
+      },
+      {
+        "id": "heart-back",
+        "type": "seam_wall",
+        "transform": {
+          "position": [
+            45.0,
+            1.5,
+            -1.5
+          ]
+        },
+        "sector": "heart",
+        "collider": {
+          "type": "aabb",
+          "halfExtents": [
+            2.5,
+            1.5,
+            0.25
+          ],
+          "solid": true
+        }
+      },
+      {
+        "id": "heart-terminal",
+        "type": "signal_terminal",
+        "transform": {
+          "position": [
+            45.0,
+            0.75,
+            -0.5
+          ]
+        },
+        "sector": "heart",
+        "collider": {
+          "type": "aabb",
+          "halfExtents": [
+            0.5,
+            0.75,
+            0.5
+          ],
+          "solid": false
+        }
+      },
+      {
+        "id": "heart-slab-0",
+        "type": "causeway",
+        "transform": {
+          "position": [
+            50.0,
+            -0.5,
+            0.0
+          ]
+        },
+        "sector": "heart",
+        "collider": {
+          "type": "aabb",
+          "halfExtents": [
+            1.25,
+            0.5,
+            1.25
+          ],
+          "solid": true
+        }
+      },
+      {
+        "id": "heart-slab-1",
+        "type": "causeway",
+        "transform": {
+          "position": [
+            52.0,
+            -0.5,
+            0.0
+          ]
+        },
+        "sector": "heart",
+        "collider": {
+          "type": "aabb",
+          "halfExtents": [
+            1.25,
+            0.5,
+            1.25
+          ],
+          "solid": true
+        }
+      },
+      {
+        "id": "heart-slab-2",
+        "type": "causeway",
+        "transform": {
+          "position": [
+            54.0,
+            -0.5,
+            0.0
+          ]
+        },
+        "sector": "heart",
+        "collider": {
+          "type": "aabb",
+          "halfExtents": [
+            1.25,
+            0.5,
+            1.25
+          ],
+          "solid": true
+        }
+      },
+      {
+        "id": "heart-slab-3",
+        "type": "causeway",
+        "transform": {
+          "position": [
+            56.0,
+            -0.5,
+            0.0
+          ]
+        },
+        "sector": "heart",
+        "collider": {
+          "type": "aabb",
+          "halfExtents": [
+            1.25,
+            0.5,
+            1.25
+          ],
+          "solid": true
+        }
+      },
+      {
+        "id": "heart-slab-4",
+        "type": "causeway",
+        "transform": {
+          "position": [
+            58.0,
+            -0.5,
+            0.0
+          ]
+        },
+        "sector": "heart",
+        "collider": {
+          "type": "aabb",
+          "halfExtents": [
+            1.25,
+            0.5,
+            1.25
+          ],
+          "solid": true
+        }
+      },
+      {
+        "id": "heart-slab-5",
+        "type": "causeway",
+        "transform": {
+          "position": [
+            60.0,
+            -0.5,
+            0.0
+          ]
+        },
+        "sector": "heart",
+        "collider": {
+          "type": "aabb",
+          "halfExtents": [
+            1.25,
+            0.5,
+            1.25
+          ],
+          "solid": true
+        }
+      },
+      {
+        "id": "beam-mark",
+        "type": "remote_mark",
+        "transform": {
+          "position": [
+            60.0,
+            3.0,
+            -6.0
+          ]
+        },
+        "sector": "heart",
+        "collider": {
+          "type": "aabb",
+          "halfExtents": [
+            0.75,
+            0.75,
+            0.25
+          ],
+          "solid": false
+        }
+      },
+      {
+        "id": "gate",
+        "type": "signal_gate",
+        "transform": {
+          "position": [
+            65.0,
+            1.75,
+            0.0
+          ]
+        },
+        "sector": "heart",
+        "collider": {
+          "type": "aabb",
+          "halfExtents": [
+            0.25,
+            1.75,
+            4.0
+          ],
+          "solid": true
+        }
+      },
+      {
+        "id": "goal",
+        "type": "goal",
+        "transform": {
+          "position": [
+            67.0,
+            1.25,
+            0.0
+          ]
+        },
+        "sector": "heart",
+        "collider": {
+          "type": "aabb",
+          "halfExtents": [
+            0.5,
+            1.25,
+            1.0
+          ],
+          "solid": false
+        }
+      },
+      {
+        "id": "heart-wire-0",
+        "type": "signal_line",
+        "transform": {
+          "position": [
+            63.0,
+            0.25,
+            -1.5
+          ],
+          "scale": [
+            1,
+            0.25,
+            0.25
+          ]
+        },
+        "sector": "heart"
+      },
+      {
+        "id": "heart-wire-1",
+        "type": "signal_line",
+        "transform": {
+          "position": [
+            63.0,
+            0.25,
+            -0.5
+          ],
+          "scale": [
+            1,
+            0.25,
+            0.25
+          ]
+        },
+        "sector": "heart"
+      },
+      {
+        "id": "heart-wire-2",
+        "type": "signal_line",
+        "transform": {
+          "position": [
+            63.0,
+            0.25,
+            0.5
+          ],
+          "scale": [
+            1,
+            0.25,
+            0.25
+          ]
+        },
+        "sector": "heart"
+      },
+      {
+        "id": "heart-wire-3",
+        "type": "signal_line",
+        "transform": {
+          "position": [
+            63.0,
+            0.25,
+            1.5
+          ],
+          "scale": [
+            1,
+            0.25,
+            0.25
+          ]
+        },
+        "sector": "heart"
+      }
+    ],
+    "spawn": {
+      "position": [
+        1,
+        1,
+        0
+      ],
+      "sector": "heart",
+      "facing": 1
+    },
+    "checkpoints": [
+      {
+        "id": "entry",
+        "position": [
+          1,
+          1,
+          0
+        ],
+        "sector": "heart"
+      },
+      {
+        "id": "relay-entry",
+        "position": [
+          25.5,
+          1,
+          0
+        ],
+        "sector": "heart"
+      },
+      {
+        "id": "relay-exit",
+        "position": [
+          37,
+          1,
+          0
+        ],
+        "sector": "heart"
+      },
+      {
+        "id": "shell-entry",
+        "position": [
+          42,
+          1,
+          2.5
+        ],
+        "sector": "heart"
+      },
+      {
+        "id": "beam-entry",
+        "position": [
+          59,
+          1,
+          0
+        ],
+        "sector": "heart"
+      }
+    ],
+    "puzzles": []
+  },
+  "instances": [
+    {
+      "id": "merge",
+      "kind": "F-1",
+      "variant": "connection",
+      "bindings": {
+        "braid": "route-braid",
+        "vineA": "route-green",
+        "vineB": "route-yellow",
+        "terminal": "route-terminal"
+      },
+      "settings": {},
+      "achievement": "merge-connected",
+      "hintGenerations": [
+        "FC"
+      ],
+      "completionGenerations": [
+        "FC"
+      ],
+      "hints": [
+        "細い道を渡るだけでは、線がつながらない。",
+        "二色を一つに見せる世代で端子を見よう。",
+        "CH 1で橋と右の端子をつなごう。",
+        "CH 1の橋を渡り、そのまま端子に触れよう。"
+      ],
+      "signals": [
+        "heart-wire-0"
+      ]
+    },
+    {
+      "id": "relay-relay",
+      "kind": "S-1",
+      "variant": "crossing",
+      "bindings": {
+        "pivot": "relay-pivot",
+        "island": "relay-island",
+        "step": "relay-step",
+        "terminal": "relay-terminal"
+      },
+      "achievement": "relay-transported",
+      "hintGenerations": [
+        "SFC"
+      ],
+      "completionGenerations": [
+        "FC",
+        "SFC",
+        "PS1",
+        "PS2"
+      ],
+      "settings": {
+        "periodTicks": 720,
+        "scaleAmplitude": 0.03
+      },
+      "hints": [
+        "盤上の島は、どう動く？",
+        "平面が回る世代では島も回る。",
+        "CH 2で島に乗り、対岸で止めよう。",
+        "島に乗ったまま半周し、右の端子へ降りよう。"
+      ],
+      "signals": [
+        "heart-wire-1"
+      ]
+    },
+    {
+      "id": "heart-core",
+      "kind": "P1-2",
+      "variant": "crossing",
+      "bindings": {
+        "seam": "heart-seam",
+        "terminal": "heart-terminal"
+      },
+      "achievement": "heart-restored",
+      "hintGenerations": [
+        "PS1"
+      ],
+      "completionGenerations": [
+        "PS1"
+      ],
+      "settings": {},
+      "hints": [
+        "殻の一枚だけ、見え方が違う。",
+        "同じ入口を3Dの二世代で見比べよう。",
+        "CH 3では継ぎ目が開く。",
+        "手前の開口から奥へ進み、中の端子に触れよう。"
+      ],
+      "signals": [
+        "heart-wire-2"
+      ]
+    },
+    {
+      "id": "beam-light",
+      "kind": "P2-1",
+      "variant": "crossing",
+      "bindings": {
+        "slabs": [
+          "heart-slab-0",
+          "heart-slab-1",
+          "heart-slab-2",
+          "heart-slab-3",
+          "heart-slab-4",
+          "heart-slab-5"
+        ],
+        "terminal": "beam-mark"
+      },
+      "achievement": "beam-lit",
+      "hintGenerations": [
+        "PS2"
+      ],
+      "completionGenerations": [
+        "PS2"
+      ],
+      "settings": {
+        "lightThreshold": 0.12
+      },
+      "hints": [
+        "向こう岸の刻印は、触れずに反応する。",
+        "近づくと光が強くなる。",
+        "CH 4で刻印に近い岸へ回ろう。",
+        "奥行き方向に刻印へ近づき、手元の光を届けよう。"
+      ],
+      "signals": [
+        "heart-wire-3"
+      ]
+    }
+  ],
+  "exit": {
+    "goal": "goal",
+    "blocker": "gate",
+    "requires": [
+      "merge-connected",
+      "relay-transported",
+      "heart-restored",
+      "beam-lit"
+    ]
+  }
+}

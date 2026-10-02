@@ -26,3 +26,24 @@ describe('authored demo routes', () => {
     session.dispose();
   });
 });
+
+describe('powered final device', () => {
+  it.each(['merge-connected', 'relay-transported', 'heart-restored', 'beam-lit'])('keeps the exit shut when %s is missing', (missing) => {
+    const stage = demoStage(4);
+    const session = createStageSession(stage, { generation: createGenerationController('FC') });
+    session.restore({ checkpointId: null, achievements: stage.exit.requires.filter((id) => id !== missing), gardens: {} });
+    session.player.position = [67, 1.25, 0];
+    session.tick(createNeutralConsoleChaosActions());
+    expect(session.cleared).toBe(false);
+    expect(session.bodies().get('gate')!.solid).toBe(true);
+    session.dispose();
+  });
+  it('allows the bridge alternate route without mistaking it for the final merged connection', () => {
+    const session = createStageSession(demoStage(4), { generation: createGenerationController('PS1'), spawn: [22, 1, 0] });
+    session.tick(createNeutralConsoleChaosActions());
+    expect(session.solved.has('merge')).toBe(false);
+    session.generation.request('FC'); session.generation.advance(350);
+    session.tick(createNeutralConsoleChaosActions());
+    expect(session.solved.has('merge')).toBe(true);
+  });
+});
