@@ -3,6 +3,7 @@ Usage: python tools/verify-demo-browser.py [http://127.0.0.1:5173]
 Evidence is written under ignored Docs/measurements/four-stage-demo.
 """
 import json
+import base64
 import sys
 from pathlib import Path
 from playwright.sync_api import sync_playwright
@@ -16,7 +17,7 @@ with sync_playwright() as p:
         '--enable-unsafe-swiftshader', '--autoplay-policy=no-user-gesture-required'])
     context = browser.new_context(viewport={'width':1280,'height':820})
     page = context.new_page()
-    errors, failed, results = [], [], []
+    errors, failed, results, captures = [], [], [], []
     page.on('pageerror', lambda error: errors.append(str(error)))
     page.on('response', lambda r: failed.append(r.url) if r.status >= 400 and not r.url.endswith('/favicon.ico') else None)
 
@@ -47,13 +48,13 @@ with sync_playwright() as p:
             frame:window.__lastFrame,checkpoint:s.snapshot().checkpointId};}''')
 
     def capture(name):
-        page.evaluate('''() => {
+        captured = page.evaluate("""() => {
             window.__step(1);
-            window.__captureLoop=()=>{window.__drawLast();window.__captureId=requestAnimationFrame(window.__captureLoop);};
-            window.__captureLoop();
-        }''')
-        page.screenshot(path=str(OUT / (name+'.png')), timeout=60000)
-        page.evaluate('cancelAnimationFrame(window.__captureId)')
+            return { image:document.querySelector('#screen').toDataURL('image/png'),
+                panel:document.querySelector('[data-campaign-panel]').textContent };
+        }""")
+        (OUT / (name+'-canvas.png')).write_bytes(base64.b64decode(captured['image'].split(',')[1]))
+        captures.append({'name':name,'panelText':captured['panel']})
 
     def channel(key):
         page.keyboard.press(str(key)); step(24)
@@ -131,7 +132,7 @@ with sync_playwright() as p:
         'saveReload':'checkpoint and both achieved outcomes restored',
         'input':'keyboard through GameHost; no player teleport or achievement injection',
         'timing':'fixed-step automated route; does not measure first-time human duration',
-        'playtest':page.evaluate('window.__consoleChaos.demoPlaytest')}
+        'playtest':page.evaluate('window.__consoleChaos.demoPlaytest'), 'captures':captures}
     (OUT/'browser-verification.json').write_text(json.dumps(report,ensure_ascii=False,indent=2))
     print(json.dumps({'stages':len(results),'falls':sum(r['falls'] for r in results),'pageErrors':errors,'failedRequests':failed},ensure_ascii=False))
     browser.close()
