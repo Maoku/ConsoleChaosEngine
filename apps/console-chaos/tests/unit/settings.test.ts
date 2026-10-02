@@ -28,6 +28,13 @@ function fakeStorage(initial: Record<string, string> = {}): Storage {
 }
 
 describe('表示設定（BR-05）', () => {
+  it('storage読み取りの拒否でも起動し、保存拒否でも操作できる', () => {
+    const denied = fakeStorage();
+    denied.getItem = () => { throw new Error('denied'); };
+    denied.setItem = () => { throw new Error('quota'); };
+    expect(loadDisplayOptions(denied)).toEqual(DEFAULT_DISPLAY_OPTIONS);
+    expect(() => createDisplaySettings(denied).toggle('moire')).not.toThrow();
+  });
   it('既定はモアレ入・平面化切（プリセットどおりの見え）', () => {
     expect(DEFAULT_DISPLAY_OPTIONS).toEqual({ moire: true, flatten: false });
     // 既定のままなら上書きは空。プリセットに一切触れない

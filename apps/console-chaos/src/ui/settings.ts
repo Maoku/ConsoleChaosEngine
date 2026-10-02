@@ -64,9 +64,9 @@ function defaultStorage(): Storage | null {
 }
 
 export function loadDisplayOptions(storage: Storage | null = defaultStorage()): DisplayOptions {
-  const raw = storage?.getItem(DISPLAY_STORAGE_KEY);
-  if (!raw) return { ...DEFAULT_DISPLAY_OPTIONS };
   try {
+    const raw = storage?.getItem(DISPLAY_STORAGE_KEY);
+    if (!raw) return { ...DEFAULT_DISPLAY_OPTIONS };
     const stored = JSON.parse(raw) as Partial<DisplayOptions>;
     return {
       moire: typeof stored.moire === 'boolean' ? stored.moire : DEFAULT_DISPLAY_OPTIONS.moire,
