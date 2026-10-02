@@ -58,7 +58,7 @@ export function createCampaignModule(options: CampaignOptions): GameModule {
       };
       async function change(nextIndex: number, restore: CampaignSave | null, nextMode: CampaignMode): Promise<void> {
         if (disposed || mode === 'loading' && active) return;
-        mode = 'loading'; guard.lock(); emit();
+        mode = 'loading'; guard.lock(context.input.snapshot); emit();
         active?.dispose(); active = null; session = null;
         for (let t = 0; t < 5 && context.generation.transition.active; t++) context.generation.advance(1000);
         context.generation.request(restore?.generation ?? 'FC');
@@ -87,7 +87,7 @@ export function createCampaignModule(options: CampaignOptions): GameModule {
                 value.state = { checkpointId: null, achievements: [], gardens: {} };
               }
               write(value);
-              mode = final ? 'finished' : 'stageComplete'; guard.lock(); emit();
+              mode = final ? 'finished' : 'stageComplete'; guard.lock(context.input.snapshot); emit();
             },
           }).create(context);
           if (disposed) { created.dispose(); return; }
@@ -123,9 +123,9 @@ export function createCampaignModule(options: CampaignOptions): GameModule {
         returnTitle() {
           if (mode === 'loading' || disposed) return;
           if (mode === 'playing') saveChanges();
-          mode = 'title'; guard.lock(); emit();
+          mode = 'title'; guard.lock(context.input.snapshot); emit();
         },
-        retry() { if (mode === 'playing') { session?.retryCheckpoint(); guard.lock(); } },
+        retry() { if (mode === 'playing') { session?.retryCheckpoint(); guard.lock(context.input.snapshot); } },
       };
       await change(0, null, 'title');
       options.onReady(controller);

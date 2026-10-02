@@ -39,6 +39,16 @@ describe('campaign lifecycle and recovery', () => {
     expect(storage.write(save())).toBe(false);
     expect(failures).toBe(2);
   });
+  it('allows a new press after the boundary while waiting for previously held controls', () => {
+    const guard = createReleaseGuard();
+    guard.lock(createDeviceSnapshot());
+    expect(guard.accept(createDeviceSnapshot(['ArrowRight']))).toBe(false);
+    expect(guard.accept(createDeviceSnapshot(['ArrowRight']))).toBe(true);
+    guard.lock(createDeviceSnapshot(['Space']));
+    expect(guard.accept(createDeviceSnapshot(['Space', 'ArrowRight']))).toBe(false);
+    expect(guard.accept(createDeviceSnapshot(['ArrowRight']))).toBe(false);
+    expect(guard.accept(createDeviceSnapshot(['ArrowRight']))).toBe(true);
+  });
   it('waits for keyboard and gamepad release after a transition', () => {
     const guard = createReleaseGuard();
     expect(guard.accept(createDeviceSnapshot(['Space', 'Digit4']))).toBe(false);
@@ -74,7 +84,7 @@ describe('campaign lifecycle and recovery', () => {
       expect(value.completed).toHaveLength(index + 1);
       const tick = old.tickIndex; step(4); expect(old.tickIndex).toBe(tick);
       if (index < 3) {
-        input.set(createDeviceSnapshot(['Space', 'Digit4', 'ArrowRight']));
+        input.set(createDeviceSnapshot(['Space', 'Digit4', 'ArrowRight'])); step(1);
         controller.next(); controller.next(); await flush(); step(5);
         expect(controller.session!.tickIndex).toBe(0);
         expect(controller.session!.player.position).toEqual(stages[index + 1]!.scene.spawn.position);
