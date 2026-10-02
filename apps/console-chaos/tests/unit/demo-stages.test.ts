@@ -14,6 +14,7 @@ describe('authored demo routes', () => {
     };
     move([1, 0], 285);
     expect(session.solved.has('route')).toBe(true);
+    expect(session.snapshot().checkpointId).toBe('backside');
     expect(session.solved.has('backside')).toBe(false);
     generation.request('PS1'); generation.advance(350);
     move([0, 1], 28);

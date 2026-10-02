@@ -23,7 +23,8 @@ export function moveGarden(ctx: PuzzleContext, instance: StagePuzzle, state: Gar
   state.center = [...pivot.position];
   const previous = [...island.position];
   const supported = ctx.support === ctx.entities.get('s1_island');
-  if (!ctx.initializing && !ctx.transitioning && ctx.profile.hardware.video.affinePlane) {
+  if (!ctx.initializing && !ctx.transitioning && ctx.profile.hardware.video.affinePlane &&
+      Math.abs(ctx.player.position[0] - pivot.position[0]) <= state.radius + 1.5) {
     state.ticks++;
     if (supported) state.carriedTicks++;
   }
@@ -33,6 +34,9 @@ export function moveGarden(ctx: PuzzleContext, instance: StagePuzzle, state: Gar
   island.position = gardenPoint(state, [-state.radius, 0]);
   if (supported && !ctx.initializing) {
     for (const axis of [0, 1, 2] as const) ctx.player.position[axis] += island.position[axis] - previous[axis]!;
+    // Floating-point top/feet subtraction must not turn the supporting floor into a horizontal wall.
+    // Gravity settles this separation in the same tick, before the presentation reads the position.
+    ctx.player.position[1] += 1e-7;
   }
 }
 export function connectGarden(ctx: PuzzleContext, instance: StagePuzzle, state: GardenState): void {
