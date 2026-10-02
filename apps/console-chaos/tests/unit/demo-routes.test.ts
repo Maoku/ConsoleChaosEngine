@@ -35,12 +35,12 @@ function driver(session: Session) {
 }
 
 describe('all four stages through movement and jump input', () => {
-  it('reads the learned stones, crosses, rides the garden and leaves stage 2', () => {
-    const session = createStageSession(demoStage(2), { generation: createGenerationController('FC') });
-    const d = driver(session); d.move(0, 8.75);
+  it.each([0x436861, 0x436862, 1, 7, 123, 2026])('crosses the learned stones and garden with seed %s', (seed) => {
+    const session = createStageSession(demoStage(2), { generation: createGenerationController('FC'), seed });
+    const d = driver(session); d.move(0, 9.25);
     const stones = ['lamp-0', 'lamp-1', 'lamp-2'].map((id) => session.bodies().get(id)!.position[0]);
     d.channel('SFC');
-    for (const stone of stones) { d.jumpTo(stone - 0.35); d.move(0, stone + 0.5); }
+    for (const stone of stones) { d.jumpTo(stone - 0.75); d.move(0, stone + 0.5); }
     d.jumpTo(18.5); d.move(0, 21);
     expect(session.solved.has('path')).toBe(true);
     d.channel('FC'); d.move(0, 30.85); d.channel('SFC');

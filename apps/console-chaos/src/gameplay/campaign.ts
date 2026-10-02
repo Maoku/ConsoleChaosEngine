@@ -24,6 +24,7 @@ export interface CampaignOptions {
   save(save: CampaignSave): void;
   hooks?: ConsoleChaosModuleHooks;
   onReady(controller: CampaignController): void;
+  onNewRun?(): void;
   onState?(controller: CampaignController): void;
 }
 
@@ -104,6 +105,7 @@ export function createCampaignModule(options: CampaignOptions): GameModule {
         get canResume() { return saved !== null && !saved.finished; },
         startNew() {
           if (mode !== 'title' && mode !== 'finished') return;
+          options.onNewRun?.();
           seed = (seed + 1) >>> 0;
           saved = null;
           void change(0, null, 'playing').then(() => { if (mode === 'playing') write(snapshot()); });

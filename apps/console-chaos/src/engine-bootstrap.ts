@@ -13,6 +13,7 @@ import {
   type GameModule,
 } from '@console-chaos/engine';
 import { createConsoleChaosModule, createConsoleChaosStageModule, type ConsoleChaosModuleHooks } from './app';
+import { createDemoPlaytest, downloadDemoPlaytest } from './debug/demo-playtest';
 import { loadCampaign } from './content/stages';
 import { createCampaignModule, type CampaignController } from './gameplay/campaign';
 import { createCampaignStorage } from './gameplay/save';
@@ -104,7 +105,7 @@ if (isMini) {
 
 const resize = observeCanvasResize(canvas, () => renderer.resize());
 const unlock = installAudioUnlock(document, () => audio.unlock());
-const playtestHud = isMini ? createPlaytestHud() : null;
+const playtestHud = isMini && (!campaignEnabled || params.get('playtest') === '1') ? createPlaytestHud() : null;
 const colliderHud = isMini ? createColliderHud() : null;
 fitCanvasToStage();
 const notice = createNoticeHud();
@@ -115,6 +116,7 @@ let hud: Hud | null = null;
 let playtest: PlaytestLog | null = null;
 let flow: PlaytestFlow | null = null;
 let demo: DemoController | null = null;
+const demoPlaytest = campaignEnabled && params.get('playtest') === '1' ? createDemoPlaytest() : null;
 let campaign: CampaignController | null = null;
 let campaignFlow: ReturnType<typeof createCampaignFlow> | null = null;
 const bgm = isMini
@@ -145,6 +147,7 @@ const campaignStorage = campaignStages ? createCampaignStorage(campaignStages, s
 
 const module: GameModule = campaignStages && campaignStorage ? createCampaignModule({
   stages: campaignStages, saved: campaignStorage.read(), save: (value) => { campaignStorage.write(value); },
+  onNewRun() { demoPlaytest?.reset(); },
   onReady(controller) { campaign = controller; campaignFlow = createCampaignFlow(controller); },
   onState() { campaignFlow?.update(); },
   hooks: {
@@ -153,7 +156,7 @@ const module: GameModule = campaignStages && campaignStorage ? createCampaignMod
       session = created; audioPresenter = presenter; presentation = createdPresentation;
       hud = createHud(canvas); bgm?.sync();
     },
-    onFixedUpdate(current) { hud?.update(hudModelFromSession(current)); },
+    onFixedUpdate(current) { hud?.update(hudModelFromSession(current)); demoPlaytest?.update(current, host.context.input.snapshot); },
     onRender(current, currentPresentation) { colliderHud?.update(current, currentPresentation.colliderBoxes); },
     onDispose(current) {
       if (session === current) session = null;
@@ -239,6 +242,7 @@ const keydown = (event: KeyboardEvent): void => {
   if (key === 'c') presentation?.toggleColliders();
   if (key === 'b') bgm?.nextSong();
   if (key === 'm') bgm?.toggleMute();
+  if (key === 'p' && campaign && demoPlaytest) downloadDemoPlaytest(demoPlaytest.record());
   if (key === 'p' && manual) playtest?.save();
   if (event.key === 'Escape' && manual) { if (campaign) campaign.returnTitle(); else flow?.finish(); }
   if (key === 'r' && manual && campaign) campaign.retry();
@@ -277,6 +281,7 @@ if (import.meta.env.DEV) {
       return session;
     },
     get campaign() { return campaign; },
+    get demoPlaytest() { return demoPlaytest?.record() ?? null; },
     get flow() {
       return flow;
     },
