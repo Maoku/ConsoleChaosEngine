@@ -58,7 +58,7 @@ npm run dev
 
 ### 遊ぶ
 
-`npm run dev` のあと `/?scene=mini&level=area1`（既定）でエリア 1 を通しで遊べます。
+`npm run dev` のあと `/` で4ステージデモを遊べます。タイトルから新規開始・続きからを選べます。旧エリア1は `/?scene=mini&level=area1` で起動します。詳細は [4ステージ実装記録](Docs/development/FOUR_STAGE_IMPLEMENTATION_STATUS.md) を参照してください。
 
 | 操作 | キー |
 |---|---|
