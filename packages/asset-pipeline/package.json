@@ -1,6 +1,6 @@
 {
   "name": "@console-chaos/asset-pipeline",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Deterministic generation-aware image asset tooling for Console Chaos projects.",
   "type": "module",
   "sideEffects": false,
@@ -39,6 +39,6 @@
     "prepack": "npm run build"
   },
   "peerDependencies": {
-    "@console-chaos/engine": "^0.2.0"
+    "@console-chaos/engine": "^0.3.0"
   }
 }

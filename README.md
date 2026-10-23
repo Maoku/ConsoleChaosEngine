@@ -2,6 +2,8 @@
 
 FC/SFC/PS1/PS2 の4つのコンソール世代表現を提供するエンジン
 
+現在の配布バージョンは **0.3.0** です。機械可読な正本はルートの [`VERSION`](VERSION) に置いています。
+
 ![アクション](./ConsoleChaosAction.jpg)
 
 ゲームの状態は単一で共有、4つの世代の出力を切り替えて遊ぶなどができます。
@@ -58,6 +60,7 @@ npm run verify:distribution
 ```
 
 生成先は `artifacts/` です。
+
 - エンジン本体の導入・最小構成・公開APIは [`packages/engine/README.md`](packages/engine/README.md)
 - 配布とリリースの詳細は [`Docs/DISTRIBUTION.md`](Docs/DISTRIBUTION.md)
 - 変更点は [`packages/engine/RELEASE_NOTES.md`](packages/engine/RELEASE_NOTES.md) を参照してください。

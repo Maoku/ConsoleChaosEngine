@@ -1,5 +1,11 @@
 # @console-chaos/asset-pipeline リリースノート
 
+## 0.1.1 — 2026-08-27
+
+- `@console-chaos/engine` 0.3.xへpeer dependencyを更新しました。
+- 生成manifestへ記録するpipeline versionを0.1.1へ更新しました。
+- image変換API、CLI、出力形式に互換性のない変更はありません。
+
 ## 0.1.0 — 2026-08-16
 
 - 8bit RGB/RGBA PNG、画像 geometry、premultiplied-alpha area resample、matte 処理を追加しました。

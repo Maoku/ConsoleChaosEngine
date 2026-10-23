@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
-  "pipelineVersion": "0.1.0",
-  "engineVersion": "0.2.0",
+  "pipelineVersion": "0.1.1",
+  "engineVersion": "0.3.0",
   "generationProfileSha256": "2501c328c1fb7de14c43a12572ab939fad1d329ec25c28b7b2ac9007f22b9a75",
   "outputs": [
     {
