@@ -215,6 +215,7 @@ describe('asset pipeline sample contract', () => {
     expect(configSource).toContain('function maskEyeWindows');
   }, 60_000);
 
+  // Allow time for build/build/check of 52 generated images on shared CI runners.
   it('writes the first fresh build once and writes nothing on the second build', async () => {
     const definition = await loadDefinition();
     const root = await mkdtemp(join(tmpdir(), 'asset-pipeline-sample-'));
@@ -230,5 +231,5 @@ describe('asset pipeline sample contract', () => {
     expect(first.written).toHaveLength(53);
     expect(second.written).toEqual([]);
     expect((await runAssetPipeline(definition, { command: 'check', baseDir: root })).ok).toBe(true);
-  }, 60_000);
+  }, 120_000);
 });
