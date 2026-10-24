@@ -3,7 +3,7 @@ import {
   DEFAULT_GENERATION_WEBGL_RENDERER_LIMITS,
   geometryCommandKey,
 } from '../src/render/webgl-renderer';
-import { quadMesh, segmentsFor } from '../src/render/geometry';
+import { boxMesh, quadMesh, segmentsFor } from '../src/render/geometry';
 import { createForwardFragmentShader } from '../src/render/shaders/ps1_forward';
 import { createSkinnedVertexShader } from '../src/render/shaders/skinned_test.vert';
 
@@ -21,6 +21,18 @@ describe('configurable 3D render capabilities', () => {
     expect(uv(1)).toEqual([2, 0]);
     expect(uv(2)).toEqual([2, 5]);
     expect(uv(3)).toEqual([0, 5]);
+  });
+
+  it('keeps dense boxes addressable beyond the 16-bit vertex limit', () => {
+    const mesh = boxMesh([52, 52, 52], { uvScale: 0, maxSegments: 104 });
+    const vertexCount = mesh.vertices.length / 8;
+
+    expect(vertexCount).toBeGreaterThan(65_536);
+    expect(mesh.indices).toBeInstanceOf(Uint32Array);
+    let maxIndex = 0;
+    for (const index of mesh.indices) maxIndex = Math.max(maxIndex, index);
+    expect(maxIndex).toBe(vertexCount - 1);
+    expect(boxMesh([1, 1, 1], { uvScale: 0 }).indices).toBeInstanceOf(Uint16Array);
   });
 
   it('injects configured light and joint capacities into shader sources', () => {

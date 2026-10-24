@@ -99,10 +99,11 @@ hold、pressure semantics を適用する。focus loss 時は browser input sour
   既定slotはopaque world 1..8、半透明9、screen-space sprite 10、debug 11。同一slotではcommand/triangleの
   登録順を保持し、rendererは毎frameの`Array.sort()`や作業配列allocationを行わない。
 - `LightCommand`: ambient/directional/pointをgeneration mask付きで複数指定する。ambientは加算、
-  directionalとpointはcommand順にrenderer上限まで使用し、pointは`shadow`で投影shadowを制御する。
+  directionalとpointはintensityの高い順にrenderer上限まで使用し、同じintensityではcommand順を保つ。
+  pointは`shadow`で投影shadowを制御する。
   commandがない場合は従来の固定lightへfallbackする。`createGenerationWebGlRenderer()`の`limits`で
   directional light、point light、skinあたりjoint数のshader上限を起動時に設定でき、GPU能力を超える値は
-  fail-fastする。既定上限はdirectional 4、point 8、joint 64である。
+  fail-fastする。既定上限はdirectional 4、point 4、joint 24である。
 - `MaterialCommand.environmentTexture/environmentStrength`: equirectangular 2D reflectionを指定する。
   `profile.video.environmentMap`がfalseならrendererがstrengthを0にする。
 - `createGenerationWebGlRenderer()`: production renderer。4世代のFBO/postfx targetを起動時に確保し、

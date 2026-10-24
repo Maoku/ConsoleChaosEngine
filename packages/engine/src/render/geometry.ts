@@ -21,7 +21,7 @@ export type Vec3 = readonly [number, number, number];
 export interface BoxMesh {
   /** position(3) + normal(3) + uv(2) のインターリーブ。mini_level と同じ並び */
   vertices: Float32Array;
-  indices: Uint16Array;
+  indices: Uint16Array | Uint32Array;
   triangles: number;
 }
 
@@ -147,7 +147,7 @@ export function boxMesh(half: Vec3, options: BoxOptions): BoxMesh {
 
   return {
     vertices: new Float32Array(vertices),
-    indices: new Uint16Array(indices),
+    indices: vertices.length / 8 > 65_536 ? new Uint32Array(indices) : new Uint16Array(indices),
     triangles: indices.length / 3,
   };
 }

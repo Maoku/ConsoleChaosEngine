@@ -377,14 +377,14 @@ async function createGpuBackend(
   const affineSurfacePass = createAffineSurfacePass(ctx, state);
   disposables.push(sceneProgram, skinProgram, backgroundProgram, rasterSurfacePass, affineSurfacePass);
 
-  function buildInterleaved(vertices: Float32Array, indices: Uint16Array, mode: 'triangles' | 'lines' = 'triangles'): Shape {
+  function buildInterleaved(vertices: Float32Array, indices: IndexArray, mode: 'triangles' | 'lines' = 'triangles'): Shape {
     const vbo = createBuffer(ctx, 'vertex', vertices);
     const ibo = createBuffer(ctx, 'index', indices);
     const vao = createVertexArray(ctx, [
       { location: 0, size: 3, buffer: vbo, strideBytes: 32, offsetBytes: 0 },
       { location: 1, size: 3, buffer: vbo, strideBytes: 32, offsetBytes: 12 },
       { location: 2, size: 2, buffer: vbo, strideBytes: 32, offsetBytes: 24 },
-    ], { buffer: ibo, type: 'ushort' });
+    ], { buffer: ibo, type: indices instanceof Uint32Array ? 'uint' : 'ushort' });
     disposables.push(vbo, ibo, vao);
     return { vao, count: indices.length, triangles: mode === 'triangles' ? indices.length / 3 : 0, mode };
   }

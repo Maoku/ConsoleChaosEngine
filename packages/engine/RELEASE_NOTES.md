@@ -16,6 +16,7 @@
 
 ### 修正と配布
 
+- 分割数の多いboxで頂点数が65,536を超える場合は32bit indexを使い、頂点番号の桁あふれを防ぎます。
 - Windowsのdrive pathとUNC pathからglTF外部bufferを正しく解決するようにしました。
 - 配布packageのbuild、pack、consumer検証に工程名、実行時間、終了codeを含む診断logを追加し、
   consumer検証失敗時は調査用の一時directoryを保持するようにしました。
