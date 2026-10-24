@@ -11,10 +11,11 @@ import { createSession } from '@/gameplay/session';
 import { createConsoleChaosPresentation, hardwareBlendForMaterial } from '@/presentation/frame';
 import { MATERIALS } from '@/render/material';
 import { loadLevelFile } from './replay/harness';
+import type { LevelFile } from '@/level/schema';
 
 const level = loadLevelFile('area1');
 
-function setup(generation: GenerationId, spawn?: [number, number, number]) {
+function setup(generation: GenerationId, spawn?: [number, number, number], source: LevelFile = level) {
   const host = createGameHost({
     loopHost: createManualLoopHost(),
     renderer: createRecordingRenderer(),
@@ -22,12 +23,12 @@ function setup(generation: GenerationId, spawn?: [number, number, number]) {
     initialGeneration: generation,
   });
   const session = createSession({
-    level,
+    level: source,
     world: host.context.world,
     generation: host.context.generation,
     ...(spawn ? { spawn } : {}),
   });
-  const presentation = createConsoleChaosPresentation(level);
+  const presentation = createConsoleChaosPresentation(source);
   const frame = createRenderFrame();
   const tick = (): void => {
     session.tick(createNeutralConsoleChaosActions());
@@ -101,6 +102,16 @@ describe('Console presentation parity commands', () => {
     expect(later.meshes.find((mesh) => mesh.id === 'f1_braid:PS1')?.visible).toBe(false);
     expect(later.meshes.find((mesh) => mesh.id === 'f1_vine_a:PS1')?.visible).toBe(true);
     ps1.host.dispose();
+  });
+
+  it('preserves level quaternion rotations in mesh commands', () => {
+    const rotated = structuredClone(level);
+    rotated.entities[0]!.transform.rotation = [0.1, 0.2, 0.3, 0.9];
+    const view = setup('PS2', undefined, rotated);
+    view.tick();
+    expect(view.build().meshes.find((mesh) => mesh.id === `${rotated.entities[0]!.id}:PS2`)?.transform.rotation)
+      .toEqual([0.1, 0.2, 0.3, 0.9]);
+    view.host.dispose();
   });
 
   it('reproduces camera, animation, rotating plane, light, and dark-room fade', () => {

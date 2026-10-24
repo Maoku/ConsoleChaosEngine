@@ -353,7 +353,16 @@ export function createConsoleChaosPresentation(level: LevelFile): ConsoleChaosPr
             id: `${entity.id}:${generation}`,
             generations: [generation],
             geometry: material.model ? { kind: 'box' } : { kind: 'box', halfExtents: half, uvScale: material.uvScale },
-            transform: material.model ? { position, scale: half } : { position },
+            transform: material.model
+              ? {
+                  position,
+                  scale: half,
+                  ...(entity.transform.rotation ? { rotation: entity.transform.rotation } : {}),
+                }
+              : {
+                  position,
+                  ...(entity.transform.rotation ? { rotation: entity.transform.rotation } : {}),
+                },
             color: ROLE_COLORS[material.role],
             ...(material.model ? { asset: `assets/models/${material.model}.gltf` } : {}),
             material: materialId,

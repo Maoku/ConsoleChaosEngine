@@ -11,8 +11,8 @@ npm install -D @console-chaos/engine-testkit
 
 ```sh
 npm install -D \
-  /path/to/artifacts/console-chaos-engine-0.2.0.tgz \
-  /path/to/artifacts/console-chaos-engine-testkit-0.2.0.tgz
+  /path/to/artifacts/console-chaos-engine-0.3.0.tgz \
+  /path/to/artifacts/console-chaos-engine-testkit-0.3.0.tgz
 ```
 
 ## 提供するテストダブル
@@ -22,4 +22,4 @@ npm install -D \
 - `createMutableInputSource`: 任意の `DeviceSnapshot` を注入
 - `createRecordingAudioService`: 音声要求、スコア、世代プロファイルを記録
 
-テストキットの `0.2.x` はエンジンの `0.2.x` をpeer dependencyとして要求します。
+テストキットの `0.3.x` はエンジンの `0.3.x` をpeer dependencyとして要求します。

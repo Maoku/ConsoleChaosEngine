@@ -6,9 +6,9 @@
 
 | ファイル                                 | 用途                                                                   |
 | ---------------------------------------- | ---------------------------------------------------------------------- |
-| `console-chaos-engine-0.2.0.tgz`         | ランタイム、レンダリング、入力、音声、アセット、型定義、リリースノート |
-| `console-chaos-engine-testkit-0.2.0.tgz` | 任意導入の決定論的テストダブルと型定義                                 |
-| `console-chaos-asset-pipeline-0.1.0.tgz` | Node.js用の世代別画像生成API、CLI、型定義、共通素材規則                |
+| `console-chaos-engine-0.3.0.tgz`         | ランタイム、レンダリング、入力、音声、アセット、型定義、リリースノート |
+| `console-chaos-engine-testkit-0.3.0.tgz` | 任意導入の決定論的テストダブルと型定義                                 |
+| `console-chaos-asset-pipeline-0.1.1.tgz` | Node.js用の世代別画像生成API、CLI、型定義、共通素材規則                |
 | `SHA256SUMS`                             | 3 tarballの配布後完全性確認                                            |
 
 tarballにはビルド済みESM、TypeScript型定義、パッケージREADMEが入り、Engineとasset pipelineには
@@ -48,13 +48,9 @@ consumer検証が失敗した場合は、一時consumerを削除せず、その�
 失敗した `package.json`、導入済みパッケージ、生成fixtureをその場で調査できます。成功時は従来どおり
 一時consumerを自動削除します。再実行すると各診断ログは最新の実行内容で上書きされます。
 
-2026-08-16 の検証済み配布物:
-
-| ファイル                                 | SHA-256                                                            |
-| ---------------------------------------- | ------------------------------------------------------------------ |
-| `console-chaos-engine-0.2.0.tgz`         | `4ad52605b1b2057ed59a67f20fdbda281169c9ef8f929d848f61cc3155ba1ca2` |
-| `console-chaos-engine-testkit-0.2.0.tgz` | `f45669fb6f8164150e302f1f74c75137a574a0490d818c5020e713b52932d955` |
-| `console-chaos-asset-pipeline-0.1.0.tgz` | `a6c07c8aae5aab5016406980f960c7df7994c7ff7f6cc4677aba9985dd1d136d` |
+配布物のSHA-256は、pack時に生成される `artifacts/SHA256SUMS` を正本とします。
+同じバージョンでもソースや依存の更新でアーカイブの内容は変わるため、配布するtarballと
+同じpack実行で生成した `SHA256SUMS` を一緒に渡してください。
 
 完全性を手動確認する場合:
 
@@ -68,21 +64,21 @@ shasum -a 256 -c SHA256SUMS
 tarballを直接渡す場合:
 
 ```sh
-npm install /absolute/path/console-chaos-engine-0.2.0.tgz
+npm install /absolute/path/console-chaos-engine-0.3.0.tgz
 ```
 
 テストキットも使う場合は、エンジン本体と同時に導入します。
 
 ```sh
-npm install /absolute/path/console-chaos-engine-0.2.0.tgz
-npm install -D /absolute/path/console-chaos-engine-testkit-0.2.0.tgz
+npm install /absolute/path/console-chaos-engine-0.3.0.tgz
+npm install -D /absolute/path/console-chaos-engine-testkit-0.3.0.tgz
 ```
 
 世代別素材を生成するprojectでは、Engineとasset pipelineを同時に導入します。
 
 ```sh
-npm install /absolute/path/console-chaos-engine-0.2.0.tgz
-npm install -D /absolute/path/console-chaos-asset-pipeline-0.1.0.tgz
+npm install /absolute/path/console-chaos-engine-0.3.0.tgz
+npm install -D /absolute/path/console-chaos-asset-pipeline-0.1.1.tgz
 ```
 
 `package.json` に `file:` でtarballを記録する運用も可能です。チーム内で共有する場合は、
@@ -91,7 +87,7 @@ tarballを各プロジェクトから安定して参照できるアーティフ�
 ```json
 {
   "dependencies": {
-    "@console-chaos/engine": "file:vendor/console-chaos-engine-0.2.0.tgz"
+    "@console-chaos/engine": "file:vendor/console-chaos-engine-0.3.0.tgz"
   }
 }
 ```
@@ -99,15 +95,15 @@ tarballを各プロジェクトから安定して参照できるアーティフ�
 ## npm互換レジストリへ公開する
 
 公開前に、対象レジストリ、`@console-chaos` scopeの所有権、公開範囲、ライセンスを決定してください。
-このリポジトリには現在ライセンスファイルがないため、生成済みtarballは許可されたプロジェクト間の
-配布を前提とします。
+リポジトリのルートにはMIT `LICENSE`があります。公開先のscope設定と、配布tarballへのライセンス同梱方針を
+確認してから公開してください。
 
 組織のprivate registryへ公開する例:
 
 ```sh
-npm publish artifacts/console-chaos-engine-0.2.0.tgz --registry https://registry.example.com
-npm publish artifacts/console-chaos-engine-testkit-0.2.0.tgz --registry https://registry.example.com
-npm publish artifacts/console-chaos-asset-pipeline-0.1.0.tgz --registry https://registry.example.com
+npm publish artifacts/console-chaos-engine-0.3.0.tgz --registry https://registry.example.com
+npm publish artifacts/console-chaos-engine-testkit-0.3.0.tgz --registry https://registry.example.com
+npm publish artifacts/console-chaos-asset-pipeline-0.1.1.tgz --registry https://registry.example.com
 ```
 
 public npmへ出す場合は、ライセンスとscope設定を完了した後で `--access public` を明示します。
@@ -118,10 +114,11 @@ public npmへ出す場合は、ライセンスとscope設定を完了した後�
 Semantic Versioningを使います。公開APIに互換性のない変更はmajor、後方互換の機能追加はminor、
 修正はpatchを更新します。リリース時は次を同時に更新します。
 
+- ルートの `VERSION` と `package.json` の配布バージョン
 - `packages/engine/package.json` の `version`
 - `packages/engine/src/index.ts` の `ENGINE_VERSION`
 - `packages/engine-testkit/package.json` の `version` と `peerDependencies`
-- `packages/asset-pipeline/package.json` の `version` と `peerDependencies`
+- `packages/asset-pipeline/package.json` の `version` と `peerDependencies`、公開version定数
 - `apps/*/package.json` のworkspace内依存バージョン
 - `package-lock.json`
 - ドキュメント内のtarball名
@@ -138,7 +135,8 @@ Semantic Versioningを使います。公開APIに互換性のない変更はmajo
   `@console-chaos/asset-pipeline`
 - `dist/` 内部へのdeep import: 非対応
 - ブラウザ描画: Canvas 2DまたはWebGL 2
-- テストキット: 同じminor系列のエンジンをpeer dependencyとして要求
+- テストキット: 同じminor系列のエンジンをpeer dependencyとして要求（0.3.xはEngine 0.3.x）
+- asset pipeline 0.1.1: Engine 0.3.xをpeer dependencyとして要求
 
 `GameModule` と `RenderFrame` の境界を利用すると、ゲーム内容をエンジンの内部実装から分離できます。
 最小構成とAPI分類は `packages/engine/README.md` を参照してください。

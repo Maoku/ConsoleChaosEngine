@@ -79,6 +79,13 @@ hold、pressure semantics を適用する。focus loss 時は browser input sour
 - `RenderFrame`: camera、mesh、skinned mesh、sprite、light、background、material、overlay、
   `rasterSurfaces`、`affineSurfaces` の平坦な command buffer。surface は内部解像度の左上原点pixel rectを使い、
   FCの走査線tableとSFCのUV affine transformをappから受け取る。Engineはゲーム固有の意味を解釈しない。
+- `TransformCommand.rotation`: `(x, y, z, w)` quaternionでmesh/skinned meshを任意軸回転する。省略時は
+  互換入力の`rotationY`を使い、両方がある場合はquaternionを優先する。
+- `CameraCommand`: perspective/orthographic、position/target/zoomに加え、`fovDegrees`、`near`、`far`、
+  `up`を指定する。`applyCameraCommand()`が省略値とclip範囲を検証し、`projectCameraPoint()`がworld座標を
+  viewport pixelへ変換する。clip範囲外またはcamera背面は`null`を返す。
+- box `GeometryCommand.density/maxSegments`: 面の分割密度と各軸の最大分割数を指定し、lightingと
+  projected shadowに必要な頂点密度を調整する。省略時はrendererの既定値を使う。
 - `SpriteCommand.screenSpace`: 省略時は従来どおりworld plane。`true`では`position.x/y`と`size`を
   generation target pixelとして描く。raster/affine surface上のHUDではないgame spriteに使用できる。
 - `SpriteCommand.billboard/depthWrite`: scene spriteのworld向きを`cylindrical / spherical / none`から選び、
@@ -91,8 +98,12 @@ hold、pressure semantics を適用する。focus loss 時は browser input sour
 - PS1 ordering table: `orderTableIndex`は0..11の固定slot、`polygonSortRange`はtriangle分割先の昇順範囲。
   既定slotはopaque world 1..8、半透明9、screen-space sprite 10、debug 11。同一slotではcommand/triangleの
   登録順を保持し、rendererは毎frameの`Array.sort()`や作業配列allocationを行わない。
-- `LightCommand`: ambient/directional/pointをgeneration mask付きで指定する。directionalは`direction`を使う。
-  commandがない場合は従来の固定lightへfallbackする。
+- `LightCommand`: ambient/directional/pointをgeneration mask付きで複数指定する。ambientは加算、
+  directionalとpointはintensityの高い順にrenderer上限まで使用し、同じintensityではcommand順を保つ。
+  pointは`shadow`で投影shadowを制御する。
+  commandがない場合は従来の固定lightへfallbackする。`createGenerationWebGlRenderer()`の`limits`で
+  directional light、point light、skinあたりjoint数のshader上限を起動時に設定でき、GPU能力を超える値は
+  fail-fastする。既定上限はdirectional 4、point 4、joint 24である。
 - `MaterialCommand.environmentTexture/environmentStrength`: equirectangular 2D reflectionを指定する。
   `profile.video.environmentMap`がfalseならrendererがstrengthを0にする。
 - `createGenerationWebGlRenderer()`: production renderer。4世代のFBO/postfx targetを起動時に確保し、

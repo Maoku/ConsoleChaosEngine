@@ -1,6 +1,6 @@
 {
   "name": "@console-chaos/engine",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "Generation-aware browser game engine with deterministic simulation, input, audio, assets, and WebGL rendering.",
   "type": "module",
   "sideEffects": false,

@@ -4,10 +4,14 @@ import type { OrderingCommand } from './ordering-table';
 
 export type Vec2 = readonly [number, number];
 export type Vec3 = readonly [number, number, number];
+export type Vec4 = readonly [number, number, number, number];
 export type Color = string;
 
 export interface TransformCommand {
   position: Vec3;
+  /** Quaternion rotation (x, y, z, w). Takes precedence over rotationY. */
+  rotation?: Vec4;
+  /** Legacy yaw-only rotation retained for backwards compatibility. */
   rotationY?: number;
   scale?: Vec3;
 }
@@ -19,10 +23,16 @@ export interface CameraCommand {
   zoom: number;
   orthoHeight?: number;
   fovDegrees?: number;
+  /** Near clipping plane in world units. Defaults to 0.1. */
+  near?: number;
+  /** Far clipping plane in world units. Defaults to 200. */
+  far?: number;
+  /** Camera up direction. Defaults to world +Y. */
+  up?: Vec3;
 }
 
 export type GeometryCommand =
-  | { kind: 'box'; halfExtents?: Vec3; uvScale?: number }
+  | { kind: 'box'; halfExtents?: Vec3; uvScale?: number; density?: number; maxSegments?: number }
   | { kind: 'quad'; halfSize: Vec2; uvRepeat?: Vec2 }
   | { kind: 'circle'; radius: number }
   | { kind: 'polygon'; points: readonly Vec2[] }
@@ -50,6 +60,8 @@ export interface SkinnedMeshCommand extends OrderingCommand {
   model: string;
   clip: string;
   animationTime: number;
+  /** Forces a glTF skin index. By default each mesh node uses its attached skin. */
+  skinIndex?: number;
   /** 省略時は従来どおりクリップ全体をループする。 */
   loop?: boolean;
   transform: TransformCommand;
@@ -102,6 +114,12 @@ export interface LightCommand {
   radius: number;
   kind?: 'point' | 'directional' | 'ambient';
   direction?: Vec3;
+  /** Point-light projected-shadow controls. `false` disables this light's shadow. */
+  shadow?: false | {
+    strength?: number;
+    maxStretch?: number;
+    lift?: number;
+  };
   generations?: readonly GenerationId[];
 }
 
